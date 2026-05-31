@@ -1,5 +1,17 @@
 This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
 
+## Environment
+
+Copy `.env.example` to `.env.local` and fill in values.
+
+### Password reset (NextAuth + SMTP)
+
+1. Set `AUTH_SECRET` and `NEXT_PUBLIC_APP_URL` (or `AUTH_URL`).
+2. Configure SMTP (see `.env.example`). For Gmail, use an [App Password](https://myaccount.google.com/apppasswords), not your normal login password.
+3. Forgot password: `/forgot-password` → email link → `/reset-password?token=...` → sign in at `/login` with NextAuth credentials.
+
+In development, if `SMTP_PASS` is missing, reset links are printed in the server console instead of being emailed.
+
 ## Getting Started
 
 First, run the development server:

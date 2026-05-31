@@ -1,0 +1,186 @@
+generator client {
+  provider = "prisma-client-js"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+enum Role {
+  STUDENT
+  TUTOR
+  ADMIN
+}
+
+enum AdminTier {
+  SUPERADMIN
+  SUBADMIN
+}
+
+enum SchoolType {
+  HOME_SCHOOL
+  PUBLIC_SCHOOL
+  PRIVATE_SCHOOL
+}
+
+enum TutorEducationLevel {
+  UNDERGRADUATE_CONTINUING
+  DIPLOMA_HND
+  GRADUATE
+  POSTGRADUATE
+}
+
+enum TutorVerificationStatus {
+  PENDING
+  NOT_QUALIFIED
+  AWAITING_RECOMMENDATION
+  AWAITING_REVIEW
+  AWAITING_SUPERADMIN
+  APPROVED
+  REJECTED
+}
+
+enum RecommenderTitle {
+  DR
+  PROF
+}
+
+model User {
+  id              String    @id @default(cuid())
+  name            String?
+  firstName       String?
+  middleName      String?
+  lastName        String?
+  dateOfBirth     DateTime?
+  email           String    @unique
+  emailVerified   DateTime?
+  phone           String?
+  country         String?
+  regionState     String?
+  termsAcceptedAt DateTime?
+  image           String?
+  passwordHash    String?
+  role            Role      @default(STUDENT)
+  adminTier       AdminTier?
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+
+  accounts       Account[]
+  sessions       Session[]
+  tutorProfile   TutorProfile?
+  studentProfile StudentProfile?
+}
+
+model StudentProfile {
+  id                String     @id @default(cuid())
+  userId            String     @unique
+  user              User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  schoolType        SchoolType
+  schoolName        String?
+  schoolRegionState String?
+  createdAt         DateTime   @default(now())
+  updatedAt         DateTime   @updatedAt
+}
+
+model TutorProfile {
+  id                 String                  @id @default(cuid())
+  userId             String                  @unique
+  user               User                    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  bio                String?
+  subjects           String[]                @default([])
+  hourlyRate         Float?
+  experience         String?
+  educationLevel     TutorEducationLevel?
+  institutionName    String?
+  transcriptUrl      String?
+  certificateUrl     String?
+  nationalIdUrl      String?
+  livePhotoUrl       String?
+  onboardingComplete Boolean                 @default(false)
+  verificationStatus TutorVerificationStatus @default(PENDING)
+  verified           Boolean                 @default(false)
+  createdAt          DateTime                @default(now())
+  updatedAt          DateTime                @updatedAt
+
+  recommendations TutorRecommendation[]
+  subadminReviews TutorSubadminReview[]
+}
+
+model TutorSubadminReview {
+  id             String       @id @default(cuid())
+  tutorProfileId String
+  tutorProfile   TutorProfile @relation(fields: [tutorProfileId], references: [id], onDelete: Cascade)
+  reviewerId     String
+  reviewerName   String
+  checkedItems   String[]     @default([])
+  createdAt      DateTime     @default(now())
+
+  @@unique([tutorProfileId, reviewerId])
+  @@index([tutorProfileId])
+}
+
+model TutorRecommendation {
+  id                  String           @id @default(cuid())
+  tutorProfileId      String
+  tutorProfile        TutorProfile     @relation(fields: [tutorProfileId], references: [id], onDelete: Cascade)
+  title               RecommenderTitle
+  recommenderFirstName String
+  recommenderLastName  String
+  departmentName      String
+  recommenderSchoolName String @default("")
+  recommenderEmail    String
+  recommenderPhone    String?
+  message             String?          @db.Text
+  token               String           @unique
+  emailSentAt         DateTime?
+  submittedAt         DateTime?
+  letterUrl           String?
+  letterText          String?          @db.Text
+  createdAt           DateTime         @default(now())
+
+  @@index([tutorProfileId])
+}
+
+model Account {
+  userId            String
+  type              String
+  provider          String
+  providerAccountId String
+  refresh_token     String? @db.Text
+  access_token      String? @db.Text
+  expires_at        Int?
+  token_type        String?
+  scope             String?
+  id_token          String? @db.Text
+  session_state     String?
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@id([provider, providerAccountId])
+}
+
+model Session {
+  sessionToken String   @unique
+  userId       String
+  expires      DateTime
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model VerificationToken {
+  identifier String
+  token      String
+  expires    DateTime
+
+  @@id([identifier, token])
+}
+
+model PasswordResetToken {
+  id        String   @id @default(cuid())
+  email     String
+  token     String   @unique
+  expires   DateTime
+  createdAt DateTime @default(now())
+
+  @@index([email])
+}
