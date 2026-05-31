@@ -1,9 +1,8 @@
 "use client";
 
 import { toast } from "sonner";
-import { DashboardHeader } from "@/components/layout/dashboard-header";
+import { AdminPageHeader } from "@/components/layout/admin-page-header";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
@@ -11,45 +10,51 @@ import { Textarea } from "@/components/ui/textarea";
 export default function AdminCmsPage() {
   return (
     <>
-      <DashboardHeader title="CMS" subtitle="Manage landing page content" />
-      <div className="flex-1 overflow-auto p-4 sm:p-6 lg:p-8 max-w-2xl">
-        <Card>
-          <CardHeader>
-            <CardTitle>Hero section</CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-4">
+      <AdminPageHeader
+        title="CMS"
+        description="Manage landing page content and platform stats."
+      />
+
+      <div className="max-w-2xl space-y-6">
+        <div className="admin-card p-6">
+          <h3 className="text-base font-bold text-slate-900">Hero section</h3>
+          <div className="mt-5 space-y-4">
             <div>
-              <Label>Headline</Label>
-              <Input defaultValue="Learn live with verified tutors" className="mt-1.5" />
-            </div>
-            <div>
-              <Label>Subtitle</Label>
-              <Textarea
-                defaultValue="Connect with expert tutors for personalized live sessions."
-                className="mt-1.5"
+              <Label className="text-slate-600">Headline</Label>
+              <Input
+                defaultValue="Learn live with verified tutors"
+                className="mt-1.5 rounded-xl"
               />
             </div>
-            <Button onClick={() => toast.success("Content published (mock)")}>
+            <div>
+              <Label className="text-slate-600">Subtitle</Label>
+              <Textarea
+                defaultValue="Connect with expert tutors for personalized live sessions."
+                className="mt-1.5 rounded-xl"
+              />
+            </div>
+            <Button
+              className="admin-gradient-btn rounded-xl"
+              onClick={() => toast.success("Content published (mock)")}
+            >
               Publish changes
             </Button>
-          </CardContent>
-        </Card>
+          </div>
+        </div>
 
-        <Card className="mt-6">
-          <CardHeader>
-            <CardTitle>Platform stats</CardTitle>
-          </CardHeader>
-          <CardContent className="grid gap-4 sm:grid-cols-2">
+        <div className="admin-card p-6">
+          <h3 className="text-base font-bold text-slate-900">Platform stats</h3>
+          <div className="mt-5 grid gap-4 sm:grid-cols-2">
             <div>
-              <Label>Tutors count</Label>
-              <Input defaultValue="2840" className="mt-1.5" />
+              <Label className="text-slate-600">Tutors count</Label>
+              <Input defaultValue="2840" className="mt-1.5 rounded-xl" />
             </div>
             <div>
-              <Label>Students count</Label>
-              <Input defaultValue="12500" className="mt-1.5" />
+              <Label className="text-slate-600">Students count</Label>
+              <Input defaultValue="12500" className="mt-1.5 rounded-xl" />
             </div>
-          </CardContent>
-        </Card>
+          </div>
+        </div>
       </div>
     </>
   );

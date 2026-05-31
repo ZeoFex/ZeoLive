@@ -39,17 +39,17 @@ export const tutorNav: NavItemConfig[] = [
 ];
 
 export const adminNav: NavItemConfig[] = [
-  { href: "/admin/dashboard", label: "Overview", icon: "layout-dashboard" },
+  { href: "/admin/dashboard", label: "Dashboard", icon: "layout-dashboard" },
   { href: "/admin/users", label: "Users", icon: "users" },
-  { href: "/admin/verification", label: "Tutor Verification", icon: "shield" },
+  { href: "/admin/verification", label: "Verification", icon: "shield" },
   { href: "/admin/payments", label: "Payments", icon: "credit-card" },
-  { href: "/admin/reports", label: "Reports", icon: "bar-chart" },
+  { href: "/admin/reports", label: "Analytics", icon: "bar-chart" },
   { href: "/admin/cms", label: "CMS", icon: "clipboard-list" },
 ];
 
 /** Sub-admins: tutor review only */
 export const subAdminNav: NavItemConfig[] = [
-  { href: "/admin/verification", label: "Tutor Verification", icon: "shield" },
+  { href: "/admin/verification", label: "Verification", icon: "shield" },
 ];
 
 export function navForAdminTier(tier: "SUPERADMIN" | "SUBADMIN" | null | undefined) {

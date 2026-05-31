@@ -3,7 +3,8 @@
 import { useCallback, useEffect, useState } from "react";
 import { Plus, Trash2 } from "lucide-react";
 import { toast } from "sonner";
-import { DashboardHeader } from "@/components/layout/dashboard-header";
+import { AdminPageHeader } from "@/components/layout/admin-page-header";
+import { AdminPagination } from "@/components/shared/admin-pagination";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
@@ -156,48 +157,18 @@ export default function AdminUsersPage() {
 
   return (
     <>
-      <DashboardHeader
-        title="User Management"
-        subtitle="Super admin: create sub-admins, students, tutors — and delete accounts"
-      />
-      <div className="flex-1 overflow-auto p-4 sm:p-6 lg:p-8">
-        <div className="mb-6 flex flex-wrap items-center gap-4">
-          <Input
-            placeholder="Search users..."
-            className="max-w-xs"
-            value={search}
-            onChange={(e) => {
-              setSearch(e.target.value);
-              setPage(0);
-            }}
-          />
-          <Select
-            value={roleFilter}
-            onValueChange={(v) => {
-              setRoleFilter(v);
-              setPage(0);
-            }}
-          >
-            <SelectTrigger className="w-[160px]">
-              <SelectValue placeholder="Role" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">All roles</SelectItem>
-              <SelectItem value="student">Students</SelectItem>
-              <SelectItem value="tutor">Tutors</SelectItem>
-              <SelectItem value="subadmin">Sub-admins</SelectItem>
-              <SelectItem value="admin">All admins</SelectItem>
-            </SelectContent>
-          </Select>
-
+      <AdminPageHeader
+        title="User manager"
+        description="Create sub-admins, students, and tutors — and manage platform accounts."
+        actions={
           <Dialog open={createOpen} onOpenChange={setCreateOpen}>
             <DialogTrigger asChild>
-              <Button className="ml-auto">
+              <Button className="admin-gradient-btn rounded-xl">
                 <Plus className="mr-2 h-4 w-4" />
                 Create user
               </Button>
             </DialogTrigger>
-            <DialogContent>
+            <DialogContent className="rounded-2xl">
               <DialogHeader>
                 <DialogTitle>Create user</DialogTitle>
               </DialogHeader>
@@ -206,7 +177,7 @@ export default function AdminUsersPage() {
                   <div>
                     <Label>First name</Label>
                     <Input
-                      className="mt-1.5"
+                      className="mt-1.5 rounded-xl"
                       value={firstName}
                       onChange={(e) => setFirstName(e.target.value)}
                       required
@@ -215,7 +186,7 @@ export default function AdminUsersPage() {
                   <div>
                     <Label>Last name</Label>
                     <Input
-                      className="mt-1.5"
+                      className="mt-1.5 rounded-xl"
                       value={lastName}
                       onChange={(e) => setLastName(e.target.value)}
                       required
@@ -226,7 +197,7 @@ export default function AdminUsersPage() {
                   <Label>Email</Label>
                   <Input
                     type="email"
-                    className="mt-1.5"
+                    className="mt-1.5 rounded-xl"
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
                     required
@@ -235,7 +206,7 @@ export default function AdminUsersPage() {
                 <div>
                   <Label>Password</Label>
                   <PasswordInput
-                    className="mt-1.5"
+                    className="mt-1.5 rounded-xl"
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
                     required
@@ -250,7 +221,7 @@ export default function AdminUsersPage() {
                       setNewRole(v as "STUDENT" | "TUTOR" | "ADMIN")
                     }
                   >
-                    <SelectTrigger className="mt-1.5">
+                    <SelectTrigger className="mt-1.5 rounded-xl">
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
@@ -260,20 +231,54 @@ export default function AdminUsersPage() {
                     </SelectContent>
                   </Select>
                 </div>
-                <Button type="submit" className="w-full" disabled={creating}>
+                <Button type="submit" className="admin-gradient-btn w-full rounded-xl" disabled={creating}>
                   {creating ? "Creating…" : "Create user"}
                 </Button>
               </form>
             </DialogContent>
           </Dialog>
-        </div>
+        }
+      />
 
-        {loading ? (
-          <p className="text-sm text-muted-foreground">Loading users…</p>
-        ) : (
+      <div className="admin-filter-bar">
+        <Input
+          placeholder="Search users..."
+          className="admin-search max-w-xs"
+          value={search}
+          onChange={(e) => {
+            setSearch(e.target.value);
+            setPage(0);
+          }}
+        />
+        <Select
+          value={roleFilter}
+          onValueChange={(v) => {
+            setRoleFilter(v);
+            setPage(0);
+          }}
+        >
+          <SelectTrigger className="admin-filter-select">
+            <SelectValue placeholder="Role" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">All roles</SelectItem>
+            <SelectItem value="student">Students</SelectItem>
+            <SelectItem value="tutor">Tutors</SelectItem>
+            <SelectItem value="subadmin">Sub-admins</SelectItem>
+            <SelectItem value="admin">All admins</SelectItem>
+          </SelectContent>
+        </Select>
+      </div>
+
+      {loading ? (
+        <p className="text-sm text-slate-500">Loading users…</p>
+      ) : users.length === 0 ? (
+        <div className="admin-empty">No users found.</div>
+      ) : (
+        <div className="admin-table-wrap">
           <Table>
             <TableHeader>
-              <TableRow>
+              <TableRow className="hover:bg-transparent">
                 <TableHead>Name</TableHead>
                 <TableHead>Email</TableHead>
                 <TableHead>Role</TableHead>
@@ -284,11 +289,11 @@ export default function AdminUsersPage() {
             </TableHeader>
             <TableBody>
               {users.map((u) => (
-                <TableRow key={u.id}>
-                  <TableCell className="font-medium">{u.name}</TableCell>
+                <TableRow key={u.id} className="border-slate-50">
+                  <TableCell className="font-semibold text-slate-900">{u.name}</TableCell>
                   <TableCell>{u.email}</TableCell>
                   <TableCell>
-                    <Badge variant="outline">{roleBadge(u.role)}</Badge>
+                    <span className="admin-tag admin-tag-violet">{roleBadge(u.role)}</span>
                   </TableCell>
                   <TableCell>
                     <Badge
@@ -309,6 +314,7 @@ export default function AdminUsersPage() {
                       <Button
                         variant="ghost"
                         size="icon"
+                        className="rounded-lg"
                         disabled={deletingId === u.id}
                         onClick={() => deleteUser(u)}
                         aria-label={`Delete ${u.name}`}
@@ -321,32 +327,16 @@ export default function AdminUsersPage() {
               ))}
             </TableBody>
           </Table>
-        )}
-
-        <div className="mt-4 flex items-center justify-between">
-          <p className="text-sm text-muted-foreground">
-            Page {page + 1} of {totalPages}
-          </p>
-          <div className="flex gap-2">
-            <Button
-              variant="outline"
-              size="sm"
-              disabled={page === 0}
-              onClick={() => setPage((p) => p - 1)}
-            >
-              Previous
-            </Button>
-            <Button
-              variant="outline"
-              size="sm"
-              disabled={page >= totalPages - 1}
-              onClick={() => setPage((p) => p + 1)}
-            >
-              Next
-            </Button>
-          </div>
         </div>
-      </div>
+      )}
+
+      {!loading && users.length > 0 && (
+        <AdminPagination
+          page={page}
+          totalPages={totalPages}
+          onPageChange={setPage}
+        />
+      )}
     </>
   );
 }

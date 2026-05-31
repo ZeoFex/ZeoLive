@@ -2,7 +2,7 @@
 
 import { Download } from "lucide-react";
 import { toast } from "sonner";
-import { DashboardHeader } from "@/components/layout/dashboard-header";
+import { AdminPageHeader } from "@/components/layout/admin-page-header";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
@@ -26,20 +26,25 @@ const statusVariant = {
 export default function AdminPaymentsPage() {
   return (
     <>
-      <DashboardHeader title="Payments" subtitle="Monitor platform transactions" />
-      <div className="flex-1 overflow-auto p-4 sm:p-6 lg:p-8">
-        <div className="mb-6 flex justify-end">
+      <AdminPageHeader
+        title="Payment manager"
+        description="Review and monitor platform transactions."
+        actions={
           <Button
             variant="outline"
+            className="admin-outline-btn rounded-xl"
             onClick={() => toast.success("Export started (mock)")}
           >
             <Download className="mr-2 h-4 w-4" />
             Export CSV
           </Button>
-        </div>
+        }
+      />
+
+      <div className="admin-table-wrap">
         <Table>
           <TableHeader>
-            <TableRow>
+            <TableRow className="hover:bg-transparent">
               <TableHead>ID</TableHead>
               <TableHead>Date</TableHead>
               <TableHead>Description</TableHead>
@@ -50,10 +55,10 @@ export default function AdminPaymentsPage() {
           <TableBody>
             {payments.map((p) => (
               <TableRow key={p.id}>
-                <TableCell className="font-mono text-xs">{p.id}</TableCell>
+                <TableCell className="font-mono text-xs text-slate-500">{p.id}</TableCell>
                 <TableCell>{formatDate(p.date)}</TableCell>
-                <TableCell>{p.description}</TableCell>
-                <TableCell>{formatCurrency(p.amount)}</TableCell>
+                <TableCell className="font-medium text-slate-900">{p.description}</TableCell>
+                <TableCell className="font-semibold">{formatCurrency(p.amount)}</TableCell>
                 <TableCell>
                   <Badge variant={statusVariant[p.status]}>{p.status}</Badge>
                 </TableCell>
