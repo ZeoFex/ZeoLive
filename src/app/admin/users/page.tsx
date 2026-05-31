@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
+import { useSearchParams } from "next/navigation";
 import { Plus, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 import { AdminPageHeader } from "@/components/layout/admin-page-header";
@@ -47,7 +48,8 @@ interface AdminUser {
 const PAGE_SIZE = 10;
 
 export default function AdminUsersPage() {
-  const [search, setSearch] = useState("");
+  const searchParams = useSearchParams();
+  const [search, setSearch] = useState(() => searchParams.get("search") ?? "");
   const [roleFilter, setRoleFilter] = useState("all");
   const [page, setPage] = useState(0);
   const [users, setUsers] = useState<AdminUser[]>([]);
@@ -56,6 +58,14 @@ export default function AdminUsersPage() {
   const [createOpen, setCreateOpen] = useState(false);
   const [creating, setCreating] = useState(false);
   const [deletingId, setDeletingId] = useState<string | null>(null);
+
+  useEffect(() => {
+    const q = searchParams.get("search");
+    if (q != null) {
+      setSearch(q);
+      setPage(0);
+    }
+  }, [searchParams]);
 
   const [firstName, setFirstName] = useState("");
   const [lastName, setLastName] = useState("");
