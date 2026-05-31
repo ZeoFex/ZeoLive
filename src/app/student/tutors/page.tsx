@@ -1,18 +1,51 @@
-import { DashboardHeader } from "@/components/layout/dashboard-header";
+"use client";
+
+import { Suspense, useMemo } from "react";
+import { useSearchParams } from "next/navigation";
+import { StudentPageHeader } from "@/components/layout/student-page-header";
 import { TutorCard } from "@/components/shared/tutor-card";
 import { allTutors } from "@/lib/mock-data";
 
-export default function StudentTutorsPage() {
+function StudentTutorsContent() {
+  const searchParams = useSearchParams();
+  const q = searchParams.get("q")?.trim().toLowerCase() ?? "";
+
+  const tutors = useMemo(() => {
+    if (!q) return allTutors;
+    return allTutors.filter((t) => {
+      const haystack = [t.name, t.subject, ...t.subjects].join(" ").toLowerCase();
+      return haystack.includes(q);
+    });
+  }, [q]);
+
   return (
     <>
-      <DashboardHeader title="Tutors" subtitle="Browse all available tutors" />
-      <div className="flex-1 overflow-auto p-4 sm:p-6 lg:p-8">
-        <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
-          {allTutors.map((tutor) => (
+      <StudentPageHeader
+        title="Browse tutors"
+        description={
+          q
+            ? `Showing results for “${searchParams.get("q")}”`
+            : "Find verified tutors across all subjects."
+        }
+      />
+
+      {tutors.length === 0 ? (
+        <div className="student-empty">No tutors match your search.</div>
+      ) : (
+        <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
+          {tutors.map((tutor) => (
             <TutorCard key={tutor.id} tutor={tutor} />
           ))}
         </div>
-      </div>
+      )}
     </>
+  );
+}
+
+export default function StudentTutorsPage() {
+  return (
+    <Suspense fallback={<p className="text-sm text-slate-500">Loading…</p>}>
+      <StudentTutorsContent />
+    </Suspense>
   );
 }

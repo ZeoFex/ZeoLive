@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardFooter } from "@/components/ui/card";
 import { LandingImage } from "@/components/shared/landing-image";
 import { tutorPhotos } from "@/lib/site-images";
-import { formatCurrency } from "@/lib/utils";
+import { cn, formatCurrency } from "@/lib/utils";
 import type { Tutor } from "@/types";
 
 function initials(name: string) {
@@ -22,18 +22,20 @@ interface TutorCardProps {
   showBook?: boolean;
   /** Photo header layout for marketing pages */
   variant?: "compact" | "photo";
+  className?: string;
 }
 
 export function TutorCard({
   tutor,
   showBook = true,
   variant = "compact",
+  className,
 }: TutorCardProps) {
   const photo = tutorPhotos[tutor.id] ?? (tutor.avatar ? { src: tutor.avatar, alt: tutor.name } : null);
 
   if (variant === "photo" && photo) {
     return (
-      <Card className="overflow-hidden shadow-none">
+      <Card className={cn("student-card overflow-hidden border-0 shadow-none", className)}>
         <LandingImage
           src={photo.src}
           alt={photo.alt}
@@ -65,7 +67,7 @@ export function TutorCard({
         </CardContent>
         {showBook && (
           <CardFooter className="border-t px-5 py-3">
-            <Button className="w-full" variant="outline" size="sm" asChild>
+            <Button className="student-gradient-btn w-full rounded-xl" size="sm" asChild>
               <Link href="/student/book">Book session</Link>
             </Button>
           </CardFooter>
@@ -75,7 +77,7 @@ export function TutorCard({
   }
 
   return (
-    <Card className="shadow-none">
+    <Card className={cn("student-card border-0 shadow-none", className)}>
       <CardContent className="p-5">
         <div className="flex items-start gap-3">
           <Avatar className="h-11 w-11">
@@ -113,7 +115,7 @@ export function TutorCard({
       </CardContent>
       {showBook && (
         <CardFooter className="border-t px-5 py-3">
-          <Button className="w-full" variant="outline" size="sm" asChild>
+          <Button className="student-gradient-btn w-full rounded-xl" size="sm" asChild>
             <Link href="/student/book">Book session</Link>
           </Button>
         </CardFooter>

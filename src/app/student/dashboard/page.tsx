@@ -1,117 +1,121 @@
 "use client";
 
-import { BookOpen, Clock, TrendingUp, Users } from "lucide-react";
+import { BookOpen, Clock, Plus, TrendingUp, Users } from "lucide-react";
 import Link from "next/link";
-import { DashboardHeader } from "@/components/layout/dashboard-header";
-import { StatCard } from "@/components/shared/stat-card";
+import { useSession } from "next-auth/react";
+import { StudentPageHeader } from "@/components/layout/student-page-header";
+import { StudentStatCard } from "@/components/shared/student-stat-card";
 import { TutorCard } from "@/components/shared/tutor-card";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
 import { featuredTutors, studentSessions } from "@/lib/mock-data";
+import { routes } from "@/lib/routes";
 import { formatDate } from "@/lib/utils";
+import { getStudentNotifications } from "@/lib/student-portal";
 
 export default function StudentDashboardPage() {
+  const { data: session } = useSession();
+  const firstName = session?.user?.name?.split(" ")[0] ?? "there";
   const upcoming = studentSessions.filter((s) => s.status === "upcoming");
+  const notifications = getStudentNotifications().slice(0, 3);
 
   return (
     <>
-      <DashboardHeader
-        title="Dashboard"
-        subtitle="Welcome back, Alex! Ready to learn?"
+      <StudentPageHeader
+        title={`Welcome back, ${firstName}!`}
+        description="Ready to learn? Here's your overview."
+        actions={
+          <Button className="student-gradient-btn rounded-xl" asChild>
+            <Link href={routes.student.book}>
+              <Plus className="mr-2 h-4 w-4" />
+              Book session
+            </Link>
+          </Button>
+        }
       />
-      <div className="flex-1 overflow-auto p-4 sm:p-6 lg:p-8">
-        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-          <StatCard title="Upcoming Sessions" value={upcoming.length} icon={BookOpen} />
-          <StatCard title="Hours Learned" value="48h" icon={Clock} trend="+12% this month" />
-          <StatCard title="Tutors Connected" value="6" icon={Users} />
-          <StatCard title="Learning Progress" value="72%" icon={TrendingUp} />
-        </div>
 
-        <div className="mt-8 grid gap-6 lg:grid-cols-2">
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between">
-              <CardTitle>Upcoming sessions</CardTitle>
-              <Button variant="ghost" size="sm" asChild>
-                <Link href="/student/classes">View all</Link>
-              </Button>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              {upcoming.map((session) => (
-                <div
-                  key={session.id}
-                  className="flex items-center gap-4 rounded-xl border p-4"
-                >
-                  <Avatar>
+      <div className="grid grid-cols-2 gap-3 sm:gap-4 xl:grid-cols-4">
+        <StudentStatCard title="Upcoming" value={upcoming.length} icon={BookOpen} />
+        <StudentStatCard title="Hours learned" value="48h" icon={Clock} trend="+12% this month" />
+        <StudentStatCard title="Tutors" value="6" icon={Users} />
+        <StudentStatCard title="Progress" value="72%" icon={TrendingUp} />
+      </div>
+
+      <div className="mt-6 grid gap-4 lg:grid-cols-2 lg:gap-6">
+        <div className="student-card p-4 sm:p-6">
+          <div className="mb-4 flex items-center justify-between gap-2">
+            <h3 className="font-bold text-slate-900">Upcoming sessions</h3>
+            <Button variant="ghost" size="sm" className="text-violet-600" asChild>
+              <Link href={routes.student.classes}>View all</Link>
+            </Button>
+          </div>
+          <div className="space-y-3">
+            {upcoming.map((session) => (
+              <div key={session.id} className="student-session-card flex flex-col gap-3 sm:flex-row sm:items-center">
+                <div className="flex min-w-0 flex-1 items-center gap-3">
+                  <Avatar className="h-10 w-10 shrink-0">
                     <AvatarImage src={session.tutorAvatar} alt={session.tutorName} />
                     <AvatarFallback>{session.tutorName[0]}</AvatarFallback>
                   </Avatar>
-                  <div className="flex-1">
-                    <p className="font-medium">{session.subject}</p>
-                    <p className="text-sm text-muted-foreground">
-                      {session.tutorName} · {formatDate(session.date)} at {session.time}
+                  <div className="min-w-0">
+                    <p className="truncate font-semibold text-slate-900">{session.subject}</p>
+                    <p className="truncate text-xs text-slate-500 sm:text-sm">
+                      {session.tutorName} · {formatDate(session.date)} · {session.time}
                     </p>
                   </div>
-                  <Button size="sm" asChild>
-                    <Link href="/classroom/demo">Join</Link>
-                  </Button>
                 </div>
-              ))}
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardHeader>
-              <CardTitle>Learning progress</CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-6">
-              {[
-                { subject: "Mathematics", progress: 85 },
-                { subject: "Physics", progress: 62 },
-                { subject: "Python", progress: 45 },
-              ].map((item) => (
-                <div key={item.subject}>
-                  <div className="mb-2 flex justify-between text-sm">
-                    <span>{item.subject}</span>
-                    <span className="text-muted-foreground">{item.progress}%</span>
-                  </div>
-                  <Progress value={item.progress} />
-                </div>
-              ))}
-            </CardContent>
-          </Card>
-        </div>
-
-        <div className="mt-8">
-          <h2 className="mb-4 text-lg font-semibold">Recent tutors</h2>
-          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-            {featuredTutors.slice(0, 3).map((tutor) => (
-              <TutorCard key={tutor.id} tutor={tutor} />
+                <Button className="student-gradient-btn w-full shrink-0 rounded-xl sm:w-auto" size="sm" asChild>
+                  <Link href="/classroom/demo">Join</Link>
+                </Button>
+              </div>
             ))}
           </div>
         </div>
 
-        <Card className="mt-8">
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              Notifications
-              <Badge>3 new</Badge>
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-3">
+        <div className="student-card p-4 sm:p-6">
+          <h3 className="mb-4 font-bold text-slate-900">Learning progress</h3>
+          <div className="space-y-5">
             {[
-              "Session reminder: Calculus II tomorrow at 10 AM",
-              "Michael Park shared new Python exercises",
-              "Student Plus renews on May 27",
-            ].map((n, i) => (
-              <p key={i} className="rounded-lg bg-muted/50 px-4 py-3 text-sm">
-                {n}
-              </p>
+              { subject: "Mathematics", progress: 85 },
+              { subject: "Physics", progress: 62 },
+              { subject: "Python", progress: 45 },
+            ].map((item) => (
+              <div key={item.subject}>
+                <div className="mb-2 flex justify-between text-sm">
+                  <span className="font-medium text-slate-800">{item.subject}</span>
+                  <span className="text-slate-500">{item.progress}%</span>
+                </div>
+                <Progress value={item.progress} className="h-2" />
+              </div>
             ))}
-          </CardContent>
-        </Card>
+          </div>
+        </div>
+      </div>
+
+      <div className="mt-6 lg:mt-8">
+        <h3 className="mb-4 font-bold text-slate-900">Recommended tutors</h3>
+        <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
+          {featuredTutors.slice(0, 3).map((tutor) => (
+            <TutorCard key={tutor.id} tutor={tutor} />
+          ))}
+        </div>
+      </div>
+
+      <div className="student-card mt-6 p-4 sm:p-6">
+        <h3 className="mb-4 font-bold text-slate-900">Recent notifications</h3>
+        <div className="space-y-2">
+          {notifications.map((n) => (
+            <Link
+              key={n.id}
+              href={n.href}
+              className="block rounded-xl border border-slate-100 bg-slate-50/80 px-4 py-3 text-sm transition-colors hover:bg-violet-50/50"
+            >
+              <p className="font-medium text-slate-900">{n.title}</p>
+              <p className="mt-0.5 text-xs text-slate-500">{n.message}</p>
+            </Link>
+          ))}
+        </div>
       </div>
     </>
   );

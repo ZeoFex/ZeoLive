@@ -1,7 +1,6 @@
-import { DashboardHeader } from "@/components/layout/dashboard-header";
+import { StudentPageHeader } from "@/components/layout/student-page-header";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
   Table,
   TableBody,
@@ -25,46 +24,32 @@ export default function StudentPaymentsPage() {
 
   return (
     <>
-      <DashboardHeader title="Payments" subtitle="Manage subscriptions and billing" />
-      <div className="flex-1 overflow-auto p-4 sm:p-6 lg:p-8">
-        <div className="grid gap-6 lg:grid-cols-3">
-          <Card className="shadow-none lg:col-span-1">
-            <CardHeader>
-              <CardTitle>Current plan</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <p className="text-2xl font-semibold">{plusPlan?.name}</p>
-              <p className="text-muted-foreground">
-                {formatCurrency(plusPlan?.price ?? 0)}/month
-              </p>
-              <Button className="mt-4 w-full" variant="outline">
-                Manage subscription
-              </Button>
-            </CardContent>
-          </Card>
-          <Card className="lg:col-span-2">
-            <CardHeader>
-              <CardTitle>Payment methods</CardTitle>
-            </CardHeader>
-            <CardContent className="flex flex-wrap gap-4">
-              <div className="min-w-[240px] rounded-lg border bg-muted/40 p-5">
-                <p className="text-xs text-muted-foreground">Visa</p>
-                <p className="mt-2 font-mono text-sm">•••• 4242</p>
-                <p className="mt-3 text-xs text-muted-foreground">Expires 12/28</p>
-              </div>
-              <Button variant="outline">Add payment method</Button>
-            </CardContent>
-          </Card>
+      <StudentPageHeader
+        title="Billing & plans"
+        description="Manage your subscription and payment history."
+      />
+
+      <div className="grid gap-4 lg:grid-cols-3 lg:gap-6">
+        <div className="student-card p-5 lg:col-span-1">
+          <h3 className="font-bold text-slate-900">Current plan</h3>
+          <p className="mt-3 text-2xl font-bold text-slate-900">{plusPlan?.name}</p>
+          <p className="text-slate-500">
+            {formatCurrency(plusPlan?.price ?? 0)}
+            <span className="text-sm">/month</span>
+          </p>
+          <Button className="student-outline-btn mt-4 w-full rounded-xl" variant="outline">
+            Change plan
+          </Button>
         </div>
 
-        <Card className="mt-8">
-          <CardHeader>
-            <CardTitle>Payment history</CardTitle>
-          </CardHeader>
-          <CardContent>
+        <div className="student-table-wrap lg:col-span-2">
+          <div className="border-b border-slate-100 px-4 py-3 sm:hidden">
+            <h3 className="font-bold text-slate-900">Payment history</h3>
+          </div>
+          <div className="hidden sm:block">
             <Table>
               <TableHeader>
-                <TableRow>
+                <TableRow className="hover:bg-transparent">
                   <TableHead>Date</TableHead>
                   <TableHead>Description</TableHead>
                   <TableHead>Amount</TableHead>
@@ -76,7 +61,7 @@ export default function StudentPaymentsPage() {
                   <TableRow key={p.id}>
                     <TableCell>{formatDate(p.date)}</TableCell>
                     <TableCell>{p.description}</TableCell>
-                    <TableCell>{formatCurrency(p.amount)}</TableCell>
+                    <TableCell className="font-semibold">{formatCurrency(p.amount)}</TableCell>
                     <TableCell>
                       <Badge variant={statusVariant[p.status]}>{p.status}</Badge>
                     </TableCell>
@@ -84,8 +69,22 @@ export default function StudentPaymentsPage() {
                 ))}
               </TableBody>
             </Table>
-          </CardContent>
-        </Card>
+          </div>
+          <div className="space-y-3 p-4 sm:hidden">
+            {payments.map((p) => (
+              <div key={p.id} className="student-session-card">
+                <div className="flex items-start justify-between gap-2">
+                  <div>
+                    <p className="font-semibold text-slate-900">{p.description}</p>
+                    <p className="text-xs text-slate-500">{formatDate(p.date)}</p>
+                  </div>
+                  <Badge variant={statusVariant[p.status]}>{p.status}</Badge>
+                </div>
+                <p className="mt-2 font-bold text-slate-900">{formatCurrency(p.amount)}</p>
+              </div>
+            ))}
+          </div>
+        </div>
       </div>
     </>
   );

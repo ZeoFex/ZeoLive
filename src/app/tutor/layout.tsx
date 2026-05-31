@@ -1,8 +1,9 @@
 "use client";
 
 import { usePathname } from "next/navigation";
-import { DashboardShell } from "@/components/layout/dashboard-shell";
+import { TutorShell } from "@/components/layout/tutor-shell";
 import { TutorOnboardingGuard } from "@/components/tutor/tutor-onboarding-guard";
+import "./tutor-theme.css";
 
 export default function TutorLayout({
   children,
@@ -16,8 +17,8 @@ export default function TutorLayout({
   }
 
   return (
-    <DashboardShell role="tutor" roleLabel="Tutor">
+    <TutorShell>
       <TutorOnboardingGuard>{children}</TutorOnboardingGuard>
-    </DashboardShell>
+    </TutorShell>
   );
 }
