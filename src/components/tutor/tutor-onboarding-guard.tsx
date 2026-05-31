@@ -56,7 +56,7 @@ export function TutorOnboardingGuard({ children }: { children: React.ReactNode }
 
   if (state === "loading" || state === "redirecting") {
     return (
-      <div className="flex flex-1 items-center justify-center p-8 text-sm text-muted-foreground">
+      <div className="flex flex-1 items-center justify-center p-8 text-sm text-slate-500">
         Loading…
       </div>
     );
@@ -108,16 +108,18 @@ function TutorBlockedScreen({
 }) {
   return (
     <div className="flex flex-1 flex-col items-center justify-center gap-4 p-8 text-center">
-      <h2 className="text-lg font-semibold">{title}</h2>
-      <p className="max-w-md text-sm text-muted-foreground">{description}</p>
-      <div className="flex flex-wrap justify-center gap-2">
-        {action}
-        <Button variant="outline" onClick={() => signOut({ callbackUrl: routes.login })}>
-          Sign out
-        </Button>
-        <Button variant="ghost" asChild>
-          <Link href={routes.home}>Home</Link>
-        </Button>
+      <div className="tutor-card max-w-md p-8">
+        <h2 className="text-lg font-bold text-slate-900">{title}</h2>
+        <p className="mt-2 text-sm text-slate-500">{description}</p>
+        <div className="mt-6 flex flex-wrap justify-center gap-2">
+          {action}
+          <Button variant="outline" className="tutor-outline-btn rounded-xl" onClick={() => signOut({ callbackUrl: routes.login })}>
+            Sign out
+          </Button>
+          <Button variant="ghost" asChild>
+            <Link href={routes.home}>Home</Link>
+          </Button>
+        </div>
       </div>
     </div>
   );

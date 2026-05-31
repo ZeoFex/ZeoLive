@@ -26,7 +26,7 @@ export default function StudentDashboardPage() {
         title={`Welcome back, ${firstName}!`}
         description="Ready to learn? Here's your overview."
         actions={
-          <Button className="student-gradient-btn rounded-xl" asChild>
+          <Button className="student-gradient-btn w-full rounded-xl sm:w-auto" asChild>
             <Link href={routes.student.book}>
               <Plus className="mr-2 h-4 w-4" />
               Book session

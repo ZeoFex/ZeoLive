@@ -70,11 +70,11 @@ export default function StudentClassesPage() {
       />
 
       <Tabs defaultValue="upcoming" className="w-full">
-        <TabsList className="student-tabs-list mb-4 h-auto w-full justify-start sm:w-auto">
-          <TabsTrigger value="upcoming" className="student-tab-trigger rounded-lg px-4">
+        <TabsList className="student-tabs-list student-mobile-nav mb-4 h-auto w-full max-w-full justify-start overflow-x-auto sm:w-auto">
+          <TabsTrigger value="upcoming" className="student-tab-trigger shrink-0 rounded-lg px-4">
             Upcoming ({upcoming.length})
           </TabsTrigger>
-          <TabsTrigger value="completed" className="student-tab-trigger rounded-lg px-4">
+          <TabsTrigger value="completed" className="student-tab-trigger shrink-0 rounded-lg px-4">
             Completed ({completed.length})
           </TabsTrigger>
         </TabsList>

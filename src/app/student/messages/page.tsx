@@ -24,14 +24,14 @@ function MessagesContent() {
     <>
       <StudentPageHeader title="Messages" description="Chat with your tutors." />
 
-      <div className="student-card flex min-h-[420px] flex-col overflow-hidden sm:min-h-[520px] sm:flex-row">
+      <div className="student-card flex min-h-[min(520px,calc(100dvh-14rem))] flex-col overflow-hidden sm:min-h-[520px] sm:flex-row lg:min-h-[560px]">
         <aside
           className={cn(
             "w-full border-b border-slate-100 sm:max-w-xs sm:border-b-0 sm:border-r",
             mobileShowChat ? "hidden sm:block" : "block"
           )}
         >
-          <div className="max-h-[320px] overflow-y-auto sm:max-h-none">
+          <div className="max-h-[min(280px,40dvh)] overflow-y-auto sm:max-h-none sm:flex-1">
             {conversations.map((c) => (
               <button
                 key={c.id}
@@ -113,11 +113,10 @@ function MessagesContent() {
                 ))}
               </div>
 
-              <div className="flex gap-2 border-t border-slate-100 p-3">
+              <div className="flex min-h-0 flex-1 gap-2 border-t border-slate-100 p-3">
                 <Input
                   placeholder="Type a message..."
-                  className="rounded-xl"
-                  onFocus={() => {}}
+                  className="min-w-0 flex-1 rounded-xl"
                 />
                 <Button
                   size="icon"

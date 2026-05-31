@@ -47,8 +47,14 @@
   border-radius: 1rem;
   border: 1px solid rgb(241 245 249);
   background: #ffffff;
-  padding: 1.25rem;
+  padding: 0.875rem;
   box-shadow: 0 4px 24px -8px rgba(15, 23, 42, 0.1);
+}
+
+@media (min-width: 640px) {
+  .student-stat-card {
+    padding: 1.25rem;
+  }
 }
 
 .student-stat-icon {
@@ -74,12 +80,64 @@
 .student-page-content {
   flex: 1;
   overflow: auto;
-  padding: 1rem 1.25rem 2rem;
+  padding: 1rem 1rem 5.5rem;
+  -webkit-overflow-scrolling: touch;
 }
 
 @media (min-width: 640px) {
   .student-page-content {
+    padding: 1rem 2rem 5.5rem;
+  }
+}
+
+@media (min-width: 1024px) {
+  .student-page-content {
     padding: 1rem 2rem 2rem;
+  }
+}
+
+.student-mobile-bottom-nav {
+  background: rgba(255, 255, 255, 0.96);
+  border-top: 1px solid rgb(241 245 249);
+  box-shadow: 0 -4px 24px -8px rgba(15, 23, 42, 0.12);
+  padding-bottom: env(safe-area-inset-bottom, 0px);
+  backdrop-filter: blur(12px);
+}
+
+.student-mobile-nav-item {
+  color: rgb(100 116 139);
+}
+
+.student-mobile-nav-item-active {
+  color: #6366f1;
+  background: rgb(238 242 255 / 0.8);
+}
+
+.student-mobile-nav-accent {
+  color: #ffffff;
+}
+
+.student-mobile-nav-accent span:first-child {
+  background: linear-gradient(135deg, #6366f1 0%, #7c3aed 55%, #9333ea 100%);
+  box-shadow: 0 8px 18px -8px rgba(99, 102, 241, 0.55);
+}
+
+.student-sidebar-drawer {
+  padding-bottom: env(safe-area-inset-bottom, 0px);
+}
+
+.student-topbar-search-panel {
+  animation: student-search-slide 0.2s ease-out;
+}
+
+@keyframes student-search-slide {
+  from {
+    opacity: 0;
+    transform: translateY(-4px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
   }
 }
 
