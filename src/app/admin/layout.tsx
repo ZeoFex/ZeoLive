@@ -3,13 +3,14 @@
 import { useSession } from "next-auth/react";
 import { usePathname, useRouter } from "next/navigation";
 import { useEffect } from "react";
-import { DashboardShell } from "@/components/layout/dashboard-shell";
+import { AdminShell } from "@/components/layout/admin-shell";
 import {
   adminRoleLabel,
   canAccessAdminPath,
 } from "@/lib/admin-permissions";
 import { navForAdminTier } from "@/lib/navigation";
 import { routes } from "@/lib/routes";
+import "./admin-theme.css";
 
 export default function AdminLayout({
   children,
@@ -40,19 +41,18 @@ export default function AdminLayout({
 
   if (status === "loading") {
     return (
-      <div className="flex min-h-screen items-center justify-center text-sm text-muted-foreground">
+      <div className="admin-shell flex min-h-screen items-center justify-center text-sm text-slate-500">
         Loading admin…
       </div>
     );
   }
 
   return (
-    <DashboardShell
-      role="admin"
+    <AdminShell
       roleLabel={adminRoleLabel(adminTier)}
       navItems={navForAdminTier(adminTier)}
     >
       {children}
-    </DashboardShell>
+    </AdminShell>
   );
 }

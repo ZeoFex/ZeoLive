@@ -5,7 +5,7 @@ import { ExternalLink, Eye } from "lucide-react";
 import { useSession } from "next-auth/react";
 import { useSearchParams } from "next/navigation";
 import { toast } from "sonner";
-import { DashboardHeader } from "@/components/layout/dashboard-header";
+import { AdminPageHeader } from "@/components/layout/admin-page-header";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -257,28 +257,29 @@ export default function AdminVerificationPage() {
 
   return (
     <>
-      <DashboardHeader title="Tutor Verification" subtitle={subtitle} />
-      <div className="flex-1 overflow-auto p-4 sm:p-6 lg:p-8">
-        <div className="mb-6">
-          <Select value={filter} onValueChange={setFilter}>
-            <SelectTrigger className="w-[240px]">
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              {filterOptions.map((option) => (
-                <SelectItem key={option.value} value={option.value}>
-                  {option.label}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        </div>
+      <AdminPageHeader title="Tutor verification" description={subtitle} />
 
-        {loading ? (
-          <p className="text-sm text-muted-foreground">Loading applications…</p>
-        ) : items.length === 0 ? (
-          <p className="text-sm text-muted-foreground">No applications in this list.</p>
-        ) : (
+      <div className="admin-filter-bar">
+        <Select value={filter} onValueChange={setFilter}>
+          <SelectTrigger className="admin-filter-select">
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent>
+            {filterOptions.map((option) => (
+              <SelectItem key={option.value} value={option.value}>
+                {option.label}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+      </div>
+
+      {loading ? (
+        <p className="text-sm text-slate-500">Loading applications…</p>
+      ) : items.length === 0 ? (
+        <div className="admin-empty">No applications in this list.</div>
+      ) : (
+        <div className="admin-table-wrap">
           <Table>
             <TableHeader>
               <TableRow>
@@ -338,7 +339,12 @@ export default function AdminVerificationPage() {
                     </Badge>
                   </TableCell>
                   <TableCell>
-                    <Button variant="outline" size="sm" onClick={() => setPreview(v)}>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="admin-outline-btn rounded-lg"
+                      onClick={() => setPreview(v)}
+                    >
                       <Eye className="h-4 w-4" />
                     </Button>
                   </TableCell>
@@ -346,7 +352,8 @@ export default function AdminVerificationPage() {
               ))}
             </TableBody>
           </Table>
-        )}
+        </div>
+      )}
 
         <Dialog open={!!preview} onOpenChange={() => setPreview(null)}>
           <DialogContent className="max-h-[90vh] max-w-2xl overflow-y-auto">
@@ -396,6 +403,7 @@ export default function AdminVerificationPage() {
                   <div className="flex gap-2 pt-2">
                     <Button
                       disabled={acting === preview.id}
+                      className="admin-gradient-btn rounded-xl"
                       onClick={() => handleSubadminRecommend(preview.id)}
                     >
                       Recommend to super admin
@@ -403,6 +411,7 @@ export default function AdminVerificationPage() {
                     <Button
                       variant="destructive"
                       disabled={acting === preview.id}
+                      className="rounded-xl"
                       onClick={() => handleReject(preview.id)}
                     >
                       Reject tutor
@@ -434,6 +443,7 @@ export default function AdminVerificationPage() {
                     <div className="flex gap-2">
                       <Button
                         disabled={acting === preview.id}
+                        className="admin-gradient-btn rounded-xl"
                         onClick={() => handleSuperadminApprove(preview.id)}
                       >
                         Approve tutor (final)
@@ -441,6 +451,7 @@ export default function AdminVerificationPage() {
                       <Button
                         variant="destructive"
                         disabled={acting === preview.id}
+                        className="rounded-xl"
                         onClick={() => handleReject(preview.id)}
                       >
                         Reject tutor
@@ -458,7 +469,6 @@ export default function AdminVerificationPage() {
             )}
           </DialogContent>
         </Dialog>
-      </div>
     </>
   );
 }

@@ -1,5 +1,5 @@
-import { DashboardHeader } from "@/components/layout/dashboard-header";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Download } from "lucide-react";
+import { AdminPageHeader } from "@/components/layout/admin-page-header";
 
 const reports = [
   { title: "Monthly Revenue Report", date: "May 2026", type: "Financial" },
@@ -8,29 +8,48 @@ const reports = [
   { title: "Tutor Performance Report", date: "May 2026", type: "Quality" },
 ];
 
+const typeTag: Record<string, string> = {
+  Financial: "admin-tag-violet",
+  Analytics: "admin-tag-emerald",
+  Operations: "admin-tag-amber",
+  Quality: "admin-tag-slate",
+};
+
 export default function AdminReportsPage() {
   return (
     <>
-      <DashboardHeader title="Reports" subtitle="Generate and download platform reports" />
-      <div className="flex-1 overflow-auto p-4 sm:p-6 lg:p-8">
-        <div className="grid gap-4 sm:grid-cols-2">
-          {reports.map((r) => (
-            <Card key={r.title}>
-              <CardHeader>
-                <CardTitle className="text-base">{r.title}</CardTitle>
-              </CardHeader>
-              <CardContent className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm text-muted-foreground">{r.date}</p>
-                  <p className="text-xs text-primary">{r.type}</p>
-                </div>
-                <button className="text-sm font-medium text-primary hover:underline">
-                  Download
-                </button>
-              </CardContent>
-            </Card>
-          ))}
-        </div>
+      <AdminPageHeader
+        title="Analytics & reports"
+        description="Generate and download platform performance reports."
+      />
+
+      <div className="grid gap-4 sm:grid-cols-2">
+        {reports.map((r) => (
+          <div key={r.title} className="admin-report-card">
+            <div className="flex items-start justify-between gap-3">
+              <div>
+                <span className={`admin-tag ${typeTag[r.type] ?? "admin-tag-slate"}`}>
+                  {r.type}
+                </span>
+                <h3 className="mt-3 text-base font-bold text-slate-900">{r.title}</h3>
+                <p className="mt-1 text-sm text-slate-500">{r.date}</p>
+              </div>
+              <button
+                type="button"
+                className="flex h-9 w-9 items-center justify-center rounded-xl border border-slate-200 bg-white text-slate-600 transition-colors hover:bg-slate-50"
+                aria-label={`Download ${r.title}`}
+              >
+                <Download className="h-4 w-4" />
+              </button>
+            </div>
+            <button
+              type="button"
+              className="mt-4 text-sm font-semibold text-violet-600 hover:underline"
+            >
+              Download report
+            </button>
+          </div>
+        ))}
       </div>
     </>
   );
