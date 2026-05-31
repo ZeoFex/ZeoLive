@@ -1,6 +1,7 @@
 "use client";
 
 import { Suspense, useMemo, useState } from "react";
+import { Search } from "lucide-react";
 import { toast } from "sonner";
 import { StudentPageHeader } from "@/components/layout/student-page-header";
 import { TutorCard } from "@/components/shared/tutor-card";
@@ -59,12 +60,15 @@ function BookSessionContent() {
       />
 
       <div className="mb-5 flex flex-col gap-3 sm:flex-row sm:flex-wrap">
-        <Input
-          placeholder="Search tutors..."
-          className="student-search max-w-full pl-10 sm:max-w-xs"
-          value={search}
-          onChange={(e) => setSearch(e.target.value)}
-        />
+        <div className="relative w-full sm:max-w-xs">
+          <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
+          <Input
+            placeholder="Search tutors..."
+            className="student-search w-full pl-10"
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+          />
+        </div>
         <Select value={subjectFilter} onValueChange={setSubjectFilter}>
           <SelectTrigger className="h-10 w-full rounded-xl sm:w-[180px]">
             <SelectValue placeholder="Subject" />
@@ -100,7 +104,7 @@ function BookSessionContent() {
       )}
 
       <Dialog open={modalOpen} onOpenChange={setModalOpen}>
-        <DialogContent className="max-w-md rounded-2xl">
+        <DialogContent className="max-h-[90dvh] w-[calc(100vw-2rem)] max-w-md overflow-y-auto rounded-2xl sm:w-full">
           <DialogHeader>
             <DialogTitle>Book with {selectedTutor?.name}</DialogTitle>
             <DialogDescription>Select date and time for your session</DialogDescription>

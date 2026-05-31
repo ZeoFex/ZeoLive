@@ -4,7 +4,6 @@ import {
   BookOpen,
   Calendar,
   ChevronDown,
-  CreditCard,
   FileText,
   HelpCircle,
   LayoutDashboard,

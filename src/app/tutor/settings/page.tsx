@@ -1,10 +1,9 @@
 "use client";
 
 import { toast } from "sonner";
-import { DashboardHeader } from "@/components/layout/dashboard-header";
+import { TutorPageHeader } from "@/components/layout/tutor-page-header";
 import { FileUpload } from "@/components/shared/file-upload";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
@@ -12,45 +11,51 @@ import { Textarea } from "@/components/ui/textarea";
 export default function TutorSettingsPage() {
   return (
     <>
-      <DashboardHeader title="Settings" subtitle="Manage your tutor profile" />
-      <div className="flex-1 overflow-auto p-4 sm:p-6 lg:p-8 max-w-2xl">
-        <Card>
-          <CardHeader>
-            <CardTitle>Profile</CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-4">
+      <TutorPageHeader
+        title="Settings"
+        description="Manage your tutor profile, rates, and certifications."
+      />
+
+      <div className="max-w-2xl space-y-6">
+        <div className="tutor-card p-5 sm:p-6">
+          <h3 className="mb-4 text-base font-bold text-slate-900">Profile</h3>
+          <div className="space-y-4">
             <FileUpload label="Profile photo" accept="image/*" />
             <div>
-              <Label>Name</Label>
-              <Input defaultValue="Dr. Sarah Chen" className="mt-1.5" />
+              <Label className="text-slate-700">Name</Label>
+              <Input defaultValue="Dr. Sarah Chen" className="mt-1.5 rounded-xl border-slate-200" />
             </div>
             <div>
-              <Label>Bio</Label>
+              <Label className="text-slate-700">Bio</Label>
               <Textarea
                 defaultValue="PhD in Mathematics with 10+ years teaching experience."
-                className="mt-1.5"
+                className="mt-1.5 rounded-xl border-slate-200"
               />
             </div>
             <div>
-              <Label>Subjects (comma-separated)</Label>
-              <Input defaultValue="Mathematics, Calculus, Statistics" className="mt-1.5" />
+              <Label className="text-slate-700">Subjects (comma-separated)</Label>
+              <Input
+                defaultValue="Mathematics, Calculus, Statistics"
+                className="mt-1.5 rounded-xl border-slate-200"
+              />
             </div>
             <div>
-              <Label>Hourly rate ($)</Label>
-              <Input type="number" defaultValue={45} className="mt-1.5" />
+              <Label className="text-slate-700">Hourly rate ($)</Label>
+              <Input type="number" defaultValue={45} className="mt-1.5 rounded-xl border-slate-200" />
             </div>
-            <Button onClick={() => toast.success("Profile saved")}>Save profile</Button>
-          </CardContent>
-        </Card>
+            <Button
+              className="tutor-gradient-btn rounded-xl"
+              onClick={() => toast.success("Profile saved")}
+            >
+              Save profile
+            </Button>
+          </div>
+        </div>
 
-        <Card className="mt-6">
-          <CardHeader>
-            <CardTitle>Certifications</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <FileUpload label="Upload certificate" accept=".pdf,image/*" />
-          </CardContent>
-        </Card>
+        <div className="tutor-card p-5 sm:p-6">
+          <h3 className="mb-4 text-base font-bold text-slate-900">Certifications</h3>
+          <FileUpload label="Upload certificate" accept=".pdf,image/*" />
+        </div>
       </div>
     </>
   );

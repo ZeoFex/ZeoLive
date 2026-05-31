@@ -9,6 +9,7 @@ import {
   LogOut,
   Search,
   Users,
+  X,
 } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
@@ -55,6 +56,7 @@ export function StudentTopbar({ title }: StudentTopbarProps) {
 
   const [query, setQuery] = useState("");
   const [searchOpen, setSearchOpen] = useState(false);
+  const [searchExpanded, setSearchExpanded] = useState(false);
   const [searchLoading, setSearchLoading] = useState(false);
   const [searchResults, setSearchResults] = useState<SearchResult[]>([]);
 
@@ -142,6 +144,7 @@ export function StudentTopbar({ title }: StudentTopbarProps) {
     setQuery("");
     setSearchResults([]);
     setSearchOpen(false);
+    setSearchExpanded(false);
     router.push(result.href);
   };
 
@@ -153,6 +156,7 @@ export function StudentTopbar({ title }: StudentTopbarProps) {
       router.push(`${routes.student.tutors}?q=${encodeURIComponent(query.trim())}`);
       setQuery("");
       setSearchOpen(false);
+      setSearchExpanded(false);
     }
   };
 
@@ -162,200 +166,371 @@ export function StudentTopbar({ title }: StudentTopbarProps) {
     return BookOpen;
   };
 
-  return (
-    <header className="border-b border-slate-100 px-4 py-4 sm:px-8">
-      <div className="flex flex-col gap-3">
-        <div className="flex items-center justify-between gap-3">
-          <h1 className="min-w-0 truncate text-lg font-bold tracking-tight text-slate-900 sm:text-2xl">
-            {title}
-          </h1>
+  const closePanels = () => {
+    setNotificationsOpen(false);
+    setUserMenuOpen(false);
+  };
 
-          <div className="flex shrink-0 items-center gap-2">
-            <div ref={notifRef} className="relative">
-              <Button
-                type="button"
-                variant="outline"
-                size="icon"
-                className="student-outline-btn relative h-10 w-10 rounded-xl"
-                aria-label="Notifications"
-                onClick={() => {
-                  setNotificationsOpen((o) => !o);
-                  setUserMenuOpen(false);
-                  if (!notificationsOpen) loadNotifications();
-                }}
-              >
-                <Bell className="h-4 w-4 text-slate-600" />
-                {unreadCount > 0 && (
-                  <span className="absolute right-2 top-2 flex h-2 w-2">
-                    <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-red-400 opacity-75" />
-                    <span className="relative inline-flex h-2 w-2 rounded-full bg-red-500" />
-                  </span>
-                )}
-              </Button>
+  const searchField = (
+    <form onSubmit={handleSearchSubmit}>
+      <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
+      {searchLoading && (
+        <Loader2 className="absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 animate-spin text-slate-400" />
+      )}
+      <Input
+        placeholder="Search tutors, subjects..."
+        className="student-search w-full"
+        aria-label="Search student portal"
+        value={query}
+        onChange={(e) => {
+          setQuery(e.target.value);
+          setSearchOpen(true);
+        }}
+        onFocus={() => {
+          if (searchResults.length > 0 || query.trim().length >= 2) {
+            setSearchOpen(true);
+          }
+        }}
+      />
+    </form>
+  );
 
-              {notificationsOpen && (
-                <div className="absolute right-0 top-[calc(100%+8px)] z-50 w-[min(calc(100vw-2rem),360px)] overflow-hidden rounded-xl border border-slate-200 bg-white shadow-xl">
-                  <div className="flex items-center justify-between border-b border-slate-100 px-4 py-3">
-                    <p className="text-sm font-bold text-slate-900">Notifications</p>
-                    {unreadCount > 0 && (
-                      <button
-                        type="button"
-                        className="text-xs font-medium text-violet-600 hover:underline"
-                        onClick={() => {
-                          markStudentNotificationsRead(notifications.map((n) => n.id));
-                          setUnreadCount(0);
-                        }}
-                      >
-                        Mark all read
-                      </button>
-                    )}
-                  </div>
-                  {notificationsLoading && notifications.length === 0 ? (
-                    <p className="px-4 py-6 text-center text-sm text-slate-500">Loading…</p>
-                  ) : notifications.length === 0 ? (
-                    <p className="px-4 py-6 text-center text-sm text-slate-500">
-                      No notifications
-                    </p>
-                  ) : (
-                    <ul className="max-h-72 overflow-y-auto">
-                      {notifications.map((item) => {
-                        const isUnread = !getReadStudentNotificationIds().has(item.id);
-                        return (
-                          <li key={item.id}>
-                            <button
-                              type="button"
-                              className={cn(
-                                "flex w-full flex-col gap-1 border-b border-slate-50 px-4 py-3 text-left hover:bg-slate-50",
-                                isUnread && "bg-violet-50/40"
-                              )}
-                              onClick={() => {
-                                markStudentNotificationRead(item.id);
-                                setUnreadCount((c) => Math.max(0, c - 1));
-                                setNotificationsOpen(false);
-                                router.push(item.href);
-                              }}
-                            >
-                              <span className="text-sm font-semibold text-slate-900">
-                                {item.title}
-                              </span>
-                              <span className="text-xs text-slate-600">{item.message}</span>
-                              <span className="text-[11px] text-slate-400">
-                                {formatDate(item.createdAt)}
-                              </span>
-                            </button>
-                          </li>
-                        );
-                      })}
-                    </ul>
-                  )}
-                </div>
-              )}
-            </div>
-
-            <div ref={userRef} className="relative">
-              <button
-                type="button"
-                className="flex items-center gap-1.5 rounded-xl border border-slate-200 bg-white py-1.5 pl-1.5 pr-1.5 sm:pr-2"
-                onClick={() => {
-                  setUserMenuOpen((o) => !o);
-                  setNotificationsOpen(false);
-                }}
-              >
-                <Avatar className="h-8 w-8">
-                  {displayImage && <AvatarImage src={displayImage} alt={displayName} />}
-                  <AvatarFallback className="bg-violet-100 text-xs font-semibold text-violet-700">
-                    {displayName[0]?.toUpperCase() ?? "S"}
-                  </AvatarFallback>
-                </Avatar>
-                <ChevronDown className="hidden h-4 w-4 text-slate-400 sm:block" />
-              </button>
-              {userMenuOpen && (
-                <div className="absolute right-0 top-[calc(100%+8px)] z-50 w-48 rounded-xl border border-slate-200 bg-white py-1 shadow-lg">
-                  <div className="border-b border-slate-100 px-4 py-2">
-                    <p className="truncate text-sm font-semibold text-slate-900">
-                      {displayName}
-                    </p>
-                    <p className="truncate text-xs text-slate-500">{session?.user?.email}</p>
-                  </div>
-                  <Link
-                    href={routes.student.settings}
-                    className="block px-4 py-2.5 text-sm text-slate-700 hover:bg-slate-50"
-                    onClick={() => setUserMenuOpen(false)}
-                  >
-                    Settings
-                  </Link>
+  const searchResultsList =
+    searchOpen && query.trim().length >= 2 ? (
+      <div className="absolute left-0 right-0 top-[calc(100%+6px)] z-50 overflow-hidden rounded-xl border border-slate-200 bg-white shadow-lg">
+        {searchLoading && searchResults.length === 0 ? (
+          <p className="px-4 py-3 text-sm text-slate-500">Searching…</p>
+        ) : searchResults.length === 0 ? (
+          <p className="px-4 py-3 text-sm text-slate-500">No results found</p>
+        ) : (
+          <ul className="max-h-64 overflow-y-auto py-1">
+            {searchResults.map((result) => {
+              const Icon = searchIcon(result.type);
+              return (
+                <li key={result.id}>
                   <button
                     type="button"
-                    className="flex w-full items-center gap-2 px-4 py-2.5 text-sm text-red-600 hover:bg-red-50"
-                    onClick={() => signOut({ callbackUrl: routes.login })}
+                    className="flex w-full items-start gap-3 px-4 py-3 text-left hover:bg-slate-50"
+                    onClick={() => handleSearchSelect(result)}
                   >
-                    <LogOut className="h-4 w-4" />
-                    Logout
+                    <span className="mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-violet-50 text-violet-600">
+                      <Icon className="h-4 w-4" />
+                    </span>
+                    <span className="min-w-0">
+                      <span className="block truncate text-sm font-semibold text-slate-900">
+                        {result.title}
+                      </span>
+                      <span className="block truncate text-xs text-slate-500">
+                        {result.subtitle}
+                      </span>
+                    </span>
                   </button>
-                </div>
+                </li>
+              );
+            })}
+          </ul>
+        )}
+      </div>
+    ) : null;
+
+  return (
+    <header className="shrink-0 border-b border-slate-100 px-4 py-3 sm:px-8 sm:py-4">
+      {/* Mobile: compact header row */}
+      <div className="flex items-center justify-between gap-2 lg:hidden">
+        <h1 className="min-w-0 flex-1 truncate text-base font-bold tracking-tight text-slate-900">
+          {title}
+        </h1>
+
+        <div className="flex shrink-0 items-center gap-1.5">
+          <Button
+            type="button"
+            variant="outline"
+            size="icon"
+            className={cn(
+              "student-outline-btn h-9 w-9 rounded-xl",
+              searchExpanded && "border-violet-200 bg-violet-50"
+            )}
+            aria-label={searchExpanded ? "Close search" : "Open search"}
+            aria-expanded={searchExpanded}
+            onClick={() => {
+              setSearchExpanded((open) => !open);
+              closePanels();
+            }}
+          >
+            {searchExpanded ? (
+              <X className="h-4 w-4 text-slate-600" />
+            ) : (
+              <Search className="h-4 w-4 text-slate-600" />
+            )}
+          </Button>
+
+          <div ref={notifRef} className="relative">
+            <Button
+              type="button"
+              variant="outline"
+              size="icon"
+              className="student-outline-btn relative h-9 w-9 rounded-xl"
+              aria-label="Notifications"
+              onClick={() => {
+                setNotificationsOpen((o) => !o);
+                setUserMenuOpen(false);
+                setSearchExpanded(false);
+                if (!notificationsOpen) loadNotifications();
+              }}
+            >
+              <Bell className="h-4 w-4 text-slate-600" />
+              {unreadCount > 0 && (
+                <span className="absolute right-1.5 top-1.5 flex h-2 w-2">
+                  <span className="relative inline-flex h-2 w-2 rounded-full bg-red-500" />
+                </span>
               )}
-            </div>
+            </Button>
+
+            {notificationsOpen && (
+              <div className="fixed inset-x-4 top-[calc(3.5rem+env(safe-area-inset-top,0px))] z-50 overflow-hidden rounded-xl border border-slate-200 bg-white shadow-xl sm:absolute sm:inset-x-auto sm:right-0 sm:top-[calc(100%+8px)] sm:w-[min(calc(100vw-2rem),360px)]">
+                <div className="flex items-center justify-between border-b border-slate-100 px-4 py-3">
+                  <p className="text-sm font-bold text-slate-900">Notifications</p>
+                  {unreadCount > 0 && (
+                    <button
+                      type="button"
+                      className="text-xs font-medium text-violet-600 hover:underline"
+                      onClick={() => {
+                        markStudentNotificationsRead(notifications.map((n) => n.id));
+                        setUnreadCount(0);
+                      }}
+                    >
+                      Mark all read
+                    </button>
+                  )}
+                </div>
+                {notificationsLoading && notifications.length === 0 ? (
+                  <p className="px-4 py-6 text-center text-sm text-slate-500">Loading…</p>
+                ) : notifications.length === 0 ? (
+                  <p className="px-4 py-6 text-center text-sm text-slate-500">No notifications</p>
+                ) : (
+                  <ul className="max-h-[min(60vh,320px)] overflow-y-auto">
+                    {notifications.map((item) => {
+                      const isUnread = !getReadStudentNotificationIds().has(item.id);
+                      return (
+                        <li key={item.id}>
+                          <button
+                            type="button"
+                            className={cn(
+                              "flex w-full flex-col gap-1 border-b border-slate-50 px-4 py-3 text-left hover:bg-slate-50",
+                              isUnread && "bg-violet-50/40"
+                            )}
+                            onClick={() => {
+                              markStudentNotificationRead(item.id);
+                              setUnreadCount((c) => Math.max(0, c - 1));
+                              setNotificationsOpen(false);
+                              router.push(item.href);
+                            }}
+                          >
+                            <span className="text-sm font-semibold text-slate-900">
+                              {item.title}
+                            </span>
+                            <span className="text-xs text-slate-600">{item.message}</span>
+                            <span className="text-[11px] text-slate-400">
+                              {formatDate(item.createdAt)}
+                            </span>
+                          </button>
+                        </li>
+                      );
+                    })}
+                  </ul>
+                )}
+              </div>
+            )}
+          </div>
+
+          <div ref={userRef} className="relative">
+            <button
+              type="button"
+              className="flex items-center rounded-xl border border-slate-200 bg-white p-1 transition-colors hover:bg-slate-50"
+              onClick={() => {
+                setUserMenuOpen((o) => !o);
+                setNotificationsOpen(false);
+                setSearchExpanded(false);
+              }}
+            >
+              <Avatar className="h-8 w-8">
+                {displayImage && <AvatarImage src={displayImage} alt={displayName} />}
+                <AvatarFallback className="bg-violet-100 text-xs font-semibold text-violet-700">
+                  {displayName[0]?.toUpperCase() ?? "S"}
+                </AvatarFallback>
+              </Avatar>
+            </button>
+            {userMenuOpen && (
+              <div className="absolute right-0 top-[calc(100%+8px)] z-50 w-48 rounded-xl border border-slate-200 bg-white py-1 shadow-lg">
+                <div className="border-b border-slate-100 px-4 py-2">
+                  <p className="truncate text-sm font-semibold text-slate-900">{displayName}</p>
+                  <p className="truncate text-xs text-slate-500">{session?.user?.email}</p>
+                </div>
+                <Link
+                  href={routes.student.settings}
+                  className="block px-4 py-2.5 text-sm text-slate-700 hover:bg-slate-50"
+                  onClick={() => setUserMenuOpen(false)}
+                >
+                  Settings
+                </Link>
+                <button
+                  type="button"
+                  className="flex w-full items-center gap-2 px-4 py-2.5 text-sm text-red-600 hover:bg-red-50"
+                  onClick={() => signOut({ callbackUrl: routes.login })}
+                >
+                  <LogOut className="h-4 w-4" />
+                  Logout
+                </button>
+              </div>
+            )}
           </div>
         </div>
+      </div>
 
-        <div ref={searchRef} className="relative w-full">
-          <form onSubmit={handleSearchSubmit}>
-            <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
-            {searchLoading && (
-              <Loader2 className="absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 animate-spin text-slate-400" />
-            )}
-            <Input
-              placeholder="Search tutors, subjects, sessions..."
-              className="student-search w-full"
-              aria-label="Search student portal"
-              value={query}
-              onChange={(e) => {
-                setQuery(e.target.value);
-                setSearchOpen(true);
+      {searchExpanded && (
+        <div
+          ref={searchRef}
+          className="student-topbar-search-panel relative mt-3 lg:hidden"
+        >
+          {searchField}
+          {searchResultsList}
+        </div>
+      )}
+
+      {/* Desktop: single row with inline search */}
+      <div className="hidden items-center justify-between gap-4 lg:flex">
+        <h1 className="min-w-0 truncate text-2xl font-bold tracking-tight text-slate-900">
+          {title}
+        </h1>
+
+        <div className="flex flex-1 items-center justify-end gap-3">
+          <div ref={searchRef} className="relative w-full max-w-md">
+            {searchField}
+            {searchResultsList}
+          </div>
+
+          <div ref={notifRef} className="relative">
+            <Button
+              type="button"
+              variant="outline"
+              size="icon"
+              className="student-outline-btn relative h-10 w-10 rounded-xl"
+              aria-label="Notifications"
+              onClick={() => {
+                setNotificationsOpen((o) => !o);
+                setUserMenuOpen(false);
+                if (!notificationsOpen) loadNotifications();
               }}
-              onFocus={() => {
-                if (searchResults.length > 0 || query.trim().length >= 2) {
-                  setSearchOpen(true);
-                }
-              }}
-            />
-          </form>
-          {searchOpen && query.trim().length >= 2 && (
-            <div className="absolute left-0 right-0 top-[calc(100%+6px)] z-50 overflow-hidden rounded-xl border border-slate-200 bg-white shadow-lg">
-              {searchLoading && searchResults.length === 0 ? (
-                <p className="px-4 py-3 text-sm text-slate-500">Searching…</p>
-              ) : searchResults.length === 0 ? (
-                <p className="px-4 py-3 text-sm text-slate-500">No results found</p>
-              ) : (
-                <ul className="max-h-64 overflow-y-auto py-1">
-                  {searchResults.map((result) => {
-                    const Icon = searchIcon(result.type);
-                    return (
-                      <li key={result.id}>
-                        <button
-                          type="button"
-                          className="flex w-full items-start gap-3 px-4 py-3 text-left hover:bg-slate-50"
-                          onClick={() => handleSearchSelect(result)}
-                        >
-                          <span className="mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-violet-50 text-violet-600">
-                            <Icon className="h-4 w-4" />
-                          </span>
-                          <span>
-                            <span className="block text-sm font-semibold text-slate-900">
-                              {result.title}
-                            </span>
-                            <span className="block text-xs text-slate-500">
-                              {result.subtitle}
-                            </span>
-                          </span>
-                        </button>
-                      </li>
-                    );
-                  })}
-                </ul>
+            >
+              <Bell className="h-4 w-4 text-slate-600" />
+              {unreadCount > 0 && (
+                <span className="absolute right-2 top-2 flex h-2 w-2">
+                  <span className="relative inline-flex h-2 w-2 rounded-full bg-red-500" />
+                </span>
               )}
-            </div>
-          )}
+            </Button>
+
+            {notificationsOpen && (
+              <div className="absolute right-0 top-[calc(100%+8px)] z-50 w-[360px] overflow-hidden rounded-xl border border-slate-200 bg-white shadow-xl">
+                <div className="flex items-center justify-between border-b border-slate-100 px-4 py-3">
+                  <p className="text-sm font-bold text-slate-900">Notifications</p>
+                  {unreadCount > 0 && (
+                    <button
+                      type="button"
+                      className="text-xs font-medium text-violet-600 hover:underline"
+                      onClick={() => {
+                        markStudentNotificationsRead(notifications.map((n) => n.id));
+                        setUnreadCount(0);
+                      }}
+                    >
+                      Mark all read
+                    </button>
+                  )}
+                </div>
+                {notificationsLoading && notifications.length === 0 ? (
+                  <p className="px-4 py-6 text-center text-sm text-slate-500">Loading…</p>
+                ) : notifications.length === 0 ? (
+                  <p className="px-4 py-6 text-center text-sm text-slate-500">No notifications</p>
+                ) : (
+                  <ul className="max-h-80 overflow-y-auto">
+                    {notifications.map((item) => {
+                      const isUnread = !getReadStudentNotificationIds().has(item.id);
+                      return (
+                        <li key={item.id}>
+                          <button
+                            type="button"
+                            className={cn(
+                              "flex w-full flex-col gap-1 border-b border-slate-50 px-4 py-3 text-left hover:bg-slate-50",
+                              isUnread && "bg-violet-50/40"
+                            )}
+                            onClick={() => {
+                              markStudentNotificationRead(item.id);
+                              setUnreadCount((c) => Math.max(0, c - 1));
+                              setNotificationsOpen(false);
+                              router.push(item.href);
+                            }}
+                          >
+                            <span className="text-sm font-semibold text-slate-900">
+                              {item.title}
+                            </span>
+                            <span className="text-xs text-slate-600">{item.message}</span>
+                            <span className="text-[11px] text-slate-400">
+                              {formatDate(item.createdAt)}
+                            </span>
+                          </button>
+                        </li>
+                      );
+                    })}
+                  </ul>
+                )}
+              </div>
+            )}
+          </div>
+
+          <div ref={userRef} className="relative">
+            <button
+              type="button"
+              className="flex items-center gap-2 rounded-xl border border-slate-200 bg-white py-1.5 pl-1.5 pr-2 transition-colors hover:bg-slate-50"
+              onClick={() => {
+                setUserMenuOpen((o) => !o);
+                setNotificationsOpen(false);
+              }}
+            >
+              <Avatar className="h-8 w-8">
+                {displayImage && <AvatarImage src={displayImage} alt={displayName} />}
+                <AvatarFallback className="bg-violet-100 text-xs font-semibold text-violet-700">
+                  {displayName[0]?.toUpperCase() ?? "S"}
+                </AvatarFallback>
+              </Avatar>
+              <span className="hidden max-w-[100px] truncate text-sm font-medium text-slate-700 xl:inline">
+                {displayName}
+              </span>
+              <ChevronDown className="h-4 w-4 text-slate-400" />
+            </button>
+            {userMenuOpen && (
+              <div className="absolute right-0 top-[calc(100%+8px)] z-50 w-48 rounded-xl border border-slate-200 bg-white py-1 shadow-lg">
+                <div className="border-b border-slate-100 px-4 py-2">
+                  <p className="truncate text-sm font-semibold text-slate-900">{displayName}</p>
+                  <p className="truncate text-xs text-slate-500">{session?.user?.email}</p>
+                </div>
+                <Link
+                  href={routes.student.settings}
+                  className="block px-4 py-2.5 text-sm text-slate-700 hover:bg-slate-50"
+                  onClick={() => setUserMenuOpen(false)}
+                >
+                  Settings
+                </Link>
+                <button
+                  type="button"
+                  className="flex w-full items-center gap-2 px-4 py-2.5 text-sm text-red-600 hover:bg-red-50"
+                  onClick={() => signOut({ callbackUrl: routes.login })}
+                >
+                  <LogOut className="h-4 w-4" />
+                  Logout
+                </button>
+              </div>
+            )}
+          </div>
         </div>
       </div>
     </header>
