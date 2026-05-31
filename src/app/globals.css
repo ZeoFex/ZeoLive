@@ -92,3 +92,60 @@ body {
   @apply bg-background text-foreground antialiased;
   font-family: var(--font-geist-sans), system-ui, sans-serif;
 }
+
+/* Auth pages — Class Optima–style split layout + ZoeLive brand */
+.auth-brand-panel {
+  background: linear-gradient(165deg, #eef7ff 0%, #dceeff 45%, #e8f3ff 100%);
+}
+
+.auth-brand-waves {
+  background-image:
+    radial-gradient(circle at 20% 80%, rgba(0, 102, 204, 0.08) 0%, transparent 50%),
+    radial-gradient(circle at 80% 20%, rgba(0, 174, 239, 0.1) 0%, transparent 45%),
+    url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%230066CC' fill-opacity='0.06'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E");
+}
+
+.auth-field-label {
+  @apply text-sm font-medium text-slate-600;
+}
+
+.auth-input {
+  @apply mt-1.5 h-11 w-full rounded-lg border-slate-200 bg-white px-3 text-slate-900 shadow-none transition-colors;
+  @apply focus-visible:border-[#0066CC] focus-visible:ring-2 focus-visible:ring-[#0066CC]/20;
+}
+
+.auth-primary-btn {
+  @apply h-11 w-full rounded-lg border-0 font-semibold text-white shadow-md transition-opacity;
+  background: linear-gradient(90deg, #00aeef 0%, #0054a6 100%) !important;
+  color: white !important;
+}
+
+.auth-primary-btn:hover:not(:disabled) {
+  opacity: 0.92;
+}
+
+.auth-primary-btn:disabled {
+  @apply opacity-60;
+}
+
+.auth-link {
+  @apply font-medium text-[#0066CC] hover:underline;
+}
+
+.auth-card {
+  @apply rounded-xl border border-slate-200 bg-slate-50/50 p-4;
+}
+
+.auth-form label {
+  @apply text-sm font-medium text-slate-600;
+}
+
+.auth-form input:not([type="checkbox"]):not([type="radio"]),
+.auth-form [data-slot="select-trigger"] {
+  @apply mt-1.5 h-11 rounded-lg border-slate-200 bg-white shadow-none;
+  @apply focus-visible:border-[#0066CC] focus-visible:ring-2 focus-visible:ring-[#0066CC]/20;
+}
+
+.auth-form .rounded-lg.border.bg-muted\/30 {
+  @apply border-slate-200 bg-slate-50/80;
+}

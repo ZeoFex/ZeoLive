@@ -7,9 +7,10 @@ import { useForm } from "react-hook-form";
 import { toast } from "sonner";
 import { z } from "zod";
 import { AuthLayout } from "@/components/auth/auth-layout";
-import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { routes } from "@/lib/routes";
+import { cn } from "@/lib/utils";
 
 const schema = z.object({
   email: z.string().email("Enter a valid email"),
@@ -40,33 +41,37 @@ export default function ForgotPasswordPage() {
     }
 
     toast.success("If that email exists, reset instructions were sent.");
-    router.push("/login");
+    router.push(routes.login);
   };
 
   return (
     <AuthLayout
       title="Reset password"
-      subtitle="We'll email a reset link when your account exists"
+      subtitle="Enter your email and we'll send reset instructions if an account exists"
+      headline="Secure Access To Your Account"
+      highlightWord="Secure Access"
     >
-      <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
+      <form onSubmit={handleSubmit(onSubmit)} className="space-y-5">
         <div>
-          <Label htmlFor="email">Email</Label>
+          <Label htmlFor="email" className="auth-field-label">
+            Email
+          </Label>
           <Input
             id="email"
             type="email"
             placeholder="you@email.com"
-            className="mt-1.5"
+            className={cn("auth-input", errors.email && "border-red-400")}
             {...register("email")}
           />
           {errors.email && (
             <p className="mt-1 text-sm text-destructive">{errors.email.message}</p>
           )}
         </div>
-        <Button type="submit" className="w-full" disabled={isSubmitting}>
-          {isSubmitting ? "Sending..." : "Send reset link"}
-        </Button>
-        <p className="text-center text-sm">
-          <Link href="/login" className="text-primary hover:underline">
+        <button type="submit" className="auth-primary-btn" disabled={isSubmitting}>
+          {isSubmitting ? "Sending…" : "Send reset link"}
+        </button>
+        <p className="text-center text-sm text-slate-500">
+          <Link href={routes.login} className="auth-link">
             Back to login
           </Link>
         </p>
