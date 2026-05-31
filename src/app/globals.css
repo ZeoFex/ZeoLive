@@ -106,12 +106,39 @@ body {
 }
 
 .auth-field-label {
-  @apply text-sm font-medium text-slate-600;
+  @apply text-sm font-semibold text-slate-800;
 }
 
 .auth-input {
-  @apply mt-1.5 h-11 w-full rounded-lg border-slate-200 bg-white px-3 text-slate-900 shadow-none transition-colors;
-  @apply focus-visible:border-[#0066CC] focus-visible:ring-2 focus-visible:ring-[#0066CC]/20;
+  @apply mt-1.5 h-11 w-full rounded-lg border-slate-300 bg-white px-3 text-base font-normal text-slate-900 shadow-none transition-colors;
+  @apply placeholder:text-slate-500 focus-visible:border-[#0066CC] focus-visible:ring-2 focus-visible:ring-[#0066CC]/20;
+  color: #0f172a;
+  -webkit-text-fill-color: #0f172a;
+}
+
+.auth-input::placeholder {
+  color: #64748b;
+  opacity: 1;
+}
+
+.auth-shell input:not([type="checkbox"]):not([type="radio"]),
+.auth-shell textarea,
+.auth-shell select {
+  color: #0f172a;
+  -webkit-text-fill-color: #0f172a;
+}
+
+.auth-shell input:not([type="checkbox"]):not([type="radio"])::placeholder,
+.auth-shell textarea::placeholder {
+  color: #64748b;
+  opacity: 1;
+}
+
+.auth-shell input:-webkit-autofill,
+.auth-shell input:-webkit-autofill:hover,
+.auth-shell input:-webkit-autofill:focus {
+  -webkit-text-fill-color: #0f172a;
+  box-shadow: 0 0 0 1000px #ffffff inset;
 }
 
 .auth-primary-btn {
@@ -137,13 +164,26 @@ body {
 }
 
 .auth-form label {
-  @apply text-sm font-medium text-slate-600;
+  @apply text-sm font-semibold text-slate-800;
 }
 
 .auth-form input:not([type="checkbox"]):not([type="radio"]),
-.auth-form [data-slot="select-trigger"] {
-  @apply mt-1.5 h-11 rounded-lg border-slate-200 bg-white shadow-none;
-  @apply focus-visible:border-[#0066CC] focus-visible:ring-2 focus-visible:ring-[#0066CC]/20;
+.auth-form textarea,
+.auth-form button[role="combobox"] {
+  @apply mt-1.5 h-11 rounded-lg border-slate-300 bg-white text-base font-normal text-slate-900 shadow-none;
+  @apply placeholder:text-slate-500 focus-visible:border-[#0066CC] focus-visible:ring-2 focus-visible:ring-[#0066CC]/20;
+  color: #0f172a;
+  -webkit-text-fill-color: #0f172a;
+}
+
+.auth-form input:not([type="checkbox"]):not([type="radio"])::placeholder,
+.auth-form textarea::placeholder {
+  color: #64748b;
+  opacity: 1;
+}
+
+.auth-form button[role="combobox"] span {
+  @apply text-slate-900;
 }
 
 .auth-form .rounded-lg.border.bg-muted\/30 {
