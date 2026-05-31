@@ -1,44 +1,54 @@
+"use client";
+
 import Link from "next/link";
+import { useRouter } from "next/navigation";
+import { useState } from "react";
 import { AuthLayout } from "@/components/auth/auth-layout";
-import { Button } from "@/components/ui/button";
-import { TUTOR_EDUCATION_LEVELS } from "@/lib/constants/registration";
+import { AuthRoleSelector, type AuthRole } from "@/components/auth/auth-role-selector";
+import { routes } from "@/lib/routes";
 
 export default function SignupChooserPage() {
+  const router = useRouter();
+  const [role, setRole] = useState<AuthRole>("student");
+
+  const continueSignup = () => {
+    router.push(role === "student" ? routes.signupStudent : routes.signupTutor);
+  };
+
   return (
     <AuthLayout
       title="Create an account"
-      subtitle="Choose how you want to use ZoeLive"
+      subtitle="Choose your category to access tailored features and resources"
+      headline="Simplify Learning And Live Tutoring"
+      highlightWord="Live Tutoring"
+      footer={
+        <Link href={routes.adminSetup} className="auth-link">
+          Administrators — register your organization here
+        </Link>
+      }
     >
-      <div className="space-y-4">
-        <div className="rounded-lg border p-4">
-          <p className="font-medium">Student</p>
-          <p className="mt-1 text-sm text-muted-foreground">
-            Book tutors, join live classes, and manage your schedule.
-          </p>
-          <Button className="mt-4 w-full" asChild>
-            <Link href="/signup/student">Sign up as student</Link>
-          </Button>
-        </div>
+      <div className="space-y-6">
+        <AuthRoleSelector value={role} onChange={setRole} />
 
-        <div className="rounded-lg border p-4">
-          <p className="font-medium">Tutor</p>
-          <p className="mt-1 text-sm text-muted-foreground">
-            Apply with your education credentials. We verify:
+        {role === "student" ? (
+          <p className="text-sm text-slate-500">
+            Book verified tutors, join live classes, and manage your learning schedule.
           </p>
-          <ul className="mt-2 space-y-1 text-xs text-muted-foreground">
-            {TUTOR_EDUCATION_LEVELS.map((level) => (
-              <li key={level.value}>• {level.label}</li>
-            ))}
-          </ul>
-          <Button className="mt-4 w-full" variant="secondary" asChild>
-            <Link href="/signup/tutor">Apply as tutor</Link>
-          </Button>
-        </div>
+        ) : (
+          <p className="text-sm text-slate-500">
+            Apply with your education credentials. Admin verification is required before
+            you can teach on the platform.
+          </p>
+        )}
 
-        <p className="text-center text-sm text-muted-foreground">
-          Already registered?{" "}
-          <Link href="/login" className="text-primary hover:underline">
-            Sign in
+        <button type="button" className="auth-primary-btn" onClick={continueSignup}>
+          Continue
+        </button>
+
+        <p className="text-center text-sm text-slate-500">
+          Already have an account?{" "}
+          <Link href={routes.login} className="auth-link">
+            Log in
           </Link>
         </p>
       </div>

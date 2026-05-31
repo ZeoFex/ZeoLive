@@ -290,9 +290,9 @@ export function TutorRegistrationWizard() {
             }}
             error={errors.acceptTerms?.message}
           />
-          <Button type="submit" className="w-full" disabled={loading}>
+          <button type="submit" className="auth-primary-btn" disabled={loading}>
             {loading ? "Creating account…" : "Continue to verification"}
-          </Button>
+          </button>
         </form>
       )}
 
@@ -356,7 +356,7 @@ export function TutorRegistrationWizard() {
             >
               Back
             </Button>
-            <Button className="flex-1" onClick={submitDocuments} disabled={loading}>
+            <Button className="auth-primary-btn flex-1 border-0" onClick={submitDocuments} disabled={loading}>
               {loading ? "Saving…" : needsRecommendation ? "Continue" : "Submit"}
             </Button>
           </div>
@@ -392,7 +392,7 @@ export function TutorRegistrationWizard() {
             >
               Back
             </Button>
-            <Button className="flex-1" onClick={sendRecommendation} disabled={loading}>
+            <Button className="auth-primary-btn flex-1 border-0" onClick={sendRecommendation} disabled={loading}>
               {loading ? "Sending…" : "Send request"}
             </Button>
           </div>
@@ -426,8 +426,8 @@ export function TutorRegistrationWizard() {
       {step === "account" && (
         <p className="text-center text-sm text-muted-foreground">
           Already have an account?{" "}
-          <Link href="/login" className="text-primary hover:underline">
-            Sign in
+          <Link href={routes.login} className="auth-link">
+            Log in
           </Link>
         </p>
       )}

@@ -8,13 +8,14 @@ import { useEffect, useState } from "react";
 import { useForm } from "react-hook-form";
 import { toast } from "sonner";
 import { z } from "zod";
-import { resolveAuthRedirect } from "@/lib/auth-utils";
-import { routes } from "@/lib/routes";
 import { AuthLayout } from "@/components/auth/auth-layout";
+import { AuthRoleSelector, type AuthRole } from "@/components/auth/auth-role-selector";
 import { PasswordInput } from "@/components/shared/password-input";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { resolveAuthRedirect } from "@/lib/auth-utils";
+import { routes } from "@/lib/routes";
 import { cn } from "@/lib/utils";
 import type { AdminTier, Role } from "@/generated/prisma";
 
@@ -24,8 +25,6 @@ const schema = z.object({
 });
 
 type FormData = z.infer<typeof schema>;
-
-type AccountHint = "student" | "tutor";
 type LoginPortal = "default" | "admin";
 
 export function LoginForm({ portal = "default" }: { portal?: LoginPortal }) {
@@ -35,7 +34,7 @@ export function LoginForm({ portal = "default" }: { portal?: LoginPortal }) {
   const reset = searchParams.get("reset");
   const { data: session } = useSession();
   const [needsAdminSetup, setNeedsAdminSetup] = useState(false);
-  const [hint, setHint] = useState<AccountHint>("student");
+  const [role, setRole] = useState<AuthRole>("student");
   const isAdminPortal = portal === "admin";
 
   useEffect(() => {
@@ -71,15 +70,15 @@ export function LoginForm({ portal = "default" }: { portal?: LoginPortal }) {
 
     const sessionRes = await fetch("/api/auth/session");
     const sessionData = await sessionRes.json();
-    const role = sessionData?.user?.role as Role | undefined;
+    const userRole = sessionData?.user?.role as Role | undefined;
     const adminTier = sessionData?.user?.adminTier as AdminTier | undefined;
 
-    if (!role) {
+    if (!userRole) {
       toast.error("Could not read your account role");
       return;
     }
 
-    if (isAdminPortal && role !== "ADMIN") {
+    if (isAdminPortal && userRole !== "ADMIN") {
       await signOut({ redirect: false });
       toast.error(
         "This account is not an administrator. Use student or tutor login instead."
@@ -87,33 +86,46 @@ export function LoginForm({ portal = "default" }: { portal?: LoginPortal }) {
       return;
     }
 
-    if (isAdminPortal && role === "ADMIN" && adminTier === "SUBADMIN") {
+    if (isAdminPortal && userRole === "ADMIN" && adminTier === "SUBADMIN") {
       toast.message("Sub-admins can only review tutor applications.");
     }
 
     toast.success("Signed in");
 
-    const dest = await resolveAuthRedirect(role, callbackUrl, adminTier);
+    const dest = await resolveAuthRedirect(userRole, callbackUrl, adminTier);
     router.push(dest);
     router.refresh();
   };
 
   return (
     <AuthLayout
-      title={isAdminPortal ? "Admin sign in" : "Sign in"}
+      title={isAdminPortal ? "Admin sign in" : "Welcome back"}
       subtitle={
         isAdminPortal
           ? "Super admins manage the platform. Sub-admins sign in here for tutor review only."
-          : "Students and tutors sign in with the email on their account"
+          : "Choose your category to access tailored features and resources"
+      }
+      headline="Connect With Expert Tutors Anytime"
+      highlightWord="Expert Tutors"
+      footer={
+        isAdminPortal ? (
+          <Link href={routes.login} className="auth-link">
+            Student or tutor login
+          </Link>
+        ) : (
+          <Link href={routes.adminLogin} className="auth-link">
+            Administrators — sign in here
+          </Link>
+        )
       }
     >
       {session?.user && (
-        <div className="mb-6 rounded-lg border bg-muted/40 p-4 text-sm">
-          <p className="font-medium">
+        <div className="auth-card mb-6 text-sm">
+          <p className="font-medium text-slate-800">
             Signed in as {session.user.email}
             {session.user.role ? ` (${session.user.role.toLowerCase()})` : ""}
           </p>
-          <p className="mt-1 text-muted-foreground">
+          <p className="mt-1 text-slate-500">
             Sign out to switch accounts (e.g. student → admin).
           </p>
           <Button
@@ -133,49 +145,26 @@ export function LoginForm({ portal = "default" }: { portal?: LoginPortal }) {
       )}
 
       {!isAdminPortal && (
-        <div className="mb-6 flex rounded-lg border p-1">
-          <button
-            type="button"
-            className={cn(
-              "flex-1 rounded-md px-3 py-2 text-sm font-medium transition-colors",
-              hint === "student"
-                ? "bg-primary text-primary-foreground"
-                : "text-muted-foreground"
-            )}
-            onClick={() => setHint("student")}
-          >
-            Student
-          </button>
-          <button
-            type="button"
-            className={cn(
-              "flex-1 rounded-md px-3 py-2 text-sm font-medium transition-colors",
-              hint === "tutor"
-                ? "bg-primary text-primary-foreground"
-                : "text-muted-foreground"
-            )}
-            onClick={() => setHint("tutor")}
-          >
-            Tutor
-          </button>
+        <div className="mb-6">
+          <AuthRoleSelector value={role} onChange={setRole} />
+          {role === "tutor" && (
+            <p className="mt-3 rounded-lg border border-dashed border-slate-200 bg-slate-50 p-3 text-xs text-slate-500">
+              Tutors must complete verification and receive admin approval before teaching.
+            </p>
+          )}
         </div>
       )}
 
-      {!isAdminPortal && hint === "tutor" && (
-        <p className="mb-4 rounded-lg border border-dashed bg-muted/40 p-3 text-xs text-muted-foreground">
-          Tutors must complete verification and receive admin approval before teaching.
-          Unapproved tutors will see a waiting screen after sign-in.
-        </p>
-      )}
-
-      <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
+      <form onSubmit={handleSubmit(onSubmit)} className="space-y-5">
         <div>
-          <Label htmlFor="email">Email</Label>
+          <Label htmlFor="email" className="auth-field-label">
+            Email
+          </Label>
           <Input
             id="email"
             type="email"
             placeholder="you@email.com"
-            className="mt-1.5"
+            className={cn("auth-input", errors.email && "border-red-400")}
             autoComplete="email"
             {...register("email")}
           />
@@ -183,80 +172,56 @@ export function LoginForm({ portal = "default" }: { portal?: LoginPortal }) {
             <p className="mt-1 text-sm text-destructive">{errors.email.message}</p>
           )}
         </div>
+
         <div>
           <div className="flex items-center justify-between">
-            <Label htmlFor="password">Password</Label>
-            <Link
-              href={routes.forgotPassword}
-              className="text-sm text-primary hover:underline"
-            >
-              Forgot password?
+            <Label htmlFor="password" className="auth-field-label">
+              Password
+            </Label>
+            <Link href={routes.forgotPassword} className="auth-link text-sm">
+              Forgot?
             </Link>
           </div>
           <PasswordInput
             id="password"
-            className="mt-1.5"
+            placeholder="Enter your password"
+            className={cn("auth-input", errors.password && "border-red-400")}
             autoComplete="current-password"
             {...register("password")}
           />
           {errors.password && (
-            <p className="mt-1 text-sm text-destructive">
-              {errors.password.message}
-            </p>
+            <p className="mt-1 text-sm text-destructive">{errors.password.message}</p>
           )}
         </div>
-        <Button type="submit" className="w-full" disabled={isSubmitting}>
-          {isSubmitting ? "Signing in..." : "Sign in"}
-        </Button>
+
+        <button type="submit" className="auth-primary-btn" disabled={isSubmitting}>
+          {isSubmitting ? "Signing in…" : "Sign in"}
+        </button>
       </form>
 
-      <div className="mt-6 space-y-3 border-t pt-6">
-        {isAdminPortal ? (
-          <p className="text-center text-sm text-muted-foreground">
-            <Link href={routes.login} className="text-primary hover:underline">
-              Student or tutor login
-            </Link>
-          </p>
-        ) : (
+      <div className="mt-6 space-y-3 text-center text-sm text-slate-500">
+        {!isAdminPortal && (
           <>
-            <p className="text-center text-sm text-muted-foreground">
-              {hint === "student" ? (
-                <>
-                  New student?{" "}
-                  <Link
-                    href={routes.signupStudent}
-                    className="text-primary hover:underline"
-                  >
-                    Create student account
-                  </Link>
-                </>
-              ) : (
-                <>
-                  New tutor?{" "}
-                  <Link
-                    href={routes.signupTutor}
-                    className="text-primary hover:underline"
-                  >
-                    Apply as tutor
-                  </Link>
-                </>
-              )}
-            </p>
-            <p className="text-center text-sm text-muted-foreground">
-              <Link href={routes.signup} className="text-primary hover:underline">
-                View all signup options
+            <p>
+              Don&apos;t have an account?{" "}
+              <Link
+                href={role === "student" ? routes.signupStudent : routes.signupTutor}
+                className="auth-link"
+              >
+                Create account
               </Link>
-              {" · "}
-              <Link href={routes.adminLogin} className="text-primary hover:underline">
-                Admin login
+            </p>
+            <p>
+              <Link href={routes.signup} className="auth-link">
+                View all signup options
               </Link>
             </p>
           </>
         )}
-        {needsAdminSetup && (
-          <p className="text-center text-sm text-muted-foreground">
+        {needsAdminSetup && isAdminPortal && (
+          <p>
             First time setup?{" "}
-            <Link href={routes.adminSetup} className="text-primary hover:underline">
+            <Link href={routes.adminSetup} className="auth-link">
               Create admin account
             </Link>
           </p>

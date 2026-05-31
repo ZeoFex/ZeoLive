@@ -15,10 +15,10 @@ import {
   PasswordFields,
   TermsCheckbox,
 } from "@/components/auth/registration-fields";
-import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { SCHOOL_TYPES, type SchoolTypeValue } from "@/lib/constants/registration";
+import { routes } from "@/lib/routes";
 import {
   studentRegistrationSchema,
   type StudentRegistrationInput,
@@ -73,14 +73,20 @@ export default function StudentSignupPage() {
 
   return (
     <AuthLayout
-      variant="student"
       title="Create student account"
-      subtitle="After registration, sign in with your email and password to book tutors."
+      subtitle="Book verified tutors, join live classes, and manage your learning schedule"
+      headline="Learn Smarter With Live Sessions"
+      highlightWord="Live Sessions"
+      footer={
+        <Link href={routes.adminSetup} className="auth-link">
+          Administrators — register your organization here
+        </Link>
+      }
     >
       <SignedInSignupNotice targetRole="student" />
 
       {session?.user?.role === "STUDENT" ? null : (
-      <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
+      <form onSubmit={handleSubmit(onSubmit)} className="auth-form space-y-4">
         <NameFields register={register} errors={errors} />
         <ContactFields
           register={register}
@@ -156,13 +162,13 @@ export default function StudentSignupPage() {
           error={errors.acceptTerms?.message}
         />
 
-        <Button type="submit" className="w-full" disabled={isSubmitting}>
+        <button type="submit" className="auth-primary-btn" disabled={isSubmitting}>
           {isSubmitting ? "Creating account…" : "Create account"}
-        </Button>
-        <p className="text-center text-sm text-muted-foreground">
+        </button>
+        <p className="text-center text-sm text-slate-500">
           Already have an account?{" "}
-          <Link href="/login" className="text-primary hover:underline">
-            Sign in
+          <Link href={routes.login} className="auth-link">
+            Log in
           </Link>
         </p>
       </form>

@@ -5,7 +5,6 @@ import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
 import { AuthLayout } from "@/components/auth/auth-layout";
-import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { PasswordInput } from "@/components/shared/password-input";
@@ -66,24 +65,30 @@ export default function AdminSetupPage() {
     <AuthLayout
       title="Create super admin account"
       subtitle="Set up the first ZoeLive super administrator. This account manages sub-admins and all platform users."
+      headline="Manage Your Platform With Confidence"
+      highlightWord="With Confidence"
     >
-      <form onSubmit={onSubmit} className="space-y-4">
+      <form onSubmit={onSubmit} className="auth-form space-y-5">
         <div className="grid gap-4 sm:grid-cols-2">
           <div>
-            <Label htmlFor="firstName">First name</Label>
+            <Label htmlFor="firstName" className="auth-field-label">
+              First name
+            </Label>
             <Input
               id="firstName"
-              className="mt-1.5"
+              className="auth-input"
               value={firstName}
               onChange={(e) => setFirstName(e.target.value)}
               required
             />
           </div>
           <div>
-            <Label htmlFor="lastName">Last name</Label>
+            <Label htmlFor="lastName" className="auth-field-label">
+              Last name
+            </Label>
             <Input
               id="lastName"
-              className="mt-1.5"
+              className="auth-input"
               value={lastName}
               onChange={(e) => setLastName(e.target.value)}
               required
@@ -91,33 +96,37 @@ export default function AdminSetupPage() {
           </div>
         </div>
         <div>
-          <Label htmlFor="email">Email</Label>
+          <Label htmlFor="email" className="auth-field-label">
+            Email
+          </Label>
           <Input
             id="email"
             type="email"
-            className="mt-1.5"
+            className="auth-input"
             value={email}
             onChange={(e) => setEmail(e.target.value)}
             required
           />
         </div>
         <div>
-          <Label htmlFor="password">Password</Label>
+          <Label htmlFor="password" className="auth-field-label">
+            Password
+          </Label>
           <PasswordInput
             id="password"
-            className="mt-1.5"
+            className="auth-input"
             value={password}
             onChange={(e) => setPassword(e.target.value)}
             required
             minLength={8}
           />
         </div>
-        <Button type="submit" className="w-full" disabled={loading}>
+        <button type="submit" className="auth-primary-btn" disabled={loading}>
           {loading ? "Creating…" : "Create super admin account"}
-        </Button>
-        <p className="text-center text-sm text-muted-foreground">
+        </button>
+        <p className="text-center text-sm text-slate-500">
           Already have an account?{" "}
-          <Link href="/admin/login" className="text-primary underline-offset-4 hover:underline">
+          <Link href="/admin/login" className="auth-link">
             Admin sign in
           </Link>
         </p>

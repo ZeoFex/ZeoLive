@@ -1,89 +1,55 @@
 import Link from "next/link";
-import { ThemeToggle } from "@/components/shared/theme-toggle";
-import { TUTOR_EDUCATION_LEVELS } from "@/lib/constants/registration";
-import { cn } from "@/lib/utils";
+import Image from "next/image";
+import { AuthBrandPanel } from "@/components/auth/auth-brand-panel";
 
 interface AuthLayoutProps {
   children: React.ReactNode;
   title: string;
   subtitle: string;
-  variant?: "default" | "tutor" | "student";
+  footer?: React.ReactNode;
+  headline?: string;
+  highlightWord?: string;
 }
 
 export function AuthLayout({
   children,
   title,
   subtitle,
-  variant = "default",
+  footer,
+  headline,
+  highlightWord,
 }: AuthLayoutProps) {
   return (
-    <div className="flex min-h-screen">
-      <div
-        className={cn(
-          "hidden flex-1 flex-col justify-between p-10 lg:flex lg:max-w-md xl:max-w-lg",
-          variant === "tutor"
-            ? "bg-gradient-to-br from-primary via-primary/90 to-slate-800 text-primary-foreground"
-            : "border-r bg-muted/50"
-        )}
-      >
-        <Link
-          href="/"
-          className={cn(
-            "text-base font-semibold",
-            variant === "tutor" && "text-primary-foreground"
-          )}
-        >
-          ZoeLive
-        </Link>
+    <div className="auth-shell flex min-h-screen bg-white">
+      <AuthBrandPanel headline={headline} highlightWord={highlightWord} />
 
-        <div className="space-y-4">
-          {variant === "tutor" ? (
-            <>
-              <p className="text-sm leading-relaxed opacity-90">
-                Tutors are verified by education level before teaching on the
-                platform.
-              </p>
-              <ul className="space-y-2 text-sm opacity-90">
-                {TUTOR_EDUCATION_LEVELS.map((level) => (
-                  <li key={level.value} className="border-l-2 border-white/40 pl-3">
-                    <span className="font-medium">{level.label}</span>
-                    <p className="mt-0.5 text-xs opacity-80">{level.description}</p>
-                  </li>
-                ))}
-              </ul>
-            </>
-          ) : (
-            <p className="text-sm leading-relaxed text-muted-foreground">
-              Students book verified tutors for live online sessions. Tutors complete
-              a separate application with document verification.
-            </p>
-          )}
-        </div>
-
-        <p
-          className={cn(
-            "text-xs",
-            variant === "tutor" ? "opacity-70" : "text-muted-foreground"
-          )}
-        >
-          © ZoeLive
-        </p>
-      </div>
-
-      <div className="flex flex-1 flex-col">
-        <div className="flex items-center justify-between p-6">
-          <Link href="/" className="text-base font-semibold lg:hidden">
-            ZoeLive
+      <div className="flex min-h-screen w-full flex-1 flex-col">
+        <div className="flex items-center justify-between border-b border-slate-100 px-6 py-4 lg:hidden">
+          <Link href="/" className="inline-flex">
+            <Image
+              src="/images/zoelive-logo.png"
+              alt="ZoeLive"
+              width={140}
+              height={56}
+              className="h-10 w-auto object-contain"
+              priority
+            />
           </Link>
-          <ThemeToggle />
         </div>
-        <div className="flex flex-1 items-center justify-center px-4 pb-12">
+
+        <div className="flex flex-1 items-center justify-center px-6 py-10 sm:px-10 lg:px-16 xl:px-20">
           <div className="w-full max-w-md">
-            <h1 className="text-xl font-semibold tracking-tight">{title}</h1>
-            <p className="mt-2 text-sm text-muted-foreground">{subtitle}</p>
+            <h1 className="text-3xl font-bold tracking-tight text-slate-900">{title}</h1>
+            <p className="mt-2 text-sm leading-relaxed text-slate-500">{subtitle}</p>
             <div className="mt-8">{children}</div>
           </div>
         </div>
+
+        {footer && (
+          <div className="border-t border-slate-100 px-6 py-4 text-center text-sm lg:px-16">
+            {footer}
+          </div>
+        )}
       </div>
     </div>
   );

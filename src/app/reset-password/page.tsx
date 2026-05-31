@@ -9,8 +9,9 @@ import { toast } from "sonner";
 import { z } from "zod";
 import { AuthLayout } from "@/components/auth/auth-layout";
 import { PasswordInput } from "@/components/shared/password-input";
-import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
+import { routes } from "@/lib/routes";
+import { cn } from "@/lib/utils";
 
 const schema = z
   .object({
@@ -74,13 +75,13 @@ function ResetPasswordForm() {
     }
 
     toast.success(body.message ?? "Password updated");
-    router.push("/login?reset=success");
+    router.push(`${routes.login}?reset=success`);
   };
 
   if (tokenStatus === "loading") {
     return (
       <AuthLayout title="Reset password" subtitle="Checking your reset link…">
-        <p className="text-center text-sm text-muted-foreground">Please wait.</p>
+        <p className="text-center text-sm text-slate-500">Please wait.</p>
       </AuthLayout>
     );
   }
@@ -92,14 +93,14 @@ function ResetPasswordForm() {
         subtitle="Request a new reset link to continue"
       >
         <div className="space-y-4 text-center">
-          <p className="text-sm text-muted-foreground">
+          <p className="text-sm text-slate-500">
             This password reset link is invalid or has expired.
           </p>
-          <Button asChild className="w-full">
-            <Link href="/forgot-password">Request new link</Link>
-          </Button>
-          <p className="text-sm">
-            <Link href="/login" className="text-primary hover:underline">
+          <Link href={routes.forgotPassword} className="auth-primary-btn inline-flex items-center justify-center">
+            Request new link
+          </Link>
+          <p className="text-sm text-slate-500">
+            <Link href={routes.login} className="auth-link">
               Back to login
             </Link>
           </p>
@@ -113,26 +114,28 @@ function ResetPasswordForm() {
       title="Choose a new password"
       subtitle="You'll sign in on the next screen with your new password"
     >
-      <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
+      <form onSubmit={handleSubmit(onSubmit)} className="space-y-5">
         <div>
-          <Label htmlFor="password">New password</Label>
+          <Label htmlFor="password" className="auth-field-label">
+            New password
+          </Label>
           <PasswordInput
             id="password"
-            className="mt-1.5"
+            className={cn("auth-input", errors.password && "border-red-400")}
             autoComplete="new-password"
             {...register("password")}
           />
           {errors.password && (
-            <p className="mt-1 text-sm text-destructive">
-              {errors.password.message}
-            </p>
+            <p className="mt-1 text-sm text-destructive">{errors.password.message}</p>
           )}
         </div>
         <div>
-          <Label htmlFor="confirmPassword">Confirm password</Label>
+          <Label htmlFor="confirmPassword" className="auth-field-label">
+            Confirm password
+          </Label>
           <PasswordInput
             id="confirmPassword"
-            className="mt-1.5"
+            className={cn("auth-input", errors.confirmPassword && "border-red-400")}
             autoComplete="new-password"
             {...register("confirmPassword")}
           />
@@ -142,11 +145,11 @@ function ResetPasswordForm() {
             </p>
           )}
         </div>
-        <Button type="submit" className="w-full" disabled={isSubmitting}>
-          {isSubmitting ? "Saving..." : "Update password"}
-        </Button>
-        <p className="text-center text-sm">
-          <Link href="/login" className="text-primary hover:underline">
+        <button type="submit" className="auth-primary-btn" disabled={isSubmitting}>
+          {isSubmitting ? "Saving…" : "Update password"}
+        </button>
+        <p className="text-center text-sm text-slate-500">
+          <Link href={routes.login} className="auth-link">
             Back to login
           </Link>
         </p>
@@ -160,7 +163,7 @@ export default function ResetPasswordPage() {
     <Suspense
       fallback={
         <AuthLayout title="Reset password" subtitle="Loading…">
-          <p className="text-center text-sm text-muted-foreground">Please wait.</p>
+          <p className="text-center text-sm text-slate-500">Please wait.</p>
         </AuthLayout>
       }
     >

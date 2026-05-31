@@ -180,9 +180,10 @@ export default function TutorOnboardingPage() {
 
   return (
     <AuthLayout
-      variant="tutor"
       title="Tutor verification"
       subtitle="Complete education verification: Undergraduate, Diploma/HND, Graduate, or Postgraduate."
+      headline="Complete Your Tutor Verification"
+      highlightWord="Verification"
     >
       {step === "verification" && (
         <div className="space-y-6">
