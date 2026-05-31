@@ -1,8 +1,8 @@
 "use client";
 
-import { useState } from "react";
-import { Send } from "lucide-react";
-import { DashboardHeader } from "@/components/layout/dashboard-header";
+import { Suspense, useState } from "react";
+import { ArrowLeft, Send } from "lucide-react";
+import { StudentPageHeader } from "@/components/layout/student-page-header";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -10,106 +10,139 @@ import { Input } from "@/components/ui/input";
 import { chatMessages, conversations } from "@/lib/mock-data";
 import { cn } from "@/lib/utils";
 
-export default function StudentMessagesPage() {
+function MessagesContent() {
   const [activeId, setActiveId] = useState(conversations[0]?.id);
-  const [typing, setTyping] = useState(false);
+  const [mobileShowChat, setMobileShowChat] = useState(false);
   const active = conversations.find((c) => c.id === activeId);
+
+  const selectConversation = (id: string) => {
+    setActiveId(id);
+    setMobileShowChat(true);
+  };
 
   return (
     <>
-      <DashboardHeader title="Messages" subtitle="Chat with your tutors" />
-      <div className="flex flex-1 overflow-hidden">
-        <aside className="w-full max-w-xs border-r overflow-y-auto hidden md:block">
-          {conversations.map((c) => (
-            <button
-              key={c.id}
-              type="button"
-              onClick={() => setActiveId(c.id)}
-              className={cn(
-                "flex w-full items-center gap-3 border-b p-4 text-left transition-colors hover:bg-muted/50",
-                activeId === c.id && "bg-muted"
-              )}
-            >
-              <div className="relative">
-                <Avatar>
-                  <AvatarImage src={c.participantAvatar} alt={c.participantName} />
-                  <AvatarFallback>{c.participantName[0]}</AvatarFallback>
-                </Avatar>
-                {c.online && (
-                  <span className="absolute bottom-0 right-0 h-3 w-3 rounded-full border-2 border-background bg-emerald-500" />
-                )}
-              </div>
-              <div className="flex-1 overflow-hidden">
-                <div className="flex items-center justify-between">
-                  <p className="font-medium truncate">{c.participantName}</p>
-                  {c.unread > 0 && <Badge className="ml-1">{c.unread}</Badge>}
-                </div>
-                <p className="truncate text-xs text-muted-foreground">{c.lastMessage}</p>
-              </div>
-            </button>
-          ))}
-        </aside>
+      <StudentPageHeader title="Messages" description="Chat with your tutors." />
 
-        <div className="flex flex-1 flex-col">
-          {active && (
-            <div className="flex items-center gap-3 border-b p-4">
-              <Avatar>
-                <AvatarImage src={active.participantAvatar} alt={active.participantName} />
-                <AvatarFallback>{active.participantName[0]}</AvatarFallback>
-              </Avatar>
-              <div>
-                <p className="font-medium">{active.participantName}</p>
-                <p className="text-xs text-muted-foreground">
-                  {active.online ? "Online" : "Offline"}
-                </p>
-              </div>
-            </div>
+      <div className="student-card flex min-h-[420px] flex-col overflow-hidden sm:min-h-[520px] sm:flex-row">
+        <aside
+          className={cn(
+            "w-full border-b border-slate-100 sm:max-w-xs sm:border-b-0 sm:border-r",
+            mobileShowChat ? "hidden sm:block" : "block"
           )}
-
-          <div className="flex-1 overflow-y-auto p-4 space-y-4">
-            {chatMessages.map((m) => (
-              <div
-                key={m.id}
+        >
+          <div className="max-h-[320px] overflow-y-auto sm:max-h-none">
+            {conversations.map((c) => (
+              <button
+                key={c.id}
+                type="button"
+                onClick={() => selectConversation(c.id)}
                 className={cn(
-                  "flex",
-                  m.isOwn ? "justify-end" : "justify-start"
+                  "flex w-full items-center gap-3 border-b border-slate-50 p-4 text-left transition-colors hover:bg-slate-50",
+                  activeId === c.id && "bg-violet-50/60"
                 )}
               >
-                <div
-                  className={cn(
-                    "max-w-[75%] rounded-2xl px-4 py-2 text-sm",
-                    m.isOwn
-                      ? "bg-primary text-primary-foreground"
-                      : "bg-muted"
+                <div className="relative shrink-0">
+                  <Avatar className="h-10 w-10">
+                    <AvatarImage src={c.participantAvatar} alt={c.participantName} />
+                    <AvatarFallback>{c.participantName[0]}</AvatarFallback>
+                  </Avatar>
+                  {c.online && (
+                    <span className="absolute bottom-0 right-0 h-2.5 w-2.5 rounded-full border-2 border-white bg-emerald-500" />
                   )}
+                </div>
+                <div className="min-w-0 flex-1">
+                  <div className="flex items-center justify-between gap-2">
+                    <p className="truncate font-semibold text-slate-900">{c.participantName}</p>
+                    {c.unread > 0 && (
+                      <Badge className="student-gradient-btn shrink-0 border-0 px-1.5 py-0 text-[10px]">
+                        {c.unread}
+                      </Badge>
+                    )}
+                  </div>
+                  <p className="truncate text-xs text-slate-500">{c.lastMessage}</p>
+                </div>
+              </button>
+            ))}
+          </div>
+        </aside>
+
+        <div
+          className={cn(
+            "flex min-h-0 flex-1 flex-col",
+            !mobileShowChat && "hidden sm:flex"
+          )}
+        >
+          {active ? (
+            <>
+              <div className="flex items-center gap-3 border-b border-slate-100 px-4 py-3">
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="shrink-0 sm:hidden"
+                  onClick={() => setMobileShowChat(false)}
+                  aria-label="Back to conversations"
                 >
-                  <p>{m.content}</p>
-                  <p className="mt-1 text-xs opacity-70">{m.timestamp}</p>
+                  <ArrowLeft className="h-4 w-4" />
+                </Button>
+                <Avatar className="h-9 w-9">
+                  <AvatarImage src={active.participantAvatar} alt={active.participantName} />
+                  <AvatarFallback>{active.participantName[0]}</AvatarFallback>
+                </Avatar>
+                <div>
+                  <p className="font-semibold text-slate-900">{active.participantName}</p>
+                  <p className="text-xs text-slate-500">
+                    {active.online ? "Online" : "Offline"}
+                  </p>
                 </div>
               </div>
-            ))}
-            {typing && (
-              <p className="text-xs text-muted-foreground">
-                Sarah Chen is typing…
-              </p>
-            )}
-          </div>
 
-          <form
-            className="flex gap-2 border-t p-4"
-            onSubmit={(e) => {
-              e.preventDefault();
-              setTyping(true);
-              setTimeout(() => setTyping(false), 2000);
-            }}
-          >
-            <Input placeholder="Type a message..." className="flex-1" />
-            <Button type="submit" size="icon">
-              <Send className="h-4 w-4" />
-            </Button>
-          </form>
+              <div className="flex-1 space-y-3 overflow-y-auto p-4">
+                {chatMessages.map((m) => (
+                  <div
+                    key={m.id}
+                    className={cn(
+                      "max-w-[85%] rounded-2xl px-4 py-2.5 text-sm",
+                      m.senderId === "student"
+                        ? "ml-auto bg-violet-600 text-white"
+                        : "bg-slate-100 text-slate-800"
+                    )}
+                  >
+                    {m.content}
+                  </div>
+                ))}
+              </div>
+
+              <div className="flex gap-2 border-t border-slate-100 p-3">
+                <Input
+                  placeholder="Type a message..."
+                  className="rounded-xl"
+                  onFocus={() => {}}
+                />
+                <Button
+                  size="icon"
+                  className="student-gradient-btn shrink-0 rounded-xl border-0"
+                  aria-label="Send message"
+                >
+                  <Send className="h-4 w-4" />
+                </Button>
+              </div>
+            </>
+          ) : (
+            <p className="flex flex-1 items-center justify-center text-sm text-slate-500">
+              Select a conversation
+            </p>
+          )}
         </div>
       </div>
     </>
+  );
+}
+
+export default function StudentMessagesPage() {
+  return (
+    <Suspense fallback={<p className="text-sm text-slate-500">Loading…</p>}>
+      <MessagesContent />
+    </Suspense>
   );
 }
