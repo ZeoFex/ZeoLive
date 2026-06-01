@@ -22,8 +22,11 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { BOOKING_TIME_SLOTS } from "@/lib/constants/time-slots";
+import { resolveBookingScheduledAt } from "@/lib/booking-schedule";
 import { useBookingStore } from "@/store/booking-store";
 import type { Tutor } from "@/types";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Label } from "@/components/ui/label";
 
 function BookSessionContent() {
   const [subjectFilter, setSubjectFilter] = useState("all");
@@ -31,6 +34,7 @@ function BookSessionContent() {
   const [modalOpen, setModalOpen] = useState(false);
   const [tutors, setTutors] = useState<Tutor[]>([]);
   const [loadingTutors, setLoadingTutors] = useState(true);
+  const [startNow, setStartNow] = useState(true);
   const { selectedTutorId, selectedDate, selectedTime, setTutor, setDate, setTime, reset } =
     useBookingStore();
 
@@ -67,15 +71,22 @@ function BookSessionContent() {
     if (!selectedTutorId || !selectedDate || !selectedTime) return;
 
     const timeMatch = selectedTime.match(/(\d+):(\d+)\s*(AM|PM)/i);
-    const scheduledAt = new Date(selectedDate);
+    let hour = 12;
+    let minute = 0;
     if (timeMatch) {
-      let hour = parseInt(timeMatch[1]!, 10);
-      const minutes = parseInt(timeMatch[2]!, 10);
+      hour = parseInt(timeMatch[1]!, 10);
+      minute = parseInt(timeMatch[2]!, 10);
       const ampm = timeMatch[3]!.toUpperCase();
       if (ampm === "PM" && hour < 12) hour += 12;
       if (ampm === "AM" && hour === 12) hour = 0;
-      scheduledAt.setHours(hour, minutes, 0, 0);
     }
+
+    const scheduledAt = resolveBookingScheduledAt(
+      selectedDate,
+      hour,
+      minute,
+      startNow
+    );
 
     try {
       const res = await fetch("/api/tutoring-sessions", {
@@ -86,6 +97,7 @@ function BookSessionContent() {
           title: selectedTutor ? `Session with ${selectedTutor.name}` : "Tutoring session",
           subject: selectedTutor?.subject,
           scheduledAt: scheduledAt.toISOString(),
+          startNow,
         }),
       });
       const json = await res.json();
@@ -167,15 +179,31 @@ function BookSessionContent() {
             <DialogDescription>Select date and time for your session</DialogDescription>
           </DialogHeader>
           <div className="space-y-4">
+            <div className="flex items-start gap-3 rounded-xl border border-slate-200 bg-slate-50/80 p-3">
+              <Checkbox
+                id="startNow"
+                checked={startNow}
+                onCheckedChange={(v) => setStartNow(v === true)}
+              />
+              <div>
+                <Label htmlFor="startNow" className="text-sm font-medium text-slate-800">
+                  Start session now
+                </Label>
+                <p className="mt-0.5 text-xs text-slate-500">
+                  Recommended if you want to join the classroom right after booking.
+                </p>
+              </div>
+            </div>
             <div>
               <label className="text-sm font-medium text-slate-700">Date</label>
               <Input
                 type="date"
                 className="mt-1.5 rounded-xl"
+                disabled={startNow}
                 onChange={(e) => setDate(e.target.value)}
               />
             </div>
-            <div>
+            <div className={startNow ? "pointer-events-none opacity-50" : undefined}>
               <label className="text-sm font-medium text-slate-700">Time slot</label>
               <div className="mt-2 grid grid-cols-2 gap-2">
                 {BOOKING_TIME_SLOTS.map((slot) => (

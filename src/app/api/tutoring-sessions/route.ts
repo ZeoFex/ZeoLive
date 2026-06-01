@@ -10,6 +10,8 @@ const createSchema = z.object({
   title: z.string().min(1).optional(),
   subject: z.string().min(1).optional(),
   scheduledAt: z.string().datetime(),
+  /** When true, session is bookable for the classroom immediately. */
+  startNow: z.boolean().optional(),
 });
 
 /** Create a tutoring session (booking without payment for now). */
@@ -47,6 +49,16 @@ export async function POST(request: Request) {
     }
 
     const roomId = `session-${randomBytes(12).toString("hex")}`;
+    let scheduledAt = new Date(data.scheduledAt);
+
+    if (data.startNow) {
+      scheduledAt = new Date();
+    } else {
+      const now = Date.now();
+      if (scheduledAt.getTime() - now <= 15 * 60 * 1000) {
+        scheduledAt = new Date();
+      }
+    }
 
     const tutoringSession = await prisma.tutoringSession.create({
       data: {
@@ -55,7 +67,7 @@ export async function POST(request: Request) {
         tutorId: tutor.id,
         title: data.title ?? "Live tutoring session",
         subject: data.subject,
-        scheduledAt: new Date(data.scheduledAt),
+        scheduledAt,
         status: "SCHEDULED",
       },
     });

@@ -6,11 +6,12 @@ import {
 } from "@livekit/components-react";
 import { DisconnectReason } from "livekit-client";
 import { useRouter } from "next/navigation";
-import { useCallback, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
 import { ChatPanel } from "@/components/livekit/ChatPanel";
 import { Controls } from "@/components/livekit/Controls";
 import { ParticipantGrid } from "@/components/livekit/ParticipantGrid";
+import { ClassroomLayoutProvider, useClassroomLayout } from "@/components/livekit/classroom-layout-context";
 import { SessionHeader } from "@/components/livekit/SessionHeader";
 import { WaitingRoom } from "@/components/livekit/WaitingRoom";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
@@ -18,6 +19,8 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { useSessionPresence } from "@/hooks/useSessionPresence";
 import type { ClassroomRole } from "@/lib/livekit";
+import { SCREEN_SHARE_PUBLISH } from "@/lib/livekit-screen-share";
+import { parseParticipantRole } from "@/lib/classroom-participant";
 import { dashboardForRole } from "@/lib/routes";
 import { cn } from "@/lib/utils";
 import { useParticipants } from "@livekit/components-react";
@@ -36,17 +39,6 @@ interface ClassroomProps {
   session: ClassroomSessionInfo;
 }
 
-function parseRole(metadata?: string): ClassroomRole | null {
-  if (!metadata) return null;
-  try {
-    const data = JSON.parse(metadata) as { role?: string };
-    if (data.role === "tutor" || data.role === "student") return data.role;
-  } catch {
-    return null;
-  }
-  return null;
-}
-
 function ParticipantsSidebar({ open }: { open: boolean }) {
   const participants = useParticipants();
 
@@ -59,7 +51,7 @@ function ParticipantsSidebar({ open }: { open: boolean }) {
       </h3>
       <ul className="space-y-2">
         {participants.map((p) => {
-          const role = parseRole(p.metadata);
+          const role = parseParticipantRole(p.metadata);
           return (
             <li key={p.sid} className="flex items-center gap-2">
               <Avatar className="h-8 w-8">
@@ -83,7 +75,7 @@ function ParticipantsSidebar({ open }: { open: boolean }) {
   );
 }
 
-function ClassroomRoom({
+function ClassroomRoomInner({
   session,
   onSessionEnded,
 }: {
@@ -92,6 +84,9 @@ function ClassroomRoom({
 }) {
   const router = useRouter();
   const containerRef = useRef<HTMLDivElement>(null);
+  const { isScreenSharing, screenExpanded } = useClassroomLayout();
+  const mobilePanelsCollapsed = useRef(false);
+
   const [showChat, setShowChat] = useState(true);
   const [showParticipants, setShowParticipants] = useState(false);
   const [ended, setEnded] = useState(false);
@@ -99,6 +94,28 @@ function ClassroomRoom({
   const { showWaitingRoom, isReconnecting, isConnected } = useSessionPresence(
     session.participantRole
   );
+
+  useEffect(() => {
+    if (window.matchMedia("(max-width: 767px)").matches) {
+      setShowChat(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    if (!isScreenSharing || mobilePanelsCollapsed.current) return;
+    if (window.matchMedia("(max-width: 767px)").matches) {
+      mobilePanelsCollapsed.current = true;
+      setShowChat(false);
+      setShowParticipants(false);
+    }
+  }, [isScreenSharing]);
+
+  useEffect(() => {
+    if (screenExpanded && window.matchMedia("(max-width: 1023px)").matches) {
+      setShowChat(false);
+      setShowParticipants(false);
+    }
+  }, [screenExpanded]);
 
   const leaveRoom = useCallback(() => {
     const path =
@@ -140,6 +157,8 @@ function ClassroomRoom({
     );
   }
 
+  const showSidePanel = showParticipants || showChat;
+
   return (
     <div ref={containerRef} className="flex h-full min-h-0 flex-1 flex-col bg-background">
       <SessionHeader
@@ -149,8 +168,13 @@ function ClassroomRoom({
         isReconnecting={isReconnecting}
       />
 
-      <div className="flex min-h-0 flex-1 flex-col overflow-hidden md:flex-row">
-        <main className="flex min-h-0 flex-1 flex-col">
+      <div
+        className={cn(
+          "flex min-h-0 flex-1 flex-col overflow-hidden md:flex-row",
+          isScreenSharing && "max-md:flex-col"
+        )}
+      >
+        <main className="flex min-h-0 min-w-0 flex-1 flex-col">
           {showWaitingRoom ? (
             <WaitingRoom />
           ) : (
@@ -158,15 +182,24 @@ function ClassroomRoom({
           )}
         </main>
 
-        {(showParticipants || showChat) && (
+        {showSidePanel && (
           <div
             className={cn(
-              "flex max-h-[40vh] flex-col border-t border-border md:max-h-none md:max-w-md md:flex-row md:border-l md:border-t-0",
-              showChat && showParticipants && "md:flex-col"
+              "flex shrink-0 flex-col border-t border-border bg-background md:border-l md:border-t-0",
+              isScreenSharing
+                ? "max-md:max-h-[36dvh] max-md:w-full"
+                : "max-md:max-h-[42dvh] md:w-80 md:max-w-[min(100%,22rem)] lg:w-96 md:max-h-none"
             )}
           >
             {showParticipants && <ParticipantsSidebar open={showParticipants} />}
-            {showChat && <ChatPanel className="min-h-[200px] flex-1" />}
+            {showChat && (
+              <ChatPanel
+                className={cn(
+                  "min-h-[160px] flex-1",
+                  isScreenSharing && "max-md:max-h-[28dvh]"
+                )}
+              />
+            )}
           </div>
         )}
       </div>
@@ -186,20 +219,36 @@ function ClassroomRoom({
   );
 }
 
+function ClassroomRoom({
+  session,
+  onSessionEnded,
+}: {
+  session: ClassroomSessionInfo;
+  onSessionEnded: () => void;
+}) {
+  return (
+    <ClassroomLayoutProvider>
+      <ClassroomRoomInner session={session} onSessionEnded={onSessionEnded} />
+    </ClassroomLayoutProvider>
+  );
+}
+
 export function Classroom({ token, serverUrl, session }: ClassroomProps) {
   const [sessionEnded, setSessionEnded] = useState(false);
 
   return (
     <LiveKitRoom
+      key={session.roomId}
       token={token}
       serverUrl={serverUrl}
       connect
       audio
       video
-      className="flex h-screen flex-col bg-background text-foreground"
+      className="flex h-[100dvh] flex-col bg-background text-foreground"
       options={{
         adaptiveStream: true,
         dynacast: true,
+        publishDefaults: SCREEN_SHARE_PUBLISH,
       }}
       connectOptions={{
         autoSubscribe: true,
@@ -214,6 +263,9 @@ export function Classroom({ token, serverUrl, session }: ClassroomProps) {
         }
       }}
       onError={(error) => {
+        if (error.message?.includes("engine not connected")) {
+          return;
+        }
         console.error("LiveKit room error:", error);
         toast.error(error.message || "Connection error");
       }}
