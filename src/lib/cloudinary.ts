@@ -34,6 +34,40 @@ export async function uploadImage(
   });
 }
 
+/** Server-side upload from a browser File (verification documents, live photo, etc.). */
+export async function uploadFileFromBuffer(
+  file: File,
+  folder: string
+): Promise<string> {
+  const cld = getCloudinary();
+  const bytes = await file.arrayBuffer();
+  const buffer = Buffer.from(bytes);
+  const isImage = file.type.startsWith("image/");
+  const resourceType = isImage ? "image" : "auto";
+
+  return new Promise((resolve, reject) => {
+    const stream = cld.uploader.upload_stream(
+      {
+        folder: `zoelive/${folder}`,
+        resource_type: resourceType,
+        format: isImage && file.type === "image/jpeg" ? "jpg" : undefined,
+      },
+      (error, result) => {
+        if (error) {
+          reject(error);
+          return;
+        }
+        if (!result?.secure_url) {
+          reject(new Error("Cloudinary did not return a URL"));
+          return;
+        }
+        resolve(result.secure_url);
+      }
+    );
+    stream.end(buffer);
+  });
+}
+
 export async function uploadVideo(
   file: string,
   folder = "zoelive/videos"

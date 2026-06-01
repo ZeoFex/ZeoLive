@@ -1,5 +1,6 @@
-import { allTutors, conversations, studentSessions } from "@/lib/mock-data";
 import { routes } from "@/lib/routes";
+import { listApprovedTutors, listPortalSessionsForUser } from "@/lib/portal-data";
+import { prisma } from "@/lib/prisma";
 
 export interface StudentSearchResult {
   id: string;
@@ -18,83 +19,91 @@ export interface StudentNotificationItem {
   createdAt: string;
 }
 
-export function searchStudentPortal(query: string): StudentSearchResult[] {
+export async function searchStudentPortal(
+  query: string,
+  studentId: string
+): Promise<StudentSearchResult[]> {
   const q = query.trim().toLowerCase();
   if (q.length < 2) return [];
 
   const results: StudentSearchResult[] = [];
+  const seen = new Set<string>();
 
-  for (const tutor of allTutors) {
-    const haystack = [tutor.name, tutor.subject, ...tutor.subjects, tutor.bio ?? ""]
+  const tutors = await listApprovedTutors();
+  for (const tutor of tutors) {
+    const haystack = [tutor.name, tutor.subject, ...tutor.subjects, tutor.bio]
       .join(" ")
       .toLowerCase();
     if (haystack.includes(q)) {
-      results.push({
-        id: `tutor-${tutor.id}`,
-        type: "tutor",
-        title: tutor.name,
-        subtitle: `${tutor.subject} · ${tutor.rating} rating`,
-        href: routes.student.book,
-      });
+      const id = `tutor-${tutor.id}`;
+      if (!seen.has(id)) {
+        seen.add(id);
+        results.push({
+          id,
+          type: "tutor",
+          title: tutor.name,
+          subtitle: tutor.subject,
+          href: routes.student.book,
+        });
+      }
     }
   }
 
-  for (const session of studentSessions) {
-    const haystack = `${session.subject} ${session.tutorName}`.toLowerCase();
+  const sessions = await listPortalSessionsForUser(studentId, "STUDENT");
+  for (const session of sessions) {
+    const haystack = `${session.title} ${session.subject} ${session.tutor.name}`.toLowerCase();
     if (haystack.includes(q)) {
-      results.push({
-        id: `session-${session.id}`,
-        type: "session",
-        title: session.subject,
-        subtitle: `${session.tutorName} · ${session.date} ${session.time}`,
-        href: routes.student.classes,
-      });
+      const id = `session-${session.id}`;
+      if (!seen.has(id)) {
+        seen.add(id);
+        results.push({
+          id,
+          type: "session",
+          title: session.title ?? session.subject ?? "Session",
+          subtitle: `${session.tutor.name} · ${new Date(session.scheduledAt).toLocaleString()}`,
+          href: routes.student.classes,
+        });
+      }
     }
   }
 
-  const seen = new Set<string>();
-  return results
-    .filter((r) => {
-      if (seen.has(r.id)) return false;
-      seen.add(r.id);
-      return true;
-    })
-    .slice(0, 8);
+  return results.slice(0, 8);
 }
 
-export function getStudentNotifications(): StudentNotificationItem[] {
+export async function getStudentNotifications(
+  studentId: string
+): Promise<StudentNotificationItem[]> {
   const items: StudentNotificationItem[] = [];
 
-  for (const session of studentSessions.filter((s) => s.status === "upcoming")) {
+  const sessions = await listPortalSessionsForUser(studentId, "STUDENT");
+  for (const session of sessions.filter(
+    (s) => s.status === "SCHEDULED" || s.status === "ACTIVE"
+  )) {
     items.push({
       id: `session-${session.id}`,
       type: "session_reminder",
       title: "Upcoming session",
-      message: `${session.subject} with ${session.tutorName} · ${session.date} at ${session.time}`,
-      href: routes.student.classes,
-      createdAt: new Date(session.date).toISOString(),
+      message: `${session.title ?? session.subject ?? "Session"} with ${session.tutor.name} · ${new Date(session.scheduledAt).toLocaleString()}`,
+      href: `/classroom/${session.roomId}`,
+      createdAt: session.scheduledAt,
     });
   }
 
-  for (const chat of conversations.filter((c) => c.unread > 0)) {
-    items.push({
-      id: `message-${chat.id}`,
-      type: "message",
-      title: `New message from ${chat.participantName}`,
-      message: chat.lastMessage,
-      href: routes.student.messages,
-      createdAt: new Date().toISOString(),
-    });
-  }
-
-  items.push({
-    id: "billing-renewal",
-    type: "billing",
-    title: "Subscription renewal",
-    message: "Student Plus renews on May 27",
-    href: routes.student.payments,
-    createdAt: new Date().toISOString(),
+  const profile = await prisma.studentProfile.findUnique({
+    where: { userId: studentId },
+    select: { createdAt: true },
   });
+
+  if (profile && items.length === 0) {
+    items.push({
+      id: "welcome",
+      type: "welcome",
+      title: "Welcome to ZoeLive",
+      message: "Browse tutors and book your first live session when you're ready.",
+      href: routes.student.book,
+      createdAt: profile.createdAt.toISOString(),
+    });
+  }
 
   items.sort(
     (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()

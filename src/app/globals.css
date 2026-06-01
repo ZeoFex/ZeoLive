@@ -93,6 +93,28 @@ body {
   font-family: var(--font-geist-sans), system-ui, sans-serif;
 }
 
+/* Auth pages — always light surfaces (ignore system dark mode) */
+.auth-shell {
+  color-scheme: light;
+  --background: 40 20% 99%;
+  --foreground: 220 18% 14%;
+  --card: 0 0% 100%;
+  --card-foreground: 220 18% 14%;
+  --popover: 0 0% 100%;
+  --popover-foreground: 220 18% 14%;
+  --primary: 215 28% 32%;
+  --primary-foreground: 40 20% 98%;
+  --secondary: 40 12% 94%;
+  --secondary-foreground: 220 14% 22%;
+  --muted: 40 10% 95%;
+  --muted-foreground: 220 8% 44%;
+  --accent: 40 14% 92%;
+  --accent-foreground: 220 18% 18%;
+  --border: 40 8% 88%;
+  --input: 214 20% 88%;
+  --ring: 210 100% 40%;
+}
+
 /* Auth pages — Class Optima–style split layout + ZoeLive brand */
 .auth-brand-panel {
   background: linear-gradient(165deg, #eef7ff 0%, #dceeff 45%, #e8f3ff 100%);
@@ -169,7 +191,8 @@ body {
 
 .auth-form input:not([type="checkbox"]):not([type="radio"]),
 .auth-form textarea,
-.auth-form button[role="combobox"] {
+.auth-form button[role="combobox"],
+.auth-shell button[role="combobox"] {
   @apply mt-1.5 h-11 rounded-lg border-slate-300 bg-white text-base font-normal text-slate-900 shadow-none;
   @apply placeholder:text-slate-500 focus-visible:border-[#0066CC] focus-visible:ring-2 focus-visible:ring-[#0066CC]/20;
   color: #0f172a;
@@ -182,10 +205,33 @@ body {
   opacity: 1;
 }
 
-.auth-form button[role="combobox"] span {
+.auth-form button[role="combobox"] span,
+.auth-shell button[role="combobox"] span {
   @apply text-slate-900;
+}
+
+.auth-form textarea,
+.auth-shell textarea {
+  @apply rounded-lg border-slate-300 bg-white text-base text-slate-900 shadow-none;
+  @apply placeholder:text-slate-500 focus-visible:border-[#0066CC] focus-visible:ring-2 focus-visible:ring-[#0066CC]/20;
 }
 
 .auth-form .rounded-lg.border.bg-muted\/30 {
   @apply border-slate-200 bg-slate-50/80;
+}
+
+.auth-form .auth-file-upload {
+  @apply min-h-[112px] border-slate-200 bg-white hover:border-[#0066CC]/40 hover:bg-slate-50/90;
+}
+
+.auth-form .auth-verification-panel {
+  @apply space-y-4 rounded-xl border border-slate-200 bg-white p-5 shadow-sm;
+}
+
+.auth-form .auth-verification-panel > p:first-of-type {
+  @apply text-sm font-semibold text-slate-800;
+}
+
+.auth-form .auth-verification-panel > p:nth-of-type(2) {
+  @apply text-xs leading-relaxed text-slate-500;
 }

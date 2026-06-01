@@ -13,12 +13,10 @@ import {
 } from "@/lib/livekit";
 import { prisma } from "@/lib/prisma";
 
-/** Legacy path — same behaviour as POST /api/livekit-token */
 const schema = z.object({
-  roomName: z.string().min(1).optional(),
-  room: z.string().min(1).optional(),
-  participantName: z.string().min(1).optional(),
-  role: z.enum(["student", "tutor"]).optional(),
+  room: z.string().min(1),
+  identity: z.string().min(1).optional(),
+  role: z.enum(["student", "tutor"]),
 });
 
 export async function POST(request: Request) {
@@ -36,17 +34,11 @@ export async function POST(request: Request) {
 
   try {
     const body = await request.json();
-    const parsed = schema.parse(body);
-    const room = parsed.room ?? parsed.roomName;
-    if (!room) {
-      return NextResponse.json({ error: "room is required" }, { status: 400 });
-    }
+    const { room, identity, role } = schema.parse(body);
 
-    const role =
-      parsed.role ??
-      (session.user.role === "TUTOR" || session.user.role === "ADMIN"
-        ? "tutor"
-        : "student");
+    if (identity && identity !== session.user.id) {
+      return NextResponse.json({ error: "Identity mismatch" }, { status: 403 });
+    }
 
     const access = await verifyClassroomAccess(
       room,
@@ -80,7 +72,7 @@ export async function POST(request: Request) {
     const token = await createLiveKitToken(
       room,
       session.user.id,
-      parsed.participantName ?? participantDisplayName(user),
+      participantDisplayName(user),
       role
     );
 

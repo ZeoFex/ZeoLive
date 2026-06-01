@@ -1,6 +1,6 @@
 "use client";
 
-import { Suspense, useMemo, useState } from "react";
+import { Suspense, useEffect, useMemo, useState } from "react";
 import { Search } from "lucide-react";
 import { toast } from "sonner";
 import { StudentPageHeader } from "@/components/layout/student-page-header";
@@ -21,20 +21,37 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { allTutors, timeSlots } from "@/lib/mock-data";
+import { BOOKING_TIME_SLOTS } from "@/lib/constants/time-slots";
 import { useBookingStore } from "@/store/booking-store";
+import type { Tutor } from "@/types";
 
 function BookSessionContent() {
   const [subjectFilter, setSubjectFilter] = useState("all");
   const [search, setSearch] = useState("");
   const [modalOpen, setModalOpen] = useState(false);
+  const [tutors, setTutors] = useState<Tutor[]>([]);
+  const [loadingTutors, setLoadingTutors] = useState(true);
   const { selectedTutorId, selectedDate, selectedTime, setTutor, setDate, setTime, reset } =
     useBookingStore();
 
-  const subjects = ["all", ...new Set(allTutors.map((t) => t.subject))];
+  useEffect(() => {
+    fetch("/api/tutors", { credentials: "same-origin" })
+      .then((r) => r.json())
+      .then((data) => setTutors(data.tutors ?? []))
+      .catch(() => setTutors([]))
+      .finally(() => setLoadingTutors(false));
+  }, []);
+
+  const subjects = useMemo(
+    () => ["all", ...new Set(tutors.flatMap((t) => t.subjects))],
+    [tutors]
+  );
 
   const filtered = useMemo(() => {
-    let list = subjectFilter === "all" ? allTutors : allTutors.filter((t) => t.subject === subjectFilter);
+    let list =
+      subjectFilter === "all"
+        ? tutors
+        : tutors.filter((t) => t.subjects.includes(subjectFilter));
     const q = search.trim().toLowerCase();
     if (q) {
       list = list.filter((t) =>
@@ -42,21 +59,55 @@ function BookSessionContent() {
       );
     }
     return list;
-  }, [subjectFilter, search]);
+  }, [subjectFilter, search, tutors]);
 
-  const selectedTutor = allTutors.find((t) => t.id === selectedTutorId);
+  const selectedTutor = tutors.find((t) => t.id === selectedTutorId);
 
-  const handleBook = () => {
-    toast.success("Session booked successfully!");
-    setModalOpen(false);
-    reset();
+  const handleBook = async () => {
+    if (!selectedTutorId || !selectedDate || !selectedTime) return;
+
+    const timeMatch = selectedTime.match(/(\d+):(\d+)\s*(AM|PM)/i);
+    const scheduledAt = new Date(selectedDate);
+    if (timeMatch) {
+      let hour = parseInt(timeMatch[1]!, 10);
+      const minutes = parseInt(timeMatch[2]!, 10);
+      const ampm = timeMatch[3]!.toUpperCase();
+      if (ampm === "PM" && hour < 12) hour += 12;
+      if (ampm === "AM" && hour === 12) hour = 0;
+      scheduledAt.setHours(hour, minutes, 0, 0);
+    }
+
+    try {
+      const res = await fetch("/api/tutoring-sessions", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          tutorId: selectedTutorId,
+          title: selectedTutor ? `Session with ${selectedTutor.name}` : "Tutoring session",
+          subject: selectedTutor?.subject,
+          scheduledAt: scheduledAt.toISOString(),
+        }),
+      });
+      const json = await res.json();
+      if (!res.ok) {
+        throw new Error(json.error ?? "Could not book session");
+      }
+      toast.success("Session booked! Payment step skipped for now.");
+      setModalOpen(false);
+      reset();
+      if (json.classroomUrl) {
+        window.location.href = json.classroomUrl;
+      }
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Could not book session");
+    }
   };
 
   return (
     <>
       <StudentPageHeader
         title="Pick a tutor"
-        description="Filter by subject and schedule your next live session."
+        description="Book a verified tutor for your next live session."
       />
 
       <div className="mb-5 flex flex-col gap-3 sm:flex-row sm:flex-wrap">
@@ -83,15 +134,21 @@ function BookSessionContent() {
         </Select>
       </div>
 
-      {filtered.length === 0 ? (
-        <div className="student-empty">No tutors match your filters.</div>
+      {loadingTutors ? (
+        <p className="text-sm text-slate-500">Loading tutors…</p>
+      ) : filtered.length === 0 ? (
+        <div className="student-empty py-12 text-center text-sm text-slate-500">
+          {tutors.length === 0
+            ? "No approved tutors are available yet. Tutors appear here after admin verification."
+            : "No tutors match your filters."}
+        </div>
       ) : (
         <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
           {filtered.map((tutor) => (
             <button
               key={tutor.id}
               type="button"
-              className="cursor-pointer text-left"
+              className="text-left"
               onClick={() => {
                 setTutor(tutor.id);
                 setModalOpen(true);
@@ -121,7 +178,7 @@ function BookSessionContent() {
             <div>
               <label className="text-sm font-medium text-slate-700">Time slot</label>
               <div className="mt-2 grid grid-cols-2 gap-2">
-                {timeSlots.map((slot) => (
+                {BOOKING_TIME_SLOTS.map((slot) => (
                   <Button
                     key={slot}
                     type="button"

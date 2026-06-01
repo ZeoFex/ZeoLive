@@ -185,6 +185,7 @@ export default function TutorOnboardingPage() {
       headline="Complete Your Tutor Verification"
       highlightWord="Verification"
     >
+      <div className="auth-form">
       {step === "verification" && (
         <div className="space-y-6">
           <EducationLevelFields
@@ -202,9 +203,9 @@ export default function TutorOnboardingPage() {
             />
           </div>
 
-          <div className="space-y-4 rounded-lg border p-4">
-            <p className="text-sm font-medium">Required documents</p>
-            <p className="text-xs text-muted-foreground">
+          <div className="auth-verification-panel">
+            <p>Required documents</p>
+            <p>
               Upload transcript, national ID, and a live photo. Certificate required for
               Diploma/HND, Graduate, and Postgraduate levels.
             </p>
@@ -287,6 +288,7 @@ export default function TutorOnboardingPage() {
           <Button onClick={() => router.push("/login")}>Go to login</Button>
         </div>
       )}
+      </div>
     </AuthLayout>
   );
 }

@@ -4,7 +4,7 @@ import { useState } from "react";
 import { toast } from "sonner";
 import { TutorPageHeader } from "@/components/layout/tutor-page-header";
 import { Button } from "@/components/ui/button";
-import { timeSlots } from "@/lib/mock-data";
+import { BOOKING_TIME_SLOTS } from "@/lib/constants/time-slots";
 import { cn } from "@/lib/utils";
 
 const days = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"];
@@ -68,7 +68,7 @@ export default function TutorAvailabilityPage() {
         <div className="tutor-card p-5 sm:p-6 lg:col-span-2">
           <h3 className="mb-4 text-base font-bold text-slate-900">{activeDay}</h3>
           <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
-            {timeSlots.map((slot) => {
+            {BOOKING_TIME_SLOTS.map((slot) => {
               const selected = (schedule[activeDay] ?? []).includes(slot);
               return (
                 <Button

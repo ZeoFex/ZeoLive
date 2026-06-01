@@ -319,8 +319,12 @@ export function TutorRegistrationWizard() {
             />
           </div>
 
-          <div className="space-y-4 rounded-lg border p-4">
-            <p className="text-sm font-medium">Upload documents</p>
+          <div className="auth-verification-panel">
+            <p>Upload documents</p>
+            <p>
+              Transcript, national ID, and a live camera photo are required. Certificate
+              uploads apply to Diploma/HND, Graduate, and Postgraduate levels.
+            </p>
             <DocumentUploadField
               label="Transcript"
               accept=".pdf,image/*"
