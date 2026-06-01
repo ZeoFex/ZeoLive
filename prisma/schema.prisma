@@ -70,6 +70,37 @@ model User {
   sessions       Session[]
   tutorProfile   TutorProfile?
   studentProfile StudentProfile?
+
+  tutoringSessionsAsStudent TutoringSession[] @relation("StudentTutoringSessions")
+  tutoringSessionsAsTutor   TutoringSession[] @relation("TutorTutoringSessions")
+}
+
+enum TutoringSessionStatus {
+  SCHEDULED
+  ACTIVE
+  COMPLETED
+  CANCELLED
+}
+
+model TutoringSession {
+  id          String                @id @default(cuid())
+  roomId      String                @unique
+  studentId   String
+  tutorId     String
+  student     User                  @relation("StudentTutoringSessions", fields: [studentId], references: [id], onDelete: Cascade)
+  tutor       User                  @relation("TutorTutoringSessions", fields: [tutorId], references: [id], onDelete: Cascade)
+  title       String?
+  subject     String?
+  status      TutoringSessionStatus @default(SCHEDULED)
+  scheduledAt DateTime
+  startedAt   DateTime?
+  endedAt     DateTime?
+  createdAt   DateTime              @default(now())
+  updatedAt   DateTime              @updatedAt
+
+  @@index([studentId])
+  @@index([tutorId])
+  @@index([status])
 }
 
 model StudentProfile {

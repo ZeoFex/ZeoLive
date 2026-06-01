@@ -57,7 +57,7 @@ export function EducationLevelFields({
       </div>
 
       {educationLevel && (
-        <ul className="space-y-1 rounded-lg border bg-muted/30 p-3 text-xs text-muted-foreground">
+        <ul className="space-y-1 rounded-lg border border-slate-200 bg-slate-50/90 p-3 text-xs text-slate-600">
           <li>• Transcript and national ID required for all levels</li>
           <li>• Live photo required for identity verification</li>
           {needsCertificate && (

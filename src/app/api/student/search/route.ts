@@ -15,5 +15,7 @@ export async function GET(request: Request) {
     return NextResponse.json({ results: [] });
   }
 
-  return NextResponse.json({ results: searchStudentPortal(q) });
+  return NextResponse.json({
+    results: await searchStudentPortal(q, session.user.id),
+  });
 }

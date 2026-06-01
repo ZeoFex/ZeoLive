@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
-import { saveUploadedFile } from "@/lib/upload-document";
+import { saveUploadedFile, validateUploadFile } from "@/lib/upload-document";
 
 export async function POST(
   request: Request,
@@ -59,6 +59,11 @@ export async function POST(
     return NextResponse.json({ url });
   } catch (error) {
     console.error("Recommendation upload error:", error);
-    return NextResponse.json({ error: "Upload failed" }, { status: 500 });
+    const message =
+      error instanceof Error ? error.message : "Upload failed";
+    const status = message.includes("10MB") || message.includes("PDF or image")
+      ? 400
+      : 500;
+    return NextResponse.json({ error: message }, { status });
   }
 }

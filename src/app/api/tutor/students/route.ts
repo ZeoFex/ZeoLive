@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { auth } from "@/auth";
-import { getTutorNotifications } from "@/lib/tutor-portal";
+import { listTutorStudents } from "@/lib/portal-data";
 
 export async function GET() {
   const session = await auth();
@@ -8,6 +8,6 @@ export async function GET() {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
-  const items = await getTutorNotifications(session.user.id);
-  return NextResponse.json({ items });
+  const students = await listTutorStudents(session.user.id);
+  return NextResponse.json({ students });
 }

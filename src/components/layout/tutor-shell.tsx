@@ -1,11 +1,10 @@
 "use client";
 
 import { usePathname } from "next/navigation";
-import { useMemo } from "react";
+import { useEffect, useState } from "react";
 import { TutorSidebar } from "@/components/layout/tutor-sidebar";
 import { TutorTopbar } from "@/components/layout/tutor-topbar";
 import { tutorNav } from "@/lib/navigation";
-import { tutorSessions } from "@/lib/mock-data";
 
 const PAGE_TITLES: Record<string, string> = {
   "/tutor/dashboard": "Dashboard",
@@ -28,11 +27,22 @@ interface TutorShellProps {
 
 export function TutorShell({ children }: TutorShellProps) {
   const pathname = usePathname();
+  const [upcomingCount, setUpcomingCount] = useState(0);
 
-  const upcomingCount = useMemo(
-    () => tutorSessions.filter((s) => s.status === "upcoming").length,
-    []
-  );
+  useEffect(() => {
+    fetch("/api/tutoring-sessions", { credentials: "same-origin" })
+      .then((r) => r.json())
+      .then((data) => {
+        const sessions = data.sessions ?? [];
+        setUpcomingCount(
+          sessions.filter(
+            (s: { status: string }) =>
+              s.status === "SCHEDULED" || s.status === "ACTIVE"
+          ).length
+        );
+      })
+      .catch(() => setUpcomingCount(0));
+  }, [pathname]);
 
   return (
     <div className="tutor-shell min-h-screen p-0 lg:p-4">

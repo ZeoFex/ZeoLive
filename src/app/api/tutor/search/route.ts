@@ -15,5 +15,7 @@ export async function GET(request: Request) {
     return NextResponse.json({ results: [] });
   }
 
-  return NextResponse.json({ results: searchTutorPortal(q) });
+  return NextResponse.json({
+    results: await searchTutorPortal(q, session.user.id),
+  });
 }
