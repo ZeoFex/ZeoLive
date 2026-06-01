@@ -1,4 +1,4 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import { Providers } from "@/components/providers";
 import "./globals.css";
@@ -19,6 +19,11 @@ export const metadata: Metadata = {
     "Schedule live lessons, manage classrooms, and handle payments for student–tutor sessions.",
 };
 
+export const viewport: Viewport = {
+  width: "device-width",
+  initialScale: 1,
+};
+
 export default function RootLayout({
   children,
 }: Readonly<{
@@ -27,6 +32,7 @@ export default function RootLayout({
   return (
     <html lang="en" suppressHydrationWarning>
       <body
+        suppressHydrationWarning
         className={`${geistSans.variable} ${geistMono.variable} min-h-screen font-sans antialiased`}
       >
         <Providers>{children}</Providers>

@@ -3,6 +3,12 @@ import { prisma } from "@/lib/prisma";
 
 export type ClassroomParticipantRole = "student" | "tutor";
 
+/** How early students may enter before `scheduledAt`. */
+const STUDENT_EARLY_JOIN_MS = 60 * 60 * 1000; // 1 hour
+
+/** How long after `scheduledAt` a SCHEDULED session may still be joined. */
+const JOIN_WINDOW_AFTER_START_MS = 3 * 60 * 60 * 1000; // 3 hours
+
 export interface ClassroomAccessResult {
   allowed: boolean;
   status: number;
@@ -32,6 +38,58 @@ export function participantDisplayName(
   user: Pick<User, "name" | "firstName" | "lastName"> & { email?: string | null }
 ) {
   return displayName(user);
+}
+
+function formatScheduledForMessage(date: Date) {
+  return date.toLocaleString(undefined, {
+    weekday: "short",
+    month: "short",
+    day: "numeric",
+    hour: "numeric",
+    minute: "2-digit",
+  });
+}
+
+/**
+ * Tutors may open the room anytime before/during a scheduled session.
+ * Students may enter up to 1 hour early, or anytime once the session is ACTIVE.
+ */
+function checkJoinWindow(
+  session: TutoringSession,
+  participantRole: ClassroomParticipantRole
+): { allowed: true } | { allowed: false; error: string } {
+  if (session.status === "ACTIVE") {
+    return { allowed: true };
+  }
+
+  if (session.status !== "SCHEDULED") {
+    return { allowed: false, error: "Session is not available to join" };
+  }
+
+  if (participantRole === "tutor") {
+    return { allowed: true };
+  }
+
+  const now = Date.now();
+  const start = session.scheduledAt.getTime();
+  const joinOpens = start - STUDENT_EARLY_JOIN_MS;
+  const joinCloses = start + JOIN_WINDOW_AFTER_START_MS;
+
+  if (now < joinOpens) {
+    return {
+      allowed: false,
+      error: `This session is scheduled for ${formatScheduledForMessage(session.scheduledAt)}. You can join up to 1 hour before that time, or ask your tutor to start the session.`,
+    };
+  }
+
+  if (now > joinCloses) {
+    return {
+      allowed: false,
+      error: "The join window for this session has closed",
+    };
+  }
+
+  return { allowed: true };
 }
 
 export async function verifyClassroomAccess(
@@ -85,29 +143,14 @@ export async function verifyClassroomAccess(
     return { allowed: false, status: 403, error: "Session is not available to join" };
   }
 
-  if (session.status === "SCHEDULED") {
-    const now = Date.now();
-    const joinWindowStart = session.scheduledAt.getTime() - 15 * 60 * 1000;
-    const joinWindowEnd = session.scheduledAt.getTime() + 3 * 60 * 60 * 1000;
-
-    if (now < joinWindowStart) {
-      return {
-        allowed: false,
-        status: 403,
-        error:
-          "This session has not started yet. You can join 15 minutes before the scheduled time.",
-        session,
-      };
-    }
-
-    if (now > joinWindowEnd) {
-      return {
-        allowed: false,
-        status: 403,
-        error: "The join window for this session has closed",
-        session,
-      };
-    }
+  const window = checkJoinWindow(session, participantRole);
+  if (!window.allowed) {
+    return {
+      allowed: false,
+      status: 403,
+      error: window.error,
+      session,
+    };
   }
 
   return {

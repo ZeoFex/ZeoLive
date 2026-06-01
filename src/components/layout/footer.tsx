@@ -70,7 +70,10 @@ export function Footer() {
           </div>
         </div>
 
-        <p className="mt-12 border-t pt-8 text-center text-sm text-muted-foreground">
+        <p
+          className="mt-12 border-t pt-8 text-center text-sm text-muted-foreground"
+          suppressHydrationWarning
+        >
           © {new Date().getFullYear()} ZoeLive
         </p>
       </div>

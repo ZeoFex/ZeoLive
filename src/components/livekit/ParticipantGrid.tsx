@@ -1,92 +1,138 @@
 "use client";
 
-import {
-  ParticipantTile,
-  useParticipants,
-  useTracks,
-} from "@livekit/components-react";
+import { useTracks, type TrackReferenceOrPlaceholder } from "@livekit/components-react";
 import { Track } from "livekit-client";
-import { Badge } from "@/components/ui/badge";
+import { useMemo } from "react";
+import { ParticipantVideoTile } from "@/components/livekit/ParticipantVideoTile";
+import { ScreenShareStage } from "@/components/livekit/ScreenShareStage";
+import { useClassroomLayout } from "@/components/livekit/classroom-layout-context";
+import { parseParticipantRole } from "@/lib/classroom-participant";
 import { cn } from "@/lib/utils";
 
-function parseRole(metadata?: string): "tutor" | "student" | null {
-  if (!metadata) return null;
-  try {
-    const data = JSON.parse(metadata) as { role?: string };
-    if (data.role === "tutor" || data.role === "student") return data.role;
-  } catch {
-    return null;
-  }
-  return null;
+function sortCameraTracks<T extends { participant: { metadata?: string; sid: string } }>(
+  tracks: T[]
+): T[] {
+  return [...tracks].sort((a, b) => {
+    const roleA = parseParticipantRole(a.participant.metadata);
+    const roleB = parseParticipantRole(b.participant.metadata);
+    if (roleA === "student" && roleB === "tutor") return -1;
+    if (roleA === "tutor" && roleB === "student") return 1;
+    return a.participant.sid.localeCompare(b.participant.sid);
+  });
+}
+
+function CameraStrip({
+  tracks,
+  variant,
+  label,
+}: {
+  tracks: TrackReferenceOrPlaceholder[];
+  variant: "filmstrip" | "dock";
+  label: string;
+}) {
+  if (tracks.length === 0) return null;
+
+  return (
+    <>
+      <p
+        className={cn(
+          "shrink-0 px-1 font-medium uppercase tracking-wide text-slate-400",
+          variant === "dock" ? "text-[9px]" : "mb-2 text-[10px] sm:text-xs"
+        )}
+      >
+        {label}
+      </p>
+      <div
+        className={cn(
+          variant === "dock"
+            ? "flex min-h-0 flex-1 flex-col gap-2 overflow-y-auto overscroll-y-contain"
+            : "flex gap-2 overflow-x-auto overscroll-x-contain pb-1 [-webkit-overflow-scrolling:touch]"
+        )}
+        role="list"
+        aria-label="Participant cameras"
+      >
+        {tracks.map((trackRef) => (
+          <ParticipantVideoTile
+            key={`${trackRef.participant.sid}-camera`}
+            trackRef={trackRef}
+            variant={variant === "dock" ? "dock" : "filmstrip"}
+          />
+        ))}
+      </div>
+    </>
+  );
 }
 
 export function ParticipantGrid({ className }: { className?: string }) {
-  const participants = useParticipants();
+  const { isScreenSharing, screenExpanded } = useClassroomLayout();
+
   const cameraTracks = useTracks(
     [{ source: Track.Source.Camera, withPlaceholder: true }],
     { onlySubscribed: false }
   );
-  const screenTracks = useTracks(
-    [{ source: Track.Source.ScreenShare, withPlaceholder: false }],
-    { onlySubscribed: true }
+
+  const sortedCameras = useMemo(
+    () => sortCameraTracks(cameraTracks),
+    [cameraTracks]
   );
 
-  const hasScreenShare = screenTracks.some((t) => t.publication?.track);
+  const count = sortedCameras.length;
 
-  return (
-    <div className={cn("flex flex-1 flex-col gap-3 p-3 md:p-4", className)}>
-      {hasScreenShare && (
-        <div className="relative aspect-video max-h-[45vh] overflow-hidden rounded-2xl border border-border bg-muted">
-          {screenTracks.map((trackRef) =>
-            trackRef.publication ? (
-              <ParticipantTile
-                key={trackRef.participant.sid + "-screen"}
-                trackRef={trackRef}
-                className="h-full w-full [&_video]:object-contain"
-              />
-            ) : null
-          )}
-          <Badge className="absolute left-3 top-3 bg-black/60 text-white">
-            Screen share
-          </Badge>
-        </div>
-      )}
-
+  if (isScreenSharing) {
+    return (
       <div
         className={cn(
-          "grid flex-1 gap-3",
-          participants.length <= 1
-            ? "grid-cols-1"
-            : "grid-cols-1 md:grid-cols-2"
+          "flex min-h-0 flex-1 gap-2 overflow-hidden p-2 sm:gap-3 sm:p-3 md:p-4",
+          screenExpanded ? "flex-row" : "flex-col",
+          className
         )}
       >
-        {cameraTracks.map((trackRef) => {
-          const role = parseRole(trackRef.participant.metadata);
-          return (
-            <div
-              key={trackRef.participant.sid}
-              className="relative aspect-video overflow-hidden rounded-2xl border border-border bg-muted shadow-sm"
-            >
-              <ParticipantTile
-                trackRef={trackRef}
-                className="h-full w-full [&_video]:object-cover"
-              />
-              <div className="absolute bottom-3 left-3 flex items-center gap-2 rounded-lg bg-black/55 px-3 py-1.5 text-sm text-white backdrop-blur-sm">
-                <span className="font-medium">
-                  {trackRef.participant.name || trackRef.participant.identity}
-                </span>
-                {role && (
-                  <Badge
-                    variant="secondary"
-                    className="text-[10px] capitalize text-white/90"
-                  >
-                    {role}
-                  </Badge>
-                )}
-              </div>
-            </div>
-          );
-        })}
+        <ScreenShareStage
+          className={cn(screenExpanded && "min-w-0 flex-1")}
+        />
+
+        {sortedCameras.length > 0 && (
+          <aside
+            className={cn(
+              "shrink-0 rounded-xl border border-border/60 bg-slate-900/50 backdrop-blur-sm",
+              screenExpanded
+                ? "flex w-[5.5rem] min-w-[5.5rem] flex-col p-1.5 sm:w-28 sm:min-w-[7rem] sm:p-2 lg:w-32"
+                : "p-2 sm:p-2.5"
+            )}
+          >
+            <CameraStrip
+              tracks={sortedCameras}
+              variant={screenExpanded ? "dock" : "filmstrip"}
+              label="Cameras"
+            />
+          </aside>
+        )}
+      </div>
+    );
+  }
+
+  return (
+    <div
+      className={cn(
+        "flex min-h-0 flex-1 flex-col gap-2 overflow-hidden p-2 sm:gap-3 sm:p-3 md:p-4",
+        className
+      )}
+    >
+      <div
+        className={cn(
+          "mx-auto grid w-full max-w-6xl flex-1 gap-3 overflow-y-auto",
+          count <= 1 && "max-w-3xl",
+          count === 2 && "grid-cols-1 sm:grid-cols-2",
+          count >= 3 && "grid-cols-1 sm:grid-cols-2"
+        )}
+      >
+        {sortedCameras.map((trackRef) => (
+          <ParticipantVideoTile
+            key={`${trackRef.participant.sid}-camera`}
+            trackRef={trackRef}
+            variant="grid"
+          />
+        ))}
       </div>
     </div>
   );
