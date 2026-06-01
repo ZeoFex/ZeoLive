@@ -34,11 +34,11 @@ export async function listApprovedTutors(): Promise<Tutor[]> {
       avatar: user.image ?? "",
       subject: subjects[0]!,
       subjects,
-      rating: 5,
-      reviewCount: 0,
+      rating: profile.rating ?? 5,
+      reviewCount: profile.reviewCount ?? 0,
       hourlyRate: profile.hourlyRate ?? 0,
       available: true,
-      bio: profile.bio ?? "Verified ZoeLive tutor.",
+      bio: profile.bio ?? "Verified Zeolive tutor.",
       experience: profile.experience
         ? parseInt(profile.experience, 10) || 0
         : 0,

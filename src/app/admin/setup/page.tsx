@@ -64,7 +64,7 @@ export default function AdminSetupPage() {
   return (
     <AuthLayout
       title="Create super admin account"
-      subtitle="Set up the first ZoeLive super administrator. This account manages sub-admins and all platform users."
+      subtitle="Set up the first Zeolive super administrator. This account manages sub-admins and all platform users."
       headline="Manage Your Platform With Confidence"
       highlightWord="With Confidence"
     >

@@ -1,39 +1,24 @@
 import { LandingImage } from "@/components/shared/landing-image";
 import { SectionHeading } from "@/components/landing/section-heading";
-import { siteImages } from "@/lib/site-images";
+import type { LandingCms } from "@/lib/cms-types";
 
-const steps = [
-  {
-    step: "1",
-    title: "Choose a tutor",
-    description: "Filter by subject, rate, and open time slots.",
-    image: siteImages.steps.browse,
-  },
-  {
-    step: "2",
-    title: "Book a time",
-    description: "Confirm the session and pay through ZoeLive.",
-    image: siteImages.steps.book,
-  },
-  {
-    step: "3",
-    title: "Join the classroom",
-    description: "Both sides use the same link at the scheduled time.",
-    image: siteImages.steps.join,
-  },
-];
-
-export function HowItWorks() {
+export function HowItWorks({ content }: { content: LandingCms["howItWorks"] }) {
   return (
-    <section id="how-it-works" className="border-y bg-muted/40 py-16 px-4 sm:px-6 lg:px-8 lg:py-20">
+    <section
+      id="how-it-works"
+      className="border-y bg-muted/40 px-4 py-16 sm:px-6 lg:px-8 lg:py-20"
+    >
       <div className="mx-auto max-w-6xl">
-        <SectionHeading title="How it works" />
+        <SectionHeading
+          title={content.heading.title}
+          description={content.heading.description}
+        />
         <ol className="mt-10 grid gap-10 md:grid-cols-3">
-          {steps.map((item) => (
+          {content.steps.map((item) => (
             <li key={item.step}>
               <LandingImage
-                src={item.image.src}
-                alt={item.image.alt}
+                src={item.imageSrc}
+                alt={item.imageAlt}
                 className="aspect-[3/2] rounded-lg border"
                 sizes="(max-width: 768px) 100vw, 30vw"
               />

@@ -20,7 +20,7 @@ export function AuthBrandPanel({
         <Link href="/" className="inline-flex w-fit">
           <Image
             src="/images/zoelive-logo.png"
-            alt="ZoeLive"
+            alt="Zeolive"
             width={160}
             height={64}
             className="h-12 w-auto object-contain"

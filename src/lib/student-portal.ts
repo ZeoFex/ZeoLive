@@ -98,7 +98,7 @@ export async function getStudentNotifications(
     items.push({
       id: "welcome",
       type: "welcome",
-      title: "Welcome to ZoeLive",
+      title: "Welcome to Zeolive",
       message: "Browse tutors and book your first live session when you're ready.",
       href: routes.student.book,
       createdAt: profile.createdAt.toISOString(),

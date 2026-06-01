@@ -66,7 +66,7 @@ export function TutorOnboardingGuard({ children }: { children: React.ReactNode }
     return (
       <TutorBlockedScreen
         title="Application not approved"
-        description="Your tutor application was not approved. Contact ZoeLive support if you believe this was a mistake."
+        description="Your tutor application was not approved. Contact Zeolive support if you believe this was a mistake."
       />
     );
   }

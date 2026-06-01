@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useState } from "react";
 import { ThemeToggle } from "@/components/shared/theme-toggle";
 import { Button } from "@/components/ui/button";
+import { BRAND_NAME } from "@/lib/brand";
 import { cn } from "@/lib/utils";
 
 const navLinks = [
@@ -22,7 +23,7 @@ export function Navbar() {
     <header className="sticky top-0 z-50 border-b bg-background">
       <div className="mx-auto flex h-14 max-w-6xl items-center justify-between px-4 sm:px-6 lg:px-8">
         <Link href="/" className="text-base font-semibold tracking-tight">
-          ZoeLive
+          {BRAND_NAME}
         </Link>
 
         <nav className="hidden items-center gap-6 md:flex">

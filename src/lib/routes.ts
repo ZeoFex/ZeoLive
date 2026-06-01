@@ -34,6 +34,7 @@ export const routes = {
   admin: {
     dashboard: "/admin/dashboard",
     verification: "/admin/verification",
+    conversations: "/admin/conversations",
     root: "/admin",
   },
 } as const;

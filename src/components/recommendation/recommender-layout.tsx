@@ -17,7 +17,7 @@ export function RecommenderLayout({
       <header className="border-b bg-background">
         <div className="mx-auto flex h-14 max-w-3xl items-center justify-between px-4">
           <Link href="/" className="font-semibold">
-            ZoeLive
+            Zeolive
           </Link>
           <span className="text-xs text-muted-foreground">Faculty recommendation</span>
           <ThemeToggle />

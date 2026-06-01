@@ -1,9 +1,10 @@
 import type { AdminTier, Role } from "@/generated/prisma";
 import { routes } from "@/lib/routes";
 
-/** Admin routes sub-admins may access (tutor review only). */
+/** Admin routes sub-admins may access (tutor review + conversation evidence). */
 export const SUBADMIN_ADMIN_PATHS = [
   routes.admin.verification,
+  routes.admin.conversations,
 ] as const;
 
 export function isSubAdminPath(pathname: string) {

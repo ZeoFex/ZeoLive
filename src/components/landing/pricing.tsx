@@ -3,19 +3,19 @@ import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { SectionHeading } from "@/components/landing/section-heading";
-import { pricingPlans } from "@/lib/mock-data";
+import type { LandingCms } from "@/lib/cms-types";
 import { cn, formatCurrency } from "@/lib/utils";
 
-export function Pricing() {
+export function Pricing({ content }: { content: LandingCms["pricing"] }) {
   return (
-    <section id="pricing" className="py-16 px-4 sm:px-6 lg:px-8 lg:py-20">
+    <section id="pricing" className="px-4 py-16 sm:px-6 lg:px-8 lg:py-20">
       <div className="mx-auto max-w-6xl">
         <SectionHeading
-          title="Plans"
-          description="Students can start free and upgrade when they need recordings and unlimited bookings."
+          title={content.heading.title}
+          description={content.heading.description}
         />
         <div className="mt-10 grid gap-6 lg:grid-cols-3">
-          {pricingPlans.map((plan) => (
+          {content.plans.map((plan) => (
             <Card
               key={plan.id}
               className={cn(
@@ -46,7 +46,10 @@ export function Pricing() {
                 <ul className="space-y-2.5">
                   {plan.features.map((f) => (
                     <li key={f} className="flex gap-2 text-sm text-muted-foreground">
-                      <Check className="mt-0.5 h-4 w-4 shrink-0 text-foreground" strokeWidth={1.75} />
+                      <Check
+                        className="mt-0.5 h-4 w-4 shrink-0 text-foreground"
+                        strokeWidth={1.75}
+                      />
                       {f}
                     </li>
                   ))}
@@ -59,9 +62,7 @@ export function Pricing() {
                   asChild
                 >
                   <Link
-                    href={
-                      plan.id === "tutor" ? "/signup/tutor" : "/signup/student"
-                    }
+                    href={plan.id === "tutor" ? "/signup/tutor" : "/signup/student"}
                   >
                     {plan.cta}
                   </Link>

@@ -182,7 +182,7 @@ export const pricingPlans: PricingPlan[] = [
     name: "Tutor",
     price: 29,
     period: "month",
-    description: "For tutors billing students through ZoeLive",
+    description: "For tutors billing students through Zeolive",
     features: [
       "Unlimited bookings",
       "Payout history",
@@ -206,7 +206,7 @@ export const faqs: FAQ[] = [
     id: "2",
     question: "Are all tutors verified?",
     answer:
-      "Yes. Every tutor on ZoeLive undergoes identity verification and credential review. We verify teaching certificates and conduct background checks before approval.",
+      "Yes. Every tutor on Zeolive undergoes identity verification and credential review. We verify teaching certificates and conduct background checks before approval.",
   },
   {
     id: "3",

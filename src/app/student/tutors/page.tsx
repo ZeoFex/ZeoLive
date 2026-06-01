@@ -35,7 +35,7 @@ function StudentTutorsContent() {
         description={
           q
             ? `Showing results for “${searchParams.get("q")}”`
-            : "Find verified tutors who are approved to teach on ZoeLive."
+            : "Find verified tutors who are approved to teach on Zeolive."
         }
       />
 

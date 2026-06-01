@@ -104,7 +104,7 @@ export async function getTutorNotifications(tutorUserId: string) {
       message:
         profile.verificationStatus === "AWAITING_RECOMMENDATION"
           ? "We're waiting for your faculty recommender to submit their letter."
-          : "Your documents are being reviewed by the ZoeLive admin team.",
+          : "Your documents are being reviewed by the Zeolive admin team.",
       href: routes.tutor.onboarding,
       createdAt: profile.updatedAt.toISOString(),
     });

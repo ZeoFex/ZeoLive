@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { BRAND_EMAIL, BRAND_NAME } from "@/lib/brand";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 
@@ -27,14 +28,14 @@ export function Footer() {
         <div className="grid gap-10 lg:grid-cols-5">
           <div className="lg:col-span-2">
             <Link href="/" className="text-base font-semibold">
-              ZoeLive
+              {BRAND_NAME}
             </Link>
             <p className="mt-3 max-w-sm text-sm leading-relaxed text-muted-foreground">
               Scheduling, classrooms, and payouts for tutors working with
               students online.
             </p>
             <p className="mt-6 text-sm text-muted-foreground">
-              contact@zoelive.com
+              {BRAND_EMAIL}
             </p>
           </div>
 
@@ -74,7 +75,7 @@ export function Footer() {
           className="mt-12 border-t pt-8 text-center text-sm text-muted-foreground"
           suppressHydrationWarning
         >
-          © {new Date().getFullYear()} ZoeLive
+          © {new Date().getFullYear()} {BRAND_NAME}
         </p>
       </div>
     </footer>

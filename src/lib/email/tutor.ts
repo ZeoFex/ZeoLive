@@ -10,7 +10,7 @@ export function buildTutorAccountEmail(params: {
 
   const body = `Hello ${params.tutorName},
 
-Thank you for registering on ZoeLive as a tutor.
+Thank you for registering on Zeolive as a tutor.
 
 Your account has been created. Please log in using the link below to complete verification and upload your documents:
 
@@ -19,10 +19,10 @@ ${loginPage}
 If you did not create this account, you can ignore this email.
 
 Regards,
-ZoeLive Admin`;
+Zeolive Admin`;
 
   return {
-    subject: "ZoeLive — Complete your tutor account verification",
+    subject: "Zeolive — Complete your tutor account verification",
     body,
   };
 }
@@ -49,26 +49,26 @@ export function buildTutorDecisionEmail(params: {
   if (params.approved) {
     const body = `Hello ${params.tutorName},
 
-Your tutor application on ZoeLive has been approved. You can now sign in and start teaching:
+Your tutor application on Zeolive has been approved. You can now sign in and start teaching:
 
 ${loginPage}
 
 Regards,
-ZoeLive Admin`;
+Zeolive Admin`;
 
-    return { subject: "ZoeLive — Your tutor application was approved", body };
+    return { subject: "Zeolive — Your tutor application was approved", body };
   }
 
   const body = `Hello ${params.tutorName},
 
-After reviewing your documents, we are unable to approve your tutor application on ZoeLive at this time.
+After reviewing your documents, we are unable to approve your tutor application on Zeolive at this time.
 
 If you believe this was a mistake, contact support or re-apply with updated documents.
 
 Regards,
-ZoeLive Admin`;
+Zeolive Admin`;
 
-  return { subject: "ZoeLive — Tutor application update", body };
+  return { subject: "Zeolive — Tutor application update", body };
 }
 
 export async function sendTutorDecisionEmail(params: {
@@ -101,7 +101,7 @@ export function buildSuperadminRecommendationEmail(params: {
 
   const body = `Hello,
 
-A sub-admin has recommended a tutor for your final approval on ZoeLive.
+A sub-admin has recommended a tutor for your final approval on Zeolive.
 
 Tutor: ${params.tutorName} (${params.tutorEmail})
 Reviewed by: ${params.reviewerName}
@@ -114,10 +114,10 @@ Review and give final approval:
 ${reviewPage}
 
 Regards,
-ZoeLive`;
+Zeolive`;
 
   return {
-    subject: `ZoeLive — Tutor ready for final approval: ${params.tutorName}`,
+    subject: `Zeolive — Tutor ready for final approval: ${params.tutorName}`,
     body,
   };
 }

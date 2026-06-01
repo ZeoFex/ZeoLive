@@ -1,5 +1,6 @@
 import { LandingImage } from "@/components/shared/landing-image";
 import { SectionHeading } from "@/components/landing/section-heading";
+import type { CmsShowcase } from "@/lib/cms-types";
 import { siteImages } from "@/lib/site-images";
 
 const panels = [
@@ -20,14 +21,11 @@ const panels = [
   },
 ];
 
-export function Showcase() {
+export function Showcase({ heading }: { heading: CmsShowcase }) {
   return (
-    <section className="border-b bg-muted/30 py-16 px-4 sm:px-6 lg:px-8 lg:py-20">
+    <section className="border-b bg-muted/30 px-4 py-16 sm:px-6 lg:px-8 lg:py-20">
       <div className="mx-auto max-w-6xl">
-        <SectionHeading
-          title="Built for recurring lessons"
-          description="A typical week on ZoeLive: live sessions, shared materials, and a clear calendar."
-        />
+        <SectionHeading title={heading.title} description={heading.description} />
         <div className="mt-10 grid gap-5 md:grid-cols-3">
           {panels.map((panel) => (
             <figure

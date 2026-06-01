@@ -54,7 +54,7 @@ export function TutorSidebar({
       <div className="tutor-shell flex h-14 items-center justify-between px-4 lg:hidden">
         <Image
           src="/images/zoelive-logo.png"
-          alt="ZoeLive"
+          alt="Zeolive"
           width={120}
           height={40}
           className="h-8 w-auto object-contain"
@@ -82,7 +82,7 @@ export function TutorSidebar({
             <div className="tutor-logo-badge flex h-9 w-9 shrink-0 items-center justify-center rounded-xl">
               <span className="text-base font-bold text-white">Z</span>
             </div>
-            <span className="text-lg font-bold tracking-tight text-slate-900">ZoeLive</span>
+            <span className="text-lg font-bold tracking-tight text-slate-900">Zeolive</span>
           </Link>
           <Button
             variant="ghost"

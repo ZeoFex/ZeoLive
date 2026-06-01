@@ -26,7 +26,7 @@ interface DashboardShellProps {
 
 export function DashboardShell({
   role,
-  title = "ZoeLive",
+  title = "Zeolive",
   roleLabel,
   navItems,
   children,

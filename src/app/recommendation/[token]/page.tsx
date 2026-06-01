@@ -80,7 +80,7 @@ export default function RecommendationSubmitPage() {
       if (!res.ok) {
         throw new Error(json.error ?? "Could not submit");
       }
-      toast.success("Thank you — your recommendation has been sent to ZoeLive");
+      toast.success("Thank you — your recommendation has been sent to Zeolive");
       const refresh = await fetch(`/api/recommendation/${token}`).then((r) => r.json());
       setMeta(refresh);
     } catch (e) {
@@ -105,10 +105,10 @@ export default function RecommendationSubmitPage() {
         subtitle="This recommendation link is not valid or has expired"
       >
         <p className="text-sm text-muted-foreground">
-          Contact ZoeLive support if you need a new link.
+          Contact Zeolive support if you need a new link.
         </p>
         <Button variant="outline" className="mt-4" asChild>
-          <Link href="/">Return to ZoeLive</Link>
+          <Link href="/">Return to Zeolive</Link>
         </Button>
       </RecommenderLayout>
     );
@@ -223,7 +223,7 @@ export default function RecommendationSubmitPage() {
               className="mt-1.5"
               value={letterText}
               onChange={(e) => setLetterText(e.target.value)}
-              placeholder="Describe how you know the student, their academic performance, and why you recommend them to tutor on ZoeLive…"
+              placeholder="Describe how you know the student, their academic performance, and why you recommend them to tutor on Zeolive…"
             />
             <p className="mt-1 text-xs text-muted-foreground">
               Minimum 50 characters. You may also switch to upload a signed PDF instead.
@@ -257,11 +257,11 @@ export default function RecommendationSubmitPage() {
         )}
 
         <Button className="w-full" onClick={onSubmit} disabled={submitting}>
-          {submitting ? "Sending to ZoeLive…" : "Send recommendation"}
+          {submitting ? "Sending to Zeolive…" : "Send recommendation"}
         </Button>
 
         <p className="text-center text-xs text-muted-foreground">
-          By submitting, you confirm this recommendation is accurate. ZoeLive admins
+          By submitting, you confirm this recommendation is accurate. Zeolive admins
           will review it before approving the tutor.
         </p>
       </div>

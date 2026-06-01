@@ -14,12 +14,12 @@ export function buildRecommendationEmailPreview(params: {
 
   return `Hello ${name} ${recommender.recommenderFirstName || "[First name]"},
 
-On behalf of ${tutorFullName}, ZoeLive is requesting a recommendation to verify this individual as a student of ${tutorInstitutionName} who applied to teach on ZoeLive.
+On behalf of ${tutorFullName}, Zeolive is requesting a recommendation to verify this individual as a student of ${tutorInstitutionName} who applied to teach on Zeolive.
 
 You are listed as faculty at ${recommender.recommenderSchoolName || "[School / institution]"}, ${recommender.departmentName || "[Department]"}.
 
 Click on the [link] to submit the letter of recommendation.
 ${recommender.message ? `\n${recommender.message}\n` : ""}
 Regards,
-ZoeLive Admin`;
+Zeolive Admin`;
 }

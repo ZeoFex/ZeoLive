@@ -73,6 +73,10 @@ model User {
 
   tutoringSessionsAsStudent TutoringSession[] @relation("StudentTutoringSessions")
   tutoringSessionsAsTutor   TutoringSession[] @relation("TutorTutoringSessions")
+
+  conversationsAsStudent TutorStudentConversation[] @relation("ConversationStudent")
+  conversationsAsTutor   TutorStudentConversation[] @relation("ConversationTutor")
+  sentMessages           StoredMessage[]            @relation("MessageSender")
 }
 
 enum TutoringSessionStatus {
@@ -98,9 +102,51 @@ model TutoringSession {
   createdAt   DateTime              @default(now())
   updatedAt   DateTime              @updatedAt
 
+  storedMessages StoredMessage[]
+
   @@index([studentId])
   @@index([tutorId])
   @@index([status])
+}
+
+enum MessageChannel {
+  DIRECT
+  CLASSROOM
+}
+
+model TutorStudentConversation {
+  id        String   @id @default(cuid())
+  studentId String
+  tutorId   String
+  student   User     @relation("ConversationStudent", fields: [studentId], references: [id], onDelete: Cascade)
+  tutor     User     @relation("ConversationTutor", fields: [tutorId], references: [id], onDelete: Cascade)
+  messages  StoredMessage[]
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([studentId, tutorId])
+  @@index([studentId])
+  @@index([tutorId])
+  @@index([updatedAt])
+}
+
+model StoredMessage {
+  id                String                 @id @default(cuid())
+  conversationId    String
+  conversation      TutorStudentConversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+  senderId          String
+  sender            User                   @relation("MessageSender", fields: [senderId], references: [id], onDelete: Cascade)
+  body              String                 @db.Text
+  channel           MessageChannel
+  tutoringSessionId String?
+  tutoringSession   TutoringSession?       @relation(fields: [tutoringSessionId], references: [id], onDelete: SetNull)
+  clientMessageId   String?
+  createdAt         DateTime               @default(now())
+
+  @@unique([conversationId, clientMessageId])
+  @@index([conversationId, createdAt])
+  @@index([tutoringSessionId])
+  @@index([createdAt])
 }
 
 model StudentProfile {
@@ -131,6 +177,9 @@ model TutorProfile {
   onboardingComplete Boolean                 @default(false)
   verificationStatus TutorVerificationStatus @default(PENDING)
   verified           Boolean                 @default(false)
+  rating             Float                   @default(4.8)
+  reviewCount        Int                     @default(0)
+  featuredOnHomepage Boolean                 @default(false)
   createdAt          DateTime                @default(now())
   updatedAt          DateTime                @updatedAt
 
@@ -214,4 +263,11 @@ model PasswordResetToken {
   createdAt DateTime @default(now())
 
   @@index([email])
+}
+
+/** Keyed landing / marketing content (JSON payloads). */
+model CmsEntry {
+  key       String   @id
+  value     Json
+  updatedAt DateTime @updatedAt
 }

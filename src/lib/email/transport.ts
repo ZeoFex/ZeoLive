@@ -49,7 +49,7 @@ export async function sendEmail(params: {
 
   if (!transport) {
     console.warn(
-      "[ZoeLive email] SMTP_PASS not set — logging email instead of sending:",
+      "[Zeolive email] SMTP_PASS not set — logging email instead of sending:",
       { to: params.to, subject: params.subject }
     );
     console.info(params.text);
@@ -57,7 +57,7 @@ export async function sendEmail(params: {
   }
 
   await transport.sendMail({
-    from: `ZoeLive <${from}>`,
+    from: `Zeolive <${from}>`,
     to: params.to,
     subject: params.subject,
     text: params.text,

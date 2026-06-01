@@ -28,7 +28,7 @@ export function AuthLayout({
           <Link href="/" className="inline-flex">
             <Image
               src="/images/zoelive-logo.png"
-              alt="ZoeLive"
+              alt="Zeolive"
               width={140}
               height={56}
               className="h-10 w-auto object-contain"

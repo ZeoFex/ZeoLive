@@ -2,7 +2,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Card, CardContent } from "@/components/ui/card";
 import { SectionHeading } from "@/components/landing/section-heading";
 import { testimonialPhotos } from "@/lib/site-images";
-import { testimonials } from "@/lib/mock-data";
+import type { LandingCms } from "@/lib/cms-types";
 
 function initials(name: string) {
   return name
@@ -13,13 +13,16 @@ function initials(name: string) {
     .toUpperCase();
 }
 
-export function Testimonials() {
+export function Testimonials({ content }: { content: LandingCms["testimonials"] }) {
   return (
-    <section className="border-t bg-muted/40 py-16 px-4 sm:px-6 lg:px-8 lg:py-20">
+    <section className="border-t bg-muted/40 px-4 py-16 sm:px-6 lg:px-8 lg:py-20">
       <div className="mx-auto max-w-6xl">
-        <SectionHeading title="Notes from students and parents" />
+        <SectionHeading
+          title={content.heading.title}
+          description={content.heading.description}
+        />
         <div className="mt-10 grid gap-5 md:grid-cols-3">
-          {testimonials.map((t) => {
+          {content.items.map((t) => {
             const photo = testimonialPhotos[t.id];
             return (
               <Card key={t.id} className="shadow-none">

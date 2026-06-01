@@ -20,7 +20,7 @@ export function buildRecommendationEmail(params: {
 
   const text = `Hello ${salutation},
 
-On behalf of ${params.tutorFullName}, ZoeLive is requesting a recommendation to verify this individual as a student of ${params.tutorInstitutionName} who applied to teach on ZoeLive.
+On behalf of ${params.tutorFullName}, Zeolive is requesting a recommendation to verify this individual as a student of ${params.tutorInstitutionName} who applied to teach on Zeolive.
 
 You are listed as faculty at ${params.recommenderSchoolName}, ${params.departmentName}.
 
@@ -28,19 +28,19 @@ Click the link below to submit your letter of recommendation:
 ${params.submitUrl}
 ${params.message ? `\n${params.message}\n` : ""}
 Regards,
-ZoeLive Admin`;
+Zeolive Admin`;
 
   const html = `
     <p>Hello ${salutation},</p>
-    <p>On behalf of <strong>${params.tutorFullName}</strong>, ZoeLive is requesting a recommendation to verify this individual as a student of <strong>${params.tutorInstitutionName}</strong> who applied to teach on ZoeLive.</p>
+    <p>On behalf of <strong>${params.tutorFullName}</strong>, Zeolive is requesting a recommendation to verify this individual as a student of <strong>${params.tutorInstitutionName}</strong> who applied to teach on Zeolive.</p>
     <p>You are listed as faculty at <strong>${params.recommenderSchoolName}</strong>, ${params.departmentName}.</p>
     <p><a href="${params.submitUrl}">Submit your letter of recommendation</a></p>
     ${params.message ? `<p>${params.message.replace(/\n/g, "<br>")}</p>` : ""}
-    <p>Regards,<br>ZoeLive Admin</p>
+    <p>Regards,<br>Zeolive Admin</p>
   `.trim();
 
   return {
-    subject: `ZoeLive — Recommendation request for ${params.tutorFullName}`,
+    subject: `Zeolive — Recommendation request for ${params.tutorFullName}`,
     text,
     html,
   };

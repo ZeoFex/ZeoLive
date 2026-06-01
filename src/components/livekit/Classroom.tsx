@@ -194,6 +194,7 @@ function ClassroomRoomInner({
             {showParticipants && <ParticipantsSidebar open={showParticipants} />}
             {showChat && (
               <ChatPanel
+                roomId={session.roomId}
                 className={cn(
                   "min-h-[160px] flex-1",
                   isScreenSharing && "max-md:max-h-[28dvh]"

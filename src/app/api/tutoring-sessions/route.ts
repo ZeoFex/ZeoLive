@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
 import { auth } from "@/auth";
+import { getOrCreateConversation } from "@/lib/messaging";
 import { listPortalSessionsForUser } from "@/lib/portal-data";
 import { prisma } from "@/lib/prisma";
 import { randomBytes } from "crypto";
@@ -71,6 +72,8 @@ export async function POST(request: Request) {
         status: "SCHEDULED",
       },
     });
+
+    await getOrCreateConversation(session.user.id, tutor.id);
 
     return NextResponse.json({
       id: tutoringSession.id,

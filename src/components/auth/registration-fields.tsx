@@ -229,7 +229,7 @@ export function TermsCheckbox({
           onCheckedChange={(v) => onAcceptTermsChange(v === true)}
         />
         <Label htmlFor="acceptTerms" className="text-sm font-normal leading-relaxed">
-          I accept the ZoeLive Terms and Agreements *
+          I accept the Zeolive Terms and Agreements *
         </Label>
       </div>
       {error && <p className="text-sm text-destructive">{error}</p>}

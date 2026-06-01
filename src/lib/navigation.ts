@@ -31,6 +31,7 @@ export const studentNav: NavItemConfig[] = [
 export const tutorNav: NavItemConfig[] = [
   { href: "/tutor/dashboard", label: "Dashboard", icon: "layout-dashboard" },
   { href: "/tutor/students", label: "Students", icon: "users" },
+  { href: "/tutor/messages", label: "Messages", icon: "message-square" },
   { href: "/tutor/sessions", label: "Sessions", icon: "book-open" },
   { href: "/tutor/earnings", label: "Earnings", icon: "wallet" },
   { href: "/tutor/availability", label: "Availability", icon: "calendar" },
@@ -41,6 +42,7 @@ export const tutorNav: NavItemConfig[] = [
 export const adminNav: NavItemConfig[] = [
   { href: "/admin/dashboard", label: "Dashboard", icon: "layout-dashboard" },
   { href: "/admin/users", label: "Users", icon: "users" },
+  { href: "/admin/conversations", label: "Conversations", icon: "message-square" },
   { href: "/admin/verification", label: "Verification", icon: "shield" },
   { href: "/admin/payments", label: "Payments", icon: "credit-card" },
   { href: "/admin/reports", label: "Analytics", icon: "bar-chart" },
@@ -49,6 +51,7 @@ export const adminNav: NavItemConfig[] = [
 
 /** Sub-admins: tutor review only */
 export const subAdminNav: NavItemConfig[] = [
+  { href: "/admin/conversations", label: "Conversations", icon: "message-square" },
   { href: "/admin/verification", label: "Verification", icon: "shield" },
 ];
 

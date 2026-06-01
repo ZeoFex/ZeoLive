@@ -51,7 +51,7 @@ export function TutorVerificationBanner({
         <div className="space-y-1 text-sm">
           <p className="font-medium">Application not approved</p>
           <p className="text-muted-foreground">
-            Contact ZoeLive support if you believe this was a mistake. You can still browse
+            Contact Zeolive support if you believe this was a mistake. You can still browse
             your account or sign out to use a different login.
           </p>
         </div>

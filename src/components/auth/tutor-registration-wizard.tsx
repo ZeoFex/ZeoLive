@@ -406,7 +406,7 @@ export function TutorRegistrationWizard() {
       {step === "not-qualified" && (
         <div className="space-y-4 text-center">
           <p className="text-sm text-muted-foreground">
-            Based on your education level, you are not eligible to tutor on ZoeLive at
+            Based on your education level, you are not eligible to tutor on Zeolive at
             this time.
           </p>
           <Button variant="outline" onClick={() => router.push("/")}>

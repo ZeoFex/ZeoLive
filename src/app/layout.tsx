@@ -13,8 +13,10 @@ const geistMono = Geist_Mono({
   subsets: ["latin"],
 });
 
+import { BRAND_NAME } from "@/lib/brand";
+
 export const metadata: Metadata = {
-  title: "ZoeLive — Online tutoring",
+  title: `${BRAND_NAME} — Online tutoring`,
   description:
     "Schedule live lessons, manage classrooms, and handle payments for student–tutor sessions.",
 };
