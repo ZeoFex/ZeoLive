@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { ZodError } from "zod";
+import { getPlatformSettings } from "@/lib/platform-settings";
 import { prisma } from "@/lib/prisma";
 import { hashPassword } from "@/lib/password";
 import { studentRegistrationSchema } from "@/lib/validations/registration";
@@ -8,6 +9,14 @@ import type { SchoolType } from "@/generated/prisma";
 
 export async function POST(request: Request) {
   try {
+    const platform = await getPlatformSettings();
+    if (!platform.allowStudentSignup) {
+      return NextResponse.json(
+        { error: "Student registration is currently disabled." },
+        { status: 403 }
+      );
+    }
+
     const body = await request.json();
     const data = studentRegistrationSchema.parse(body);
     const email = data.email.toLowerCase();

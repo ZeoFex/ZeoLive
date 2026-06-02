@@ -1,11 +1,17 @@
 "use client";
 
-import { Loader2, MessageSquare, Send } from "lucide-react";
+import { Loader2, MessageSquare, Trash2 } from "lucide-react";
 import Link from "next/link";
+import { useSession } from "next-auth/react";
 import { useCallback, useEffect, useState } from "react";
 import { toast } from "sonner";
+import { ChatComposer } from "@/components/messaging/chat-composer";
+import { MessageThreadList } from "@/components/messaging/message-thread-list";
+import {
+  DeleteConfirmDialog,
+  type DeleteConfirmTarget,
+} from "@/components/messaging/delete-confirm-dialog";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import { cn } from "@/lib/utils";
 import type { ConversationSummary, StoredMessageDto } from "@/lib/messaging";
 
@@ -32,10 +38,15 @@ export function MessagesInbox({
   const [contacts, setContacts] = useState<Contact[]>([]);
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [messages, setMessages] = useState<StoredMessageDto[]>([]);
-  const [draft, setDraft] = useState("");
   const [loadingList, setLoadingList] = useState(true);
   const [loadingThread, setLoadingThread] = useState(false);
   const [sending, setSending] = useState(false);
+  const [deletingMessageId, setDeletingMessageId] = useState<string | null>(null);
+  const [deleteTarget, setDeleteTarget] = useState<DeleteConfirmTarget | null>(null);
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [deleteLoading, setDeleteLoading] = useState(false);
+  const { data: session } = useSession();
+  const currentUserId = session?.user?.id;
 
   const loadConversations = useCallback(async () => {
     setLoadingList(true);
@@ -113,6 +124,52 @@ export function MessagesInbox({
       : selected.student
     : null;
 
+  const openDeleteDialog = (target: DeleteConfirmTarget) => {
+    setDeleteTarget(target);
+    setDeleteDialogOpen(true);
+  };
+
+  const performDelete = async () => {
+    if (!deleteTarget) return;
+
+    setDeleteLoading(true);
+    try {
+      if (deleteTarget.type === "message") {
+        if (!selectedId) return;
+        setDeletingMessageId(deleteTarget.messageId);
+        const res = await fetch(
+          `/api/messages/conversations/${selectedId}/messages/${deleteTarget.messageId}`,
+          { method: "DELETE", credentials: "same-origin" }
+        );
+        const json = await res.json();
+        if (!res.ok) throw new Error(json.error ?? "Could not delete message");
+        setMessages((prev) => prev.filter((m) => m.id !== deleteTarget.messageId));
+        await loadConversations();
+        toast.success("Message deleted");
+      } else {
+        const res = await fetch(`/api/messages/conversations/${deleteTarget.conversationId}`, {
+          method: "DELETE",
+          credentials: "same-origin",
+        });
+        const json = await res.json();
+        if (!res.ok) throw new Error(json.error ?? "Could not delete conversation");
+        if (selectedId === deleteTarget.conversationId) {
+          setSelectedId(null);
+          setMessages([]);
+        }
+        await loadConversations();
+        toast.success("Conversation deleted");
+      }
+      setDeleteDialogOpen(false);
+      setDeleteTarget(null);
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Delete failed");
+    } finally {
+      setDeleteLoading(false);
+      setDeletingMessageId(null);
+    }
+  };
+
   const startWithContact = async (contact: Contact) => {
     const existing = conversations.find((c) =>
       role === "STUDENT" ? c.tutor.id === contact.userId : c.student.id === contact.userId
@@ -145,30 +202,30 @@ export function MessagesInbox({
     }
   };
 
-  const sendMessage = async (e: React.FormEvent) => {
-    e.preventDefault();
-    const text = draft.trim();
-    if (!text || !selectedId) return;
+  const sendMessage = useCallback(
+    async (text: string) => {
+      if (!text.trim() || !selectedId) return;
 
-    setSending(true);
-    try {
-      const res = await fetch(`/api/messages/conversations/${selectedId}`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        credentials: "same-origin",
-        body: JSON.stringify({ body: text }),
-      });
-      const json = await res.json();
-      if (!res.ok) throw new Error(json.error ?? "Could not send");
-      setDraft("");
-      await loadThread(selectedId);
-      await loadConversations();
-    } catch (err) {
-      toast.error(err instanceof Error ? err.message : "Could not send message");
-    } finally {
-      setSending(false);
-    }
-  };
+      setSending(true);
+      try {
+        const res = await fetch(`/api/messages/conversations/${selectedId}`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          credentials: "same-origin",
+          body: JSON.stringify({ body: text.trim() }),
+        });
+        const json = await res.json();
+        if (!res.ok) throw new Error(json.error ?? "Could not send");
+        await loadThread(selectedId);
+        await loadConversations();
+      } catch (err) {
+        toast.error(err instanceof Error ? err.message : "Could not send message");
+      } finally {
+        setSending(false);
+      }
+    },
+    [selectedId, loadThread, loadConversations]
+  );
 
   return (
     <div
@@ -177,6 +234,17 @@ export function MessagesInbox({
         className
       )}
     >
+      <DeleteConfirmDialog
+        target={deleteTarget}
+        open={deleteDialogOpen}
+        onOpenChange={(open) => {
+          setDeleteDialogOpen(open);
+          if (!open && !deleteLoading) setDeleteTarget(null);
+        }}
+        onConfirm={performDelete}
+        loading={deleteLoading}
+      />
+
       <aside className="flex w-full flex-col border-b md:w-72 md:border-b-0 md:border-r">
         <div className="border-b px-3 py-2.5">
           <p className="text-sm font-semibold">Conversations</p>
@@ -196,20 +264,40 @@ export function MessagesInbox({
               {conversations.map((c) => {
                 const p = role === "STUDENT" ? c.tutor : c.student;
                 return (
-                  <li key={c.id}>
+                  <li key={c.id} className="flex items-stretch gap-0.5">
                     <button
                       type="button"
                       onClick={() => setSelectedId(c.id)}
                       className={cn(
-                        "w-full rounded-lg px-3 py-2 text-left text-sm transition-colors hover:bg-muted",
+                        "min-w-0 flex-1 rounded-lg px-3 py-2 text-left text-sm transition-colors hover:bg-muted",
                         selectedId === c.id && "bg-muted font-medium"
                       )}
                     >
                       <p className="truncate font-medium">{p.name}</p>
                       <p className="truncate text-xs text-muted-foreground">
-                        {c.lastMessage ?? "No messages"}
+                        {p.email || c.lastMessage || "No messages"}
                       </p>
                     </button>
+                    <Button
+                      type="button"
+                      size="icon"
+                      variant="ghost"
+                      className="h-auto shrink-0 self-center text-muted-foreground hover:text-destructive"
+                      title="Delete conversation"
+                      onClick={() =>
+                        openDeleteDialog({
+                          type: "conversation",
+                          conversationId: c.id,
+                          studentName: c.student.name,
+                          studentEmail: c.student.email,
+                          tutorName: c.tutor.name,
+                          tutorEmail: c.tutor.email,
+                          messageCount: c.messageCount,
+                        })
+                      }
+                    >
+                      <Trash2 className="h-4 w-4" />
+                    </Button>
                   </li>
                 );
               })}
@@ -240,7 +328,7 @@ export function MessagesInbox({
       </aside>
 
       <div className="flex min-h-[280px] flex-1 flex-col">
-        {!selectedId ? (
+        {!selectedId || !selected ? (
           <div className="flex flex-1 flex-col items-center justify-center gap-3 p-8 text-center">
             <MessageSquare className="h-10 w-10 text-muted-foreground" />
             <p className="max-w-xs text-sm text-muted-foreground">{emptyHint}</p>
@@ -252,40 +340,55 @@ export function MessagesInbox({
           </div>
         ) : (
           <>
-            <div className="border-b px-4 py-3">
-              <p className="font-semibold">{peer?.name}</p>
-              <p className="text-xs text-muted-foreground">{peer?.email}</p>
-            </div>
-            <div className="flex-1 space-y-3 overflow-y-auto p-4">
-              {loadingThread ? (
-                <div className="flex justify-center py-8">
-                  <Loader2 className="h-6 w-6 animate-spin" />
-                </div>
-              ) : messages.length === 0 ? (
-                <p className="text-center text-sm text-muted-foreground">No messages yet.</p>
-              ) : (
-                messages.map((msg) => (
-                  <div key={msg.id} className="rounded-lg bg-muted px-3 py-2">
-                    <p className="text-xs font-medium text-muted-foreground">
-                      {msg.senderName}
-                      {msg.channel === "CLASSROOM" && " · classroom"}
-                    </p>
-                    <p className="mt-0.5 text-sm">{msg.body}</p>
-                  </div>
-                ))
-              )}
-            </div>
-            <form onSubmit={sendMessage} className="flex gap-2 border-t p-3">
-              <Input
-                value={draft}
-                onChange={(e) => setDraft(e.target.value)}
-                placeholder="Type a message…"
-                disabled={sending}
-              />
-              <Button type="submit" size="icon" disabled={!draft.trim() || sending}>
-                <Send className="h-4 w-4" />
+            <div className="flex items-start justify-between gap-2 border-b px-4 py-3">
+              <div className="min-w-0">
+                <p className="font-semibold">{peer?.name}</p>
+                <p className="truncate text-xs text-muted-foreground">{peer?.email}</p>
+              </div>
+              <Button
+                type="button"
+                size="sm"
+                variant="outline"
+                className="shrink-0 border-red-200 text-red-700 hover:bg-red-50"
+                onClick={() =>
+                  openDeleteDialog({
+                    type: "conversation",
+                    conversationId: selected.id,
+                    studentName: selected.student.name,
+                    studentEmail: selected.student.email,
+                    tutorName: selected.tutor.name,
+                    tutorEmail: selected.tutor.email,
+                    messageCount: selected.messageCount,
+                  })
+                }
+              >
+                <Trash2 className="mr-1.5 h-4 w-4" />
+                Delete chat
               </Button>
-            </form>
+            </div>
+            <div className="flex min-h-0 flex-1 flex-col">
+              <div className="flex-1 space-y-3 overflow-y-auto p-4">
+                <MessageThreadList
+                  messages={messages}
+                  currentUserId={currentUserId}
+                  loading={loadingThread}
+                  deletingMessageId={deletingMessageId}
+                  onRequestDelete={(msg) =>
+                    openDeleteDialog({
+                      type: "message",
+                      messageId: msg.id,
+                      senderName: msg.senderName,
+                      bodyPreview: msg.body,
+                    })
+                  }
+                />
+              </div>
+              <ChatComposer
+                onSend={sendMessage}
+                disabled={sending}
+                placeholder="Type a message…"
+              />
+            </div>
           </>
         )}
       </div>

@@ -1,5 +1,6 @@
 import { routes } from "@/lib/routes";
 import { listApprovedTutors, listPortalSessionsForUser } from "@/lib/portal-data";
+import { listStudentMaterials } from "@/lib/study-materials";
 import { prisma } from "@/lib/prisma";
 
 export interface StudentSearchResult {
@@ -74,6 +75,18 @@ export async function getStudentNotifications(
   studentId: string
 ): Promise<StudentNotificationItem[]> {
   const items: StudentNotificationItem[] = [];
+
+  const sharedMaterials = await listStudentMaterials(studentId);
+  for (const item of sharedMaterials.filter((m) => m.isNew).slice(0, 5)) {
+    items.push({
+      id: `material-${item.shareId}`,
+      type: "study_material",
+      title: "New study material",
+      message: `${item.tutor.name} shared “${item.title}”`,
+      href: routes.student.materials,
+      createdAt: item.sharedAt,
+    });
+  }
 
   const sessions = await listPortalSessionsForUser(studentId, "STUDENT");
   for (const session of sessions.filter(

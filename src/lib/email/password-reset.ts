@@ -30,8 +30,9 @@ Zeolive`;
 export async function sendPasswordResetEmail(params: {
   to: string;
   rawToken: string;
+  baseUrl?: string;
 }) {
-  const resetUrl = resetPasswordUrl(params.rawToken);
+  const resetUrl = resetPasswordUrl(params.rawToken, params.baseUrl);
   const email = buildPasswordResetEmail({ resetUrl });
   return sendEmail({
     to: params.to,

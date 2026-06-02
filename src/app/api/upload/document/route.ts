@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { auth } from "@/auth";
+import { getPlatformSettings } from "@/lib/platform-settings";
 import { saveUploadedFile } from "@/lib/upload-document";
 
 export async function POST(request: Request) {
@@ -18,7 +19,8 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: "No file provided" }, { status: 400 });
     }
 
-    const url = await saveUploadedFile(file, folder);
+    const platform = await getPlatformSettings();
+    const url = await saveUploadedFile(file, folder, platform.maxUploadSizeMb);
     return NextResponse.json({ url });
   } catch (error) {
     console.error("Document upload error:", error);

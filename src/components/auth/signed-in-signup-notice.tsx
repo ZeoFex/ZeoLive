@@ -1,7 +1,8 @@
 "use client";
 
 import Link from "next/link";
-import { signOut, useSession } from "next-auth/react";
+import { useSession } from "next-auth/react";
+import { signOutToAppPath } from "@/lib/auth-client";
 import { Button } from "@/components/ui/button";
 import { routes } from "@/lib/routes";
 
@@ -53,10 +54,9 @@ export function SignedInSignupNotice({
         size="sm"
         className="mt-3"
         onClick={() =>
-          signOut({
-            callbackUrl:
-              targetRole === "tutor" ? routes.signupTutor : routes.signupStudent,
-          })
+          void signOutToAppPath(
+            targetRole === "tutor" ? routes.signupTutor : routes.signupStudent
+          )
         }
       >
         Sign out and start fresh

@@ -17,6 +17,7 @@ export const routes = {
     tutors: "/student/tutors",
     payments: "/student/payments",
     messages: "/student/messages",
+    materials: "/student/materials",
     settings: "/student/settings",
     root: "/student",
   },
@@ -35,6 +36,7 @@ export const routes = {
     dashboard: "/admin/dashboard",
     verification: "/admin/verification",
     conversations: "/admin/conversations",
+    settings: "/admin/settings",
     root: "/admin",
   },
 } as const;

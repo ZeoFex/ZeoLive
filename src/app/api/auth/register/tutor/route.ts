@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { ZodError } from "zod";
+import { getPlatformSettings } from "@/lib/platform-settings";
 import { prisma } from "@/lib/prisma";
 import { hashPassword } from "@/lib/password";
 import { tutorRegistrationSchema } from "@/lib/validations/registration";
@@ -8,6 +9,14 @@ import { buildDisplayName, parseDateOfBirth } from "@/lib/user-name";
 
 export async function POST(request: Request) {
   try {
+    const platform = await getPlatformSettings();
+    if (!platform.allowTutorSignup) {
+      return NextResponse.json(
+        { error: "Tutor applications are currently disabled." },
+        { status: 403 }
+      );
+    }
+
     const body = await request.json();
     const data = tutorRegistrationSchema.parse(body);
     const email = data.email.toLowerCase();

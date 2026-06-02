@@ -4,6 +4,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { signIn, signOut, useSession } from "next-auth/react";
+import { signOutToAppPath } from "@/lib/auth-client";
 import { useEffect, useState } from "react";
 import { useForm } from "react-hook-form";
 import { toast } from "sonner";
@@ -134,9 +135,9 @@ export function LoginForm({ portal = "default" }: { portal?: LoginPortal }) {
             size="sm"
             className="mt-3"
             onClick={() =>
-              signOut({
-                callbackUrl: isAdminPortal ? routes.adminLogin : routes.login,
-              })
+              void signOutToAppPath(
+                isAdminPortal ? routes.adminLogin : routes.login
+              )
             }
           >
             Sign out

@@ -1,7 +1,8 @@
 "use client";
 
 import { Bell, LogOut } from "lucide-react";
-import { signOut, useSession } from "next-auth/react";
+import { useSession } from "next-auth/react";
+import { signOutToAppPath } from "@/lib/auth-client";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 
@@ -38,7 +39,7 @@ export function DashboardHeader({
           variant="ghost"
           size="icon"
           aria-label="Sign out"
-          onClick={() => signOut({ callbackUrl: "/login" })}
+          onClick={() => void signOutToAppPath("/login")}
         >
           <LogOut className="h-5 w-5" />
         </Button>

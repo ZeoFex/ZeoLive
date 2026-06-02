@@ -3,6 +3,7 @@ import { z } from "zod";
 import { auth } from "@/auth";
 import { verifyClassroomAccess } from "@/lib/classroom-access";
 import { storeMessage } from "@/lib/messaging";
+import { getPlatformSettings } from "@/lib/platform-settings";
 import { prisma } from "@/lib/prisma";
 
 const schema = z.object({
@@ -27,6 +28,14 @@ export async function POST(request: Request) {
   }
 
   try {
+    const platform = await getPlatformSettings();
+    if (!platform.classroomChatEnabled) {
+      return NextResponse.json(
+        { error: "Classroom chat is disabled by the platform administrator." },
+        { status: 403 }
+      );
+    }
+
     const data = schema.parse(await request.json());
 
     const access = await verifyClassroomAccess(

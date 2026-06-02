@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
+import { getAppBaseUrlFromRequest } from "@/lib/app-url";
 import { sendPasswordResetEmail } from "@/lib/email/password-reset";
 import { createPasswordResetToken } from "@/lib/password-reset";
 import { prisma } from "@/lib/prisma";
@@ -34,7 +35,11 @@ export async function POST(request: Request) {
       });
 
       try {
-        await sendPasswordResetEmail({ to: normalized, rawToken });
+        await sendPasswordResetEmail({
+          to: normalized,
+          rawToken,
+          baseUrl: getAppBaseUrlFromRequest(request),
+        });
       } catch (mailError) {
         console.error("[forgot-password] Email send failed:", mailError);
         await prisma.verificationToken.deleteMany({
@@ -57,7 +62,7 @@ export async function POST(request: Request) {
       if (process.env.NODE_ENV === "development") {
         const { resetPasswordUrl } = await import("@/lib/app-url");
         console.info(
-          `[dev] Password reset link for ${normalized}: ${resetPasswordUrl(rawToken)}`
+          `[dev] Password reset link for ${normalized}: ${resetPasswordUrl(rawToken, getAppBaseUrlFromRequest(request))}`
         );
       }
     }

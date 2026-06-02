@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { requireAdmin } from "@/lib/admin-auth";
 import {
+  deleteConversation,
   getConversationByIdForAdmin,
   listMessagesForConversation,
 } from "@/lib/messaging";
@@ -50,4 +51,25 @@ export async function GET(
   }
 
   return NextResponse.json({ conversation, messages });
+}
+
+export async function DELETE(
+  _request: Request,
+  { params }: { params: Promise<{ conversationId: string }> }
+) {
+  const authResult = await requireAdmin();
+  if ("error" in authResult) return authResult.error;
+
+  const { conversationId } = await params;
+  const result = await deleteConversation({
+    conversationId,
+    actorId: authResult.session.user!.id!,
+    actorRole: "ADMIN",
+  });
+
+  if (!result.ok) {
+    return NextResponse.json({ error: result.error }, { status: result.status });
+  }
+
+  return NextResponse.json({ ok: true });
 }

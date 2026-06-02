@@ -77,6 +77,9 @@ model User {
   conversationsAsStudent TutorStudentConversation[] @relation("ConversationStudent")
   conversationsAsTutor   TutorStudentConversation[] @relation("ConversationTutor")
   sentMessages           StoredMessage[]            @relation("MessageSender")
+
+  studyMaterialsAsTutor    StudyMaterial[] @relation("TutorStudyMaterials")
+  materialSharesReceived   MaterialShare[] @relation("StudentMaterialShares")
 }
 
 enum TutoringSessionStatus {
@@ -263,6 +266,36 @@ model PasswordResetToken {
   createdAt DateTime @default(now())
 
   @@index([email])
+}
+
+model StudyMaterial {
+  id            String          @id @default(cuid())
+  tutorId       String
+  tutor         User            @relation("TutorStudyMaterials", fields: [tutorId], references: [id], onDelete: Cascade)
+  title         String
+  description   String?
+  fileUrl       String
+  fileName      String
+  mimeType      String?
+  fileSizeBytes Int
+  createdAt     DateTime        @default(now())
+  updatedAt     DateTime        @updatedAt
+  shares        MaterialShare[]
+
+  @@index([tutorId, createdAt])
+}
+
+model MaterialShare {
+  id         String        @id @default(cuid())
+  materialId String
+  material   StudyMaterial @relation(fields: [materialId], references: [id], onDelete: Cascade)
+  studentId  String
+  student    User          @relation("StudentMaterialShares", fields: [studentId], references: [id], onDelete: Cascade)
+  sharedAt   DateTime      @default(now())
+  viewedAt   DateTime?
+
+  @@unique([materialId, studentId])
+  @@index([studentId, sharedAt])
 }
 
 /** Keyed landing / marketing content (JSON payloads). */

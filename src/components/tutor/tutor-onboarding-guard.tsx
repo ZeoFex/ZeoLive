@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
-import { signOut } from "next-auth/react";
+import { signOutToAppPath } from "@/lib/auth-client";
 import { Button } from "@/components/ui/button";
 import { routes } from "@/lib/routes";
 
@@ -113,7 +113,7 @@ function TutorBlockedScreen({
         <p className="mt-2 text-sm text-slate-500">{description}</p>
         <div className="mt-6 flex flex-wrap justify-center gap-2">
           {action}
-          <Button variant="outline" className="tutor-outline-btn rounded-xl" onClick={() => signOut({ callbackUrl: routes.login })}>
+          <Button variant="outline" className="tutor-outline-btn rounded-xl" onClick={() => void signOutToAppPath(routes.login)}>
             Sign out
           </Button>
           <Button variant="ghost" asChild>

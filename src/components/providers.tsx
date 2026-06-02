@@ -4,6 +4,7 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { ThemeProvider } from "next-themes";
 import { useState } from "react";
 import { Toaster } from "sonner";
+import { MaintenanceGuard } from "@/components/providers/maintenance-guard";
 import { AuthSessionProvider } from "@/components/providers/session-provider";
 
 export function Providers({ children }: { children: React.ReactNode }) {
@@ -26,7 +27,7 @@ export function Providers({ children }: { children: React.ReactNode }) {
           disableTransitionOnChange
           enableColorScheme={false}
         >
-          {children}
+          <MaintenanceGuard>{children}</MaintenanceGuard>
           <Toaster richColors position="top-right" />
         </ThemeProvider>
       </AuthSessionProvider>

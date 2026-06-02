@@ -9,6 +9,7 @@ import {
   LayoutDashboard,
   LogOut,
   Menu,
+  Settings2,
   Shield,
   Users,
   X,
@@ -17,7 +18,7 @@ import {
 import Image from "next/image";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { signOut } from "next-auth/react";
+import { signOutToAppPath } from "@/lib/auth-client";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import type { NavIconName, NavItemConfig } from "@/lib/navigation";
@@ -31,7 +32,7 @@ const navIcons: Record<NavIconName, LucideIcon> = {
   users: Users,
   "credit-card": CreditCard,
   "message-square": HelpCircle,
-  settings: HelpCircle,
+  settings: Settings2,
   wallet: CreditCard,
   "file-text": ClipboardList,
   shield: Shield,
@@ -137,7 +138,7 @@ export function AdminSidebar({ items, roleLabel, pendingCount = 0 }: AdminSideba
           </Link>
           <button
             type="button"
-            onClick={() => signOut({ callbackUrl: routes.adminLogin })}
+            onClick={() => void signOutToAppPath(routes.adminLogin)}
             className="flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium text-red-500 transition-colors hover:bg-red-50"
           >
             <LogOut className="h-[18px] w-[18px]" strokeWidth={2} />

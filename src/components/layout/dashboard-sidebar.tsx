@@ -19,7 +19,7 @@ import {
 } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { signOut } from "next-auth/react";
+import { signOutToAppPath } from "@/lib/auth-client";
 import { LogOut } from "lucide-react";
 import { ThemeToggle } from "@/components/shared/theme-toggle";
 import { Button } from "@/components/ui/button";
@@ -131,7 +131,7 @@ export function DashboardSidebar({
             variant="ghost"
             size="sm"
             className="w-full justify-start gap-2 text-muted-foreground"
-            onClick={() => signOut({ callbackUrl: "/login" })}
+            onClick={() => void signOutToAppPath("/login")}
           >
             <LogOut className="h-4 w-4" />
             Sign out

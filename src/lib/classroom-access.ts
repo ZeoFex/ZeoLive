@@ -1,13 +1,8 @@
 import type { Role, TutoringSession, TutoringSessionStatus, User } from "@/generated/prisma";
+import { getPlatformSettings } from "@/lib/platform-settings";
 import { prisma } from "@/lib/prisma";
 
 export type ClassroomParticipantRole = "student" | "tutor";
-
-/** How early students may enter before `scheduledAt`. */
-const STUDENT_EARLY_JOIN_MS = 60 * 60 * 1000; // 1 hour
-
-/** How long after `scheduledAt` a SCHEDULED session may still be joined. */
-const JOIN_WINDOW_AFTER_START_MS = 3 * 60 * 60 * 1000; // 3 hours
 
 export interface ClassroomAccessResult {
   allowed: boolean;
@@ -56,8 +51,12 @@ function formatScheduledForMessage(date: Date) {
  */
 function checkJoinWindow(
   session: TutoringSession,
-  participantRole: ClassroomParticipantRole
+  participantRole: ClassroomParticipantRole,
+  earlyMinutes: number,
+  lateMinutes: number
 ): { allowed: true } | { allowed: false; error: string } {
+  const earlyMs = earlyMinutes * 60 * 1000;
+  const lateMs = lateMinutes * 60 * 1000;
   if (session.status === "ACTIVE") {
     return { allowed: true };
   }
@@ -72,13 +71,13 @@ function checkJoinWindow(
 
   const now = Date.now();
   const start = session.scheduledAt.getTime();
-  const joinOpens = start - STUDENT_EARLY_JOIN_MS;
-  const joinCloses = start + JOIN_WINDOW_AFTER_START_MS;
+  const joinOpens = start - earlyMs;
+  const joinCloses = start + lateMs;
 
   if (now < joinOpens) {
     return {
       allowed: false,
-      error: `This session is scheduled for ${formatScheduledForMessage(session.scheduledAt)}. You can join up to 1 hour before that time, or ask your tutor to start the session.`,
+      error: `This session is scheduled for ${formatScheduledForMessage(session.scheduledAt)}. You can join up to ${earlyMinutes} minutes before that time, or ask your tutor to start the session.`,
     };
   }
 
@@ -143,7 +142,13 @@ export async function verifyClassroomAccess(
     return { allowed: false, status: 403, error: "Session is not available to join" };
   }
 
-  const window = checkJoinWindow(session, participantRole);
+  const platform = await getPlatformSettings();
+  const window = checkJoinWindow(
+    session,
+    participantRole,
+    platform.sessionJoinEarlyMinutes,
+    platform.sessionJoinLateMinutes
+  );
   if (!window.allowed) {
     return {
       allowed: false,

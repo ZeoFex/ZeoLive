@@ -25,6 +25,7 @@ export const studentNav: NavItemConfig[] = [
   { href: "/student/tutors", label: "Tutors", icon: "users" },
   { href: "/student/payments", label: "Payments", icon: "credit-card" },
   { href: "/student/messages", label: "Messages", icon: "message-square" },
+  { href: "/student/materials", label: "Materials", icon: "file-text" },
   { href: "/student/settings", label: "Settings", icon: "settings" },
 ];
 
@@ -47,6 +48,7 @@ export const adminNav: NavItemConfig[] = [
   { href: "/admin/payments", label: "Payments", icon: "credit-card" },
   { href: "/admin/reports", label: "Analytics", icon: "bar-chart" },
   { href: "/admin/cms", label: "CMS", icon: "clipboard-list" },
+  { href: "/admin/settings", label: "Settings", icon: "settings" },
 ];
 
 /** Sub-admins: tutor review only */

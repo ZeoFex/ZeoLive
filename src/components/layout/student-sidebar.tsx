@@ -16,7 +16,7 @@ import {
 import Image from "next/image";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { signOut } from "next-auth/react";
+import { signOutToAppPath } from "@/lib/auth-client";
 import { useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
@@ -150,7 +150,7 @@ export function StudentSidebar({ items }: StudentSidebarProps) {
           </p>
           <button
             type="button"
-            onClick={() => signOut({ callbackUrl: routes.login })}
+            onClick={() => void signOutToAppPath(routes.login)}
             className="flex w-full items-center gap-3 rounded-xl px-3 py-3 text-sm font-medium text-red-500 transition-colors hover:bg-red-50 active:scale-[0.98] lg:py-2.5"
           >
             <LogOut className="h-[18px] w-[18px]" strokeWidth={2} />

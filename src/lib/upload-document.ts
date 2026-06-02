@@ -3,7 +3,7 @@ import path from "path";
 import { randomBytes } from "crypto";
 import { isCloudinaryConfigured, uploadFileFromBuffer } from "@/lib/cloudinary";
 
-const MAX_FILE_BYTES = 10 * 1024 * 1024;
+const DEFAULT_MAX_MB = 10;
 
 const ALLOWED_TYPES = new Set([
   "application/pdf",
@@ -13,9 +13,37 @@ const ALLOWED_TYPES = new Set([
   "image/jpg",
 ]);
 
-export function validateUploadFile(file: File): string | null {
-  if (file.size > MAX_FILE_BYTES) {
-    return "File must be 10MB or smaller";
+const STUDY_MATERIAL_TYPES = new Set([
+  ...ALLOWED_TYPES,
+  "application/msword",
+  "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+  "application/vnd.ms-powerpoint",
+  "application/vnd.openxmlformats-officedocument.presentationml.presentation",
+  "text/plain",
+]);
+
+export function validateStudyMaterialFile(file: File, maxMb = DEFAULT_MAX_MB): string | null {
+  const maxBytes = maxMb * 1024 * 1024;
+  if (file.size > maxBytes) {
+    return `File must be ${maxMb}MB or smaller`;
+  }
+  if (file.type && !STUDY_MATERIAL_TYPES.has(file.type)) {
+    return "Upload a PDF, Word document, PowerPoint, image, or text file";
+  }
+  if (!file.type && file.name) {
+    const ext = path.extname(file.name).toLowerCase();
+    const allowedExt = [".pdf", ".doc", ".docx", ".ppt", ".pptx", ".png", ".jpg", ".jpeg", ".webp", ".txt"];
+    if (!allowedExt.includes(ext)) {
+      return "Upload a PDF, Word document, PowerPoint, image, or text file";
+    }
+  }
+  return null;
+}
+
+export function validateUploadFile(file: File, maxMb = DEFAULT_MAX_MB): string | null {
+  const maxBytes = maxMb * 1024 * 1024;
+  if (file.size > maxBytes) {
+    return `File must be ${maxMb}MB or smaller`;
   }
   if (file.type && !ALLOWED_TYPES.has(file.type)) {
     return "Upload a PDF or image (JPG, PNG, WebP)";
@@ -34,11 +62,43 @@ async function saveToLocalDisk(file: File, subfolder: string): Promise<string> {
   return `/uploads/${subfolder}/${filename}`;
 }
 
+export async function saveStudyMaterialFile(
+  file: File,
+  tutorId: string,
+  maxMb = DEFAULT_MAX_MB
+): Promise<string> {
+  const validationError = validateStudyMaterialFile(file, maxMb);
+  if (validationError) {
+    throw new Error(validationError);
+  }
+
+  if (isCloudinaryConfigured()) {
+    try {
+      return await uploadFileFromBuffer(file, `materials/${tutorId}`);
+    } catch (error) {
+      console.error("Cloudinary upload error:", error);
+      throw new Error("Could not upload file to storage");
+    }
+  }
+
+  try {
+    return await saveToLocalDisk(file, `materials/${tutorId}`);
+  } catch (error) {
+    console.error("Local upload error:", error);
+    const hint =
+      process.env.VERCEL === "1"
+        ? "File storage is not available in this environment. Configure Cloudinary."
+        : "Could not save file on the server";
+    throw new Error(hint);
+  }
+}
+
 export async function saveUploadedFile(
   file: File,
-  subfolder: string
+  subfolder: string,
+  maxMb = DEFAULT_MAX_MB
 ): Promise<string> {
-  const validationError = validateUploadFile(file);
+  const validationError = validateUploadFile(file, maxMb);
   if (validationError) {
     throw new Error(validationError);
   }

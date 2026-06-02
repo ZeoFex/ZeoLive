@@ -19,7 +19,12 @@ function createPrismaClient() {
 /** Recreate client when schema delegates are missing (stale dev hot-reload cache). */
 function getPrismaClient(): PrismaClient {
   const cached = globalForPrisma.prisma;
-  if (cached?.tutorStudentConversation && cached?.storedMessage && cached?.cmsEntry) {
+  if (
+    cached?.tutorStudentConversation &&
+    cached?.storedMessage &&
+    cached?.cmsEntry &&
+    cached?.studyMaterial
+  ) {
     return cached;
   }
   const client = createPrismaClient();

@@ -325,6 +325,92 @@ export async function listMessagesForConversation(conversationId: string) {
   );
 }
 
+export async function deleteConversation(input: {
+  conversationId: string;
+  actorId: string;
+  actorRole: Role;
+}) {
+  const conversation = await prisma.tutorStudentConversation.findUnique({
+    where: { id: input.conversationId },
+  });
+
+  if (!conversation) {
+    return { ok: false as const, status: 404, error: "Conversation not found" };
+  }
+
+  if (input.actorRole === "ADMIN") {
+    /* full access */
+  } else if (input.actorRole === "STUDENT") {
+    if (conversation.studentId !== input.actorId) {
+      return { ok: false as const, status: 403, error: "Forbidden" };
+    }
+  } else if (input.actorRole === "TUTOR") {
+    if (conversation.tutorId !== input.actorId) {
+      return { ok: false as const, status: 403, error: "Forbidden" };
+    }
+  } else {
+    return { ok: false as const, status: 403, error: "Forbidden" };
+  }
+
+  await prisma.tutorStudentConversation.delete({
+    where: { id: input.conversationId },
+  });
+
+  return { ok: true as const };
+}
+
+export async function deleteStoredMessage(input: {
+  conversationId: string;
+  messageId: string;
+  actorId: string;
+  actorRole: Role;
+}) {
+  const message = await prisma.storedMessage.findFirst({
+    where: { id: input.messageId, conversationId: input.conversationId },
+    include: { conversation: true },
+  });
+
+  if (!message) {
+    return { ok: false as const, status: 404, error: "Message not found" };
+  }
+
+  if (input.actorRole === "ADMIN") {
+    // Admins may remove any message in a conversation (evidence moderation).
+  } else if (input.actorRole === "STUDENT") {
+    if (message.conversation.studentId !== input.actorId) {
+      return { ok: false as const, status: 403, error: "Forbidden" };
+    }
+    if (message.senderId !== input.actorId) {
+      return {
+        ok: false as const,
+        status: 403,
+        error: "You can only delete messages you sent",
+      };
+    }
+  } else if (input.actorRole === "TUTOR") {
+    if (message.conversation.tutorId !== input.actorId) {
+      return { ok: false as const, status: 403, error: "Forbidden" };
+    }
+    if (message.senderId !== input.actorId) {
+      return {
+        ok: false as const,
+        status: 403,
+        error: "You can only delete messages you sent",
+      };
+    }
+  } else {
+    return { ok: false as const, status: 403, error: "Forbidden" };
+  }
+
+  await prisma.storedMessage.delete({ where: { id: message.id } });
+  await prisma.tutorStudentConversation.update({
+    where: { id: input.conversationId },
+    data: { updatedAt: new Date() },
+  });
+
+  return { ok: true as const };
+}
+
 export async function getConversationByIdForAdmin(conversationId: string) {
   return prisma.tutorStudentConversation.findUnique({
     where: { id: conversationId },

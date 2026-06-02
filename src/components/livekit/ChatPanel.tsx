@@ -1,10 +1,8 @@
 "use client";
 
 import { useChat } from "@livekit/components-react";
-import { Send } from "lucide-react";
-import { useRef, useEffect, useState, useMemo } from "react";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
+import { memo, useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { ChatComposer } from "@/components/messaging/chat-composer";
 import { cn } from "@/lib/utils";
 import type { StoredMessageDto } from "@/lib/messaging";
 
@@ -20,9 +18,35 @@ type DisplayMessage = {
   createdAt: string;
 };
 
+const ClassroomMessageList = memo(function ClassroomMessageList({
+  messages,
+}: {
+  messages: DisplayMessage[];
+}) {
+  if (messages.length === 0) {
+    return (
+      <p className="text-center text-sm text-muted-foreground">
+        No messages yet. Say hello!
+      </p>
+    );
+  }
+
+  return (
+    <>
+      {messages.map((msg) => (
+        <div key={msg.id}>
+          <p className="text-xs font-medium text-muted-foreground">{msg.senderLabel}</p>
+          <p className="mt-0.5 whitespace-pre-wrap rounded-lg bg-muted px-3 py-2 text-sm leading-relaxed text-foreground">
+            {msg.body}
+          </p>
+        </div>
+      ))}
+    </>
+  );
+});
+
 export function ChatPanel({ className, roomId }: ChatPanelProps) {
   const { chatMessages, send, isSending } = useChat();
-  const [draft, setDraft] = useState("");
   const [archived, setArchived] = useState<StoredMessageDto[]>([]);
   const bottomRef = useRef<HTMLDivElement>(null);
 
@@ -82,33 +106,35 @@ export function ChatPanel({ className, roomId }: ChatPanelProps) {
     bottomRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [displayMessages.length]);
 
-  const persistMessage = async (text: string, clientMessageId: string) => {
-    try {
-      await fetch("/api/messages/classroom", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        credentials: "same-origin",
-        body: JSON.stringify({
-          roomId,
-          body: text,
-          clientMessageId,
-        }),
-      });
-    } catch {
-      /* logged server-side when failing */
-    }
-  };
+  const persistMessage = useCallback(
+    async (text: string, clientMessageId: string) => {
+      try {
+        await fetch("/api/messages/classroom", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          credentials: "same-origin",
+          body: JSON.stringify({
+            roomId,
+            body: text,
+            clientMessageId,
+          }),
+        });
+      } catch {
+        /* logged server-side when failing */
+      }
+    },
+    [roomId]
+  );
 
-  const handleSend = async (e: React.FormEvent) => {
-    e.preventDefault();
-    const text = draft.trim();
-    if (!text || isSending) return;
-    setDraft("");
-
-    const clientMessageId = `lk-${Date.now()}-${Math.random().toString(36).slice(2, 9)}`;
-    await send(text);
-    void persistMessage(text, clientMessageId);
-  };
+  const handleSend = useCallback(
+    async (text: string) => {
+      if (!text || isSending) return;
+      const clientMessageId = `lk-${Date.now()}-${Math.random().toString(36).slice(2, 9)}`;
+      await send(text);
+      void persistMessage(text, clientMessageId);
+    },
+    [isSending, persistMessage, send]
+  );
 
   return (
     <aside
@@ -124,46 +150,19 @@ export function ChatPanel({ className, roomId }: ChatPanelProps) {
         </p>
       </div>
 
-      <div className="flex-1 space-y-3 overflow-y-auto p-4">
-        {displayMessages.length === 0 ? (
-          <p className="text-center text-sm text-muted-foreground">
-            No messages yet. Say hello!
-          </p>
-        ) : (
-          displayMessages.map((msg) => (
-            <div key={msg.id}>
-              <p className="text-xs font-medium text-muted-foreground">
-                {msg.senderLabel}
-              </p>
-              <p className="mt-0.5 rounded-lg bg-muted px-3 py-2 text-sm text-foreground">
-                {msg.body}
-              </p>
-            </div>
-          ))
-        )}
-        <div ref={bottomRef} />
-      </div>
-
-      <form
-        onSubmit={handleSend}
-        className="flex gap-2 border-t border-border p-3"
-      >
-        <Input
-          value={draft}
-          onChange={(e) => setDraft(e.target.value)}
-          placeholder="Send a message…"
-          className="bg-background"
+      <div className="flex min-h-0 flex-1 flex-col">
+        <div className="flex-1 space-y-3 overflow-y-auto p-4">
+          <ClassroomMessageList messages={displayMessages} />
+          <div ref={bottomRef} />
+        </div>
+        <ChatComposer
+          onSend={handleSend}
           disabled={isSending}
+          placeholder="Send a message…"
+          className="border-border"
+          inputClassName="bg-background"
         />
-        <Button
-          type="submit"
-          size="icon"
-          disabled={!draft.trim() || isSending}
-          aria-label="Send message"
-        >
-          <Send className="h-4 w-4" />
-        </Button>
-      </form>
+      </div>
     </aside>
   );
 }

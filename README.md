@@ -6,7 +6,7 @@ Copy `.env.example` to `.env.local` and fill in values.
 
 ### Password reset (NextAuth + SMTP)
 
-1. Set `AUTH_SECRET` and `NEXT_PUBLIC_APP_URL` (or `AUTH_URL`).
+1. Set `AUTH_SECRET`. For local dev use `AUTH_URL=http://localhost:3000`. On Vercel/production set `AUTH_URL` and `NEXT_PUBLIC_APP_URL` to your live site URL (not localhost).
 2. Configure SMTP (see `.env.example`). For Gmail, use an [App Password](https://myaccount.google.com/apppasswords), not your normal login password.
 3. Forgot password: `/forgot-password` → email link → `/reset-password?token=...` → sign in at `/login` with NextAuth credentials.
 

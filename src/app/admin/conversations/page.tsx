@@ -1,9 +1,13 @@
 "use client";
 
-import { Download, Loader2, Play, Search } from "lucide-react";
+import { Download, Loader2, Play, Search, Trash2 } from "lucide-react";
 import { useCallback, useEffect, useState } from "react";
 import { toast } from "sonner";
 import { AdminPageHeader } from "@/components/layout/admin-page-header";
+import {
+  DeleteConfirmDialog,
+  type DeleteConfirmTarget,
+} from "@/components/messaging/delete-confirm-dialog";
 import { TranscriptMessageList } from "@/components/messaging/transcript-playback";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -29,6 +33,10 @@ export default function AdminConversationsPage() {
   const [loadingDetail, setLoadingDetail] = useState(false);
   const [playbackIndex, setPlaybackIndex] = useState<number | null>(null);
   const [playing, setPlaying] = useState(false);
+  const [deletingMessageId, setDeletingMessageId] = useState<string | null>(null);
+  const [deleteTarget, setDeleteTarget] = useState<DeleteConfirmTarget | null>(null);
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [deleteLoading, setDeleteLoading] = useState(false);
 
   const loadList = useCallback(async () => {
     setLoadingList(true);
@@ -102,6 +110,75 @@ export default function AdminConversationsPage() {
     return () => window.clearInterval(timer);
   }, [playing, messages.length]);
 
+  const openDeleteDialog = (target: DeleteConfirmTarget) => {
+    setDeleteTarget(target);
+    setDeleteDialogOpen(true);
+  };
+
+  const performDelete = async () => {
+    if (!deleteTarget) return;
+
+    setDeleteLoading(true);
+    try {
+      if (deleteTarget.type === "message") {
+        if (!selectedId) return;
+
+        setDeletingMessageId(deleteTarget.messageId);
+        const res = await fetch(
+          `/api/messages/conversations/${selectedId}/messages/${deleteTarget.messageId}`,
+          { method: "DELETE", credentials: "same-origin" }
+        );
+        const text = await res.text();
+        const json = text ? (JSON.parse(text) as { error?: string }) : {};
+        if (!res.ok) throw new Error(json.error ?? "Could not delete message");
+
+        const messageId = deleteTarget.messageId;
+        setMessages((prev) => {
+          const next = prev.filter((m) => m.id !== messageId);
+          setPlaybackIndex((idx) => {
+            if (idx === null) return null;
+            const removedIndex = prev.findIndex((m) => m.id === messageId);
+            if (removedIndex < 0) return idx;
+            if (idx > removedIndex) return idx - 1;
+            if (idx >= next.length) return next.length > 0 ? next.length - 1 : null;
+            return idx;
+          });
+          return next;
+        });
+        setDetail((d) =>
+          d ? { ...d, messageCount: Math.max(0, d.messageCount - 1) } : d
+        );
+        toast.success("Message deleted");
+      } else {
+        const res = await fetch(
+          `/api/admin/conversations/${deleteTarget.conversationId}`,
+          { method: "DELETE", credentials: "same-origin" }
+        );
+        const text = await res.text();
+        const json = text ? (JSON.parse(text) as { error?: string }) : {};
+        if (!res.ok) throw new Error(json.error ?? "Could not delete conversation");
+
+        if (selectedId === deleteTarget.conversationId) {
+          setSelectedId(null);
+          setDetail(null);
+          setMessages([]);
+        }
+        setConversations((prev) =>
+          prev.filter((c) => c.id !== deleteTarget.conversationId)
+        );
+        toast.success("Conversation and all messages deleted");
+      }
+
+      setDeleteDialogOpen(false);
+      setDeleteTarget(null);
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Delete failed");
+    } finally {
+      setDeleteLoading(false);
+      setDeletingMessageId(null);
+    }
+  };
+
   const download = (format: "txt" | "json") => {
     if (!selectedId) return;
     window.open(
@@ -116,6 +193,17 @@ export default function AdminConversationsPage() {
       <AdminPageHeader
         title="Conversation records"
         description="Review and export student–tutor messages (direct and classroom) for safety and evidence."
+      />
+
+      <DeleteConfirmDialog
+        target={deleteTarget}
+        open={deleteDialogOpen}
+        onOpenChange={(open) => {
+          setDeleteDialogOpen(open);
+          if (!open && !deleteLoading) setDeleteTarget(null);
+        }}
+        onConfirm={performDelete}
+        loading={deleteLoading}
       />
 
       <div className="admin-card mb-4 flex flex-col gap-3 p-4 sm:flex-row sm:items-center">
@@ -148,12 +236,13 @@ export default function AdminConversationsPage() {
                   <TableHead>Tutor</TableHead>
                   <TableHead>Last activity</TableHead>
                   <TableHead className="text-right">Msgs</TableHead>
+                  <TableHead className="w-10" />
                 </TableRow>
               </TableHeader>
               <TableBody>
                 {conversations.length === 0 ? (
                   <TableRow>
-                    <TableCell colSpan={4} className="py-10 text-center text-sm text-slate-500">
+                    <TableCell colSpan={5} className="py-10 text-center text-sm text-slate-500">
                       No conversations stored yet.
                     </TableCell>
                   </TableRow>
@@ -181,6 +270,29 @@ export default function AdminConversationsPage() {
                           : "—"}
                       </TableCell>
                       <TableCell className="text-right tabular-nums">{c.messageCount}</TableCell>
+                      <TableCell>
+                        <Button
+                          type="button"
+                          size="icon"
+                          variant="ghost"
+                          className="h-8 w-8 text-slate-400 hover:bg-red-50 hover:text-red-600"
+                          title="Delete entire conversation"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            openDeleteDialog({
+                              type: "conversation",
+                              conversationId: c.id,
+                              studentName: c.student.name,
+                              studentEmail: c.student.email,
+                              tutorName: c.tutor.name,
+                              tutorEmail: c.tutor.email,
+                              messageCount: c.messageCount,
+                            });
+                          }}
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
+                      </TableCell>
                     </TableRow>
                   ))
                 )}
@@ -214,6 +326,26 @@ export default function AdminConversationsPage() {
                     </p>
                   </div>
                   <div className="flex flex-wrap gap-2">
+                    <Button
+                      type="button"
+                      size="sm"
+                      variant="outline"
+                      className="border-red-200 text-red-700 hover:bg-red-50"
+                      onClick={() =>
+                        openDeleteDialog({
+                          type: "conversation",
+                          conversationId: detail.id,
+                          studentName: detail.student.name,
+                          studentEmail: detail.student.email,
+                          tutorName: detail.tutor.name,
+                          tutorEmail: detail.tutor.email,
+                          messageCount: detail.messageCount,
+                        })
+                      }
+                    >
+                      <Trash2 className="mr-2 h-4 w-4" />
+                      Delete thread
+                    </Button>
                     <Button
                       type="button"
                       size="sm"
@@ -259,6 +391,15 @@ export default function AdminConversationsPage() {
                 <TranscriptMessageList
                   messages={messages}
                   highlightIndex={playbackIndex}
+                  onRequestDeleteMessage={(msg) =>
+                    openDeleteDialog({
+                      type: "message",
+                      messageId: msg.id,
+                      senderName: msg.senderName,
+                      bodyPreview: msg.body,
+                    })
+                  }
+                  deletingMessageId={deletingMessageId}
                 />
               </div>
             </>

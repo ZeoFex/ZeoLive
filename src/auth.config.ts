@@ -1,5 +1,13 @@
 import type { NextAuthConfig } from "next-auth";
+import {
+  getAppBaseUrl,
+  inferDeploymentBaseUrl,
+  isLocalhostAppUrl,
+  syncAuthUrlForDeployment,
+} from "@/lib/app-url";
 import { getAuthSecret } from "@/lib/auth-env";
+
+syncAuthUrlForDeployment();
 
 type AppRole = "STUDENT" | "TUTOR" | "ADMIN";
 type AppAdminTier = "SUPERADMIN" | "SUBADMIN";
@@ -18,6 +26,35 @@ export const authConfig = {
     strategy: "jwt",
   },
   callbacks: {
+    async redirect({ url, baseUrl }) {
+      let safeBase = baseUrl;
+      if (isLocalhostAppUrl(baseUrl)) {
+        safeBase =
+          getAppBaseUrl() !== "http://localhost:3000"
+            ? getAppBaseUrl()
+            : (inferDeploymentBaseUrl() ?? baseUrl);
+      }
+
+      if (url.startsWith("/")) {
+        return `${safeBase}${url}`;
+      }
+
+      try {
+        const target = new URL(url);
+        const base = new URL(safeBase);
+        if (target.origin === base.origin) return url;
+        if (
+          isLocalhostAppUrl(target.origin) &&
+          !isLocalhostAppUrl(base.origin)
+        ) {
+          return `${safeBase}${target.pathname}${target.search}`;
+        }
+      } catch {
+        /* ignore malformed url */
+      }
+
+      return safeBase;
+    },
     async jwt({ token, user }) {
       if (user?.id) {
         token.id = user.id;

@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { z } from "zod";
 import { auth } from "@/auth";
 import {
+  deleteConversation,
   getConversationForUser,
   listMessagesForConversation,
   storeMessage,
@@ -91,4 +92,41 @@ export async function POST(
     }
     return NextResponse.json({ error: "Could not send message" }, { status: 400 });
   }
+}
+
+export async function DELETE(
+  _request: Request,
+  { params }: { params: Promise<{ conversationId: string }> }
+) {
+  const session = await auth();
+  if (!session?.user?.id) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+
+  if (session.user.role !== "STUDENT" && session.user.role !== "TUTOR") {
+    return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+  }
+
+  const { conversationId } = await params;
+  const conversation = await getConversationForUser(
+    conversationId,
+    session.user.id,
+    session.user.role
+  );
+
+  if (!conversation) {
+    return NextResponse.json({ error: "Conversation not found" }, { status: 404 });
+  }
+
+  const result = await deleteConversation({
+    conversationId,
+    actorId: session.user.id,
+    actorRole: session.user.role,
+  });
+
+  if (!result.ok) {
+    return NextResponse.json({ error: result.error }, { status: result.status });
+  }
+
+  return NextResponse.json({ ok: true });
 }

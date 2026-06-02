@@ -1,3 +1,4 @@
+import { getPlatformSettings } from "@/lib/platform-settings";
 import { prisma } from "@/lib/prisma";
 import { displayUserName } from "@/lib/portal-data";
 import type { Tutor } from "@/types";
@@ -83,6 +84,9 @@ export async function ensureTutorRatingsSeeded() {
 }
 
 async function seedTutorRatingsIfNeeded() {
+  const platform = await getPlatformSettings();
+  if (!platform.autoSeedTutorRatings) return;
+
   const needsSeed = await prisma.tutorProfile.findMany({
     where: {
       verificationStatus: "APPROVED",
