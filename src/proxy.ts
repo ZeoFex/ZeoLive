@@ -48,6 +48,9 @@ export async function proxy(req: NextRequest) {
   const token = (await getToken({
     req,
     secret: getAuthSecret(),
+    // Auth.js prefixes the session cookie with `__Secure-` on HTTPS; without
+    // this, getToken looks for `authjs.session-token` and portals bounce to login.
+    secureCookie: req.nextUrl.protocol === "https:",
   })) as TokenWithRole | null;
 
   const isLoggedIn = !!token?.sub;
