@@ -159,8 +159,8 @@ export function StudentSidebar({ items }: StudentSidebarProps) {
         </nav>
 
         <div className="student-promo-card mx-3 mb-4 rounded-2xl p-4 sm:mx-4 sm:mb-6">
-          <p className="text-sm font-semibold text-violet-900">Book your next session</p>
-          <p className="mt-1 text-xs text-violet-700/80">
+          <p className="text-sm font-semibold text-blue-900">Book your next session</p>
+          <p className="mt-1 text-xs text-blue-700/80">
             Browse verified tutors and schedule live classes in minutes.
           </p>
           <Button asChild size="sm" className="student-gradient-btn mt-3 w-full rounded-xl">

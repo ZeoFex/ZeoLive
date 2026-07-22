@@ -78,7 +78,7 @@ export default function TutorAvailabilityPage() {
                   className={cn(
                     "rounded-xl",
                     selected ? "tutor-gradient-btn" : "tutor-outline-btn",
-                    selected && "ring-2 ring-violet-200"
+                    selected && "ring-2 ring-sky-200"
                   )}
                   onClick={() => toggleSlot(slot)}
                 >

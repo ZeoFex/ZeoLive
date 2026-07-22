@@ -22,6 +22,19 @@ const STUDY_MATERIAL_TYPES = new Set([
   "text/plain",
 ]);
 
+function canUseLocalDiskFallback() {
+  // Vercel’s filesystem is ephemeral / not durable for user uploads
+  return process.env.VERCEL !== "1";
+}
+
+function isTransientCloudinaryError(error: unknown) {
+  if (!(error instanceof Error)) return true;
+  const message = `${error.message} ${"code" in error ? String((error as { code?: string }).code) : ""}`;
+  return /ETIMEDOUT|ESOCKETTIMEDOUT|ECONNRESET|ENOTFOUND|EAI_AGAIN|timed out|socket hang up|network/i.test(
+    message
+  );
+}
+
 export function validateStudyMaterialFile(file: File, maxMb = DEFAULT_MAX_MB): string | null {
   const maxBytes = maxMb * 1024 * 1024;
   if (file.size > maxBytes) {
@@ -62,6 +75,49 @@ async function saveToLocalDisk(file: File, subfolder: string): Promise<string> {
   return `/uploads/${subfolder}/${filename}`;
 }
 
+async function uploadWithCloudinaryFallback(
+  file: File,
+  subfolder: string
+): Promise<string> {
+  if (isCloudinaryConfigured()) {
+    try {
+      return await uploadFileFromBuffer(file, subfolder);
+    } catch (error) {
+      console.error("Cloudinary upload error:", error);
+      if (canUseLocalDiskFallback() && isTransientCloudinaryError(error)) {
+        console.warn(
+          "Cloudinary unavailable; saving upload to local disk instead:",
+          subfolder
+        );
+        return saveToLocalDisk(file, subfolder);
+      }
+      if (canUseLocalDiskFallback()) {
+        console.warn(
+          "Cloudinary failed; falling back to local disk:",
+          subfolder
+        );
+        return saveToLocalDisk(file, subfolder);
+      }
+      throw new Error(
+        "Could not upload file to storage. Check Cloudinary credentials and network, then try again."
+      );
+    }
+  }
+
+  if (!canUseLocalDiskFallback()) {
+    throw new Error(
+      "File storage is not available in this environment. Configure Cloudinary (CLOUDINARY_CLOUD_NAME, CLOUDINARY_API_KEY, CLOUDINARY_API_SECRET)."
+    );
+  }
+
+  try {
+    return await saveToLocalDisk(file, subfolder);
+  } catch (error) {
+    console.error("Local upload error:", error);
+    throw new Error("Could not save file on the server");
+  }
+}
+
 export async function saveStudyMaterialFile(
   file: File,
   tutorId: string,
@@ -72,25 +128,7 @@ export async function saveStudyMaterialFile(
     throw new Error(validationError);
   }
 
-  if (isCloudinaryConfigured()) {
-    try {
-      return await uploadFileFromBuffer(file, `materials/${tutorId}`);
-    } catch (error) {
-      console.error("Cloudinary upload error:", error);
-      throw new Error("Could not upload file to storage");
-    }
-  }
-
-  try {
-    return await saveToLocalDisk(file, `materials/${tutorId}`);
-  } catch (error) {
-    console.error("Local upload error:", error);
-    const hint =
-      process.env.VERCEL === "1"
-        ? "File storage is not available in this environment. Configure Cloudinary."
-        : "Could not save file on the server";
-    throw new Error(hint);
-  }
+  return uploadWithCloudinaryFallback(file, `materials/${tutorId}`);
 }
 
 export async function saveUploadedFile(
@@ -103,23 +141,5 @@ export async function saveUploadedFile(
     throw new Error(validationError);
   }
 
-  if (isCloudinaryConfigured()) {
-    try {
-      return await uploadFileFromBuffer(file, subfolder);
-    } catch (error) {
-      console.error("Cloudinary upload error:", error);
-      throw new Error("Could not upload file to storage");
-    }
-  }
-
-  try {
-    return await saveToLocalDisk(file, subfolder);
-  } catch (error) {
-    console.error("Local upload error:", error);
-    const hint =
-      process.env.VERCEL === "1"
-        ? "File storage is not available in this environment. Configure Cloudinary (CLOUDINARY_CLOUD_NAME, CLOUDINARY_API_KEY, CLOUDINARY_API_SECRET)."
-        : "Could not save file on the server";
-    throw new Error(hint);
-  }
+  return uploadWithCloudinaryFallback(file, subfolder);
 }

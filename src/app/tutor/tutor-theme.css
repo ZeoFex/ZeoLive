@@ -1,9 +1,184 @@
 @import "tailwindcss" reference;
 
-/* Tutor portal — matches admin Skillora-style dashboard */
+/*
+ * While any tutor shell is mounted, keep the whole document on light tokens.
+ * Covers Radix portals (select/dropdown) rendered outside .tutor-shell.
+ */
+html:has(.tutor-shell),
+html:has(.tutor-shell).dark {
+  color-scheme: light;
+  --background: 210 40% 99%;
+  --foreground: 215 28% 14%;
+  --card: 0 0% 100%;
+  --card-foreground: 215 28% 14%;
+  --popover: 0 0% 100%;
+  --popover-foreground: 215 28% 14%;
+  --primary: 210 100% 40%;
+  --primary-foreground: 0 0% 100%;
+  --secondary: 210 32% 96%;
+  --secondary-foreground: 215 25% 22%;
+  --muted: 210 28% 96%;
+  --muted-foreground: 215 14% 40%;
+  --accent: 205 55% 94%;
+  --accent-foreground: 215 40% 22%;
+  --border: 214 24% 88%;
+  --input: 214 24% 86%;
+  --ring: 210 100% 40%;
+}
+
+/* Tutor portal — blue / white Zeolive theme (always light, even if site is dark) */
 .tutor-shell {
-  background: #eef1f8;
+  color-scheme: light;
+  background: #eef4fb;
+  color: #0f172a;
   font-family: var(--font-geist-sans), system-ui, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  --background: 210 40% 99%;
+  --foreground: 215 28% 14%;
+  --card: 0 0% 100%;
+  --card-foreground: 215 28% 14%;
+  --popover: 0 0% 100%;
+  --popover-foreground: 215 28% 14%;
+  --primary: 210 100% 40%;
+  --primary-foreground: 0 0% 100%;
+  --secondary: 210 32% 96%;
+  --secondary-foreground: 215 25% 22%;
+  --muted: 210 28% 96%;
+  --muted-foreground: 215 14% 40%;
+  --accent: 205 55% 94%;
+  --accent-foreground: 215 40% 22%;
+  --border: 214 24% 88%;
+  --input: 214 24% 86%;
+  --ring: 210 100% 40%;
+}
+
+.tutor-shell h1,
+.tutor-shell h2,
+.tutor-shell h3,
+.tutor-shell h4,
+.tutor-shell h5,
+.tutor-shell h6 {
+  color: #0f172a;
+}
+
+.tutor-shell .text-muted-foreground,
+.tutor-shell [class*="text-muted"] {
+  color: #64748b !important;
+}
+
+.tutor-shell .text-slate-400 {
+  color: #94a3b8 !important;
+}
+
+.tutor-shell .text-slate-500 {
+  color: #64748b !important;
+}
+
+.tutor-shell .text-slate-600,
+.tutor-shell .text-slate-700 {
+  color: #334155 !important;
+}
+
+.tutor-shell .text-slate-800,
+.tutor-shell .text-slate-900 {
+  color: #0f172a !important;
+}
+
+/* All native + shadcn fields: white surface, dark text, clear focus */
+.tutor-shell input:not([type="checkbox"]):not([type="radio"]):not([type="range"]),
+.tutor-shell textarea,
+.tutor-shell select,
+.tutor-shell button[role="combobox"] {
+  background-color: #ffffff !important;
+  color: #0f172a !important;
+  -webkit-text-fill-color: #0f172a;
+  border-color: #cbd5e1 !important;
+  caret-color: #0f172a;
+}
+
+.tutor-shell input:not([type="checkbox"]):not([type="radio"]):not([type="range"])::placeholder,
+.tutor-shell textarea::placeholder {
+  color: #64748b !important;
+  opacity: 1;
+  -webkit-text-fill-color: #64748b;
+}
+
+.tutor-shell input:not([type="checkbox"]):not([type="radio"]):not([type="range"]):focus,
+.tutor-shell input:not([type="checkbox"]):not([type="radio"]):not([type="range"]):focus-visible,
+.tutor-shell textarea:focus,
+.tutor-shell textarea:focus-visible,
+.tutor-shell select:focus,
+.tutor-shell button[role="combobox"]:focus,
+.tutor-shell button[role="combobox"]:focus-visible {
+  border-color: #0066cc !important;
+  outline: none;
+  box-shadow: 0 0 0 3px rgba(0, 102, 204, 0.18);
+}
+
+.tutor-shell input:-webkit-autofill,
+.tutor-shell input:-webkit-autofill:hover,
+.tutor-shell input:-webkit-autofill:focus,
+.tutor-shell textarea:-webkit-autofill {
+  -webkit-text-fill-color: #0f172a;
+  box-shadow: 0 0 0 1000px #ffffff inset;
+  transition: background-color 9999s ease-in-out 0s;
+}
+
+.tutor-shell label,
+.tutor-shell [data-slot="label"] {
+  color: #334155 !important;
+  font-weight: 600;
+}
+
+.tutor-shell button[role="combobox"] span {
+  color: #0f172a !important;
+}
+
+/* Portals (dialogs, selects) outside .tutor-shell */
+html:has(.tutor-shell) [role="dialog"],
+html:has(.tutor-shell) [data-radix-popper-content-wrapper],
+html:has(.tutor-shell) [data-slot="dialog-content"],
+html:has(.tutor-shell) [data-slot="select-content"],
+html:has(.tutor-shell) [data-slot="popover-content"],
+html:has(.tutor-shell) [data-slot="dropdown-menu-content"] {
+  color: #0f172a;
+  --background: 0 0% 100%;
+  --foreground: 215 28% 14%;
+  --popover: 0 0% 100%;
+  --popover-foreground: 215 28% 14%;
+  --muted: 210 28% 96%;
+  --muted-foreground: 215 14% 40%;
+  --border: 214 24% 88%;
+  --input: 214 24% 86%;
+}
+
+html:has(.tutor-shell) [role="dialog"] input:not([type="checkbox"]):not([type="radio"]):not([type="range"]),
+html:has(.tutor-shell) [role="dialog"] textarea,
+html:has(.tutor-shell) [role="dialog"] select,
+html:has(.tutor-shell) [role="dialog"] button[role="combobox"] {
+  background-color: #ffffff !important;
+  color: #0f172a !important;
+  -webkit-text-fill-color: #0f172a;
+  border-color: #cbd5e1 !important;
+  caret-color: #0f172a;
+}
+
+html:has(.tutor-shell) [role="dialog"] input::placeholder,
+html:has(.tutor-shell) [role="dialog"] textarea::placeholder {
+  color: #64748b !important;
+  opacity: 1;
+  -webkit-text-fill-color: #64748b;
+}
+
+html:has(.tutor-shell) [role="dialog"] label,
+html:has(.tutor-shell) [role="dialog"] [data-slot="label"] {
+  color: #334155 !important;
+  font-weight: 600;
+}
+
+html:has(.tutor-shell) [data-slot="select-item"],
+html:has(.tutor-shell) [role="option"] {
+  color: #0f172a !important;
 }
 
 .tutor-sidebar {
@@ -11,14 +186,14 @@
 }
 
 .tutor-logo-badge {
-  background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 50%, #a855f7 100%);
-  box-shadow: 0 6px 16px -4px rgba(99, 102, 241, 0.55);
+  background: linear-gradient(135deg, #00aeef 0%, #0066cc 55%, #0054a6 100%);
+  box-shadow: 0 6px 16px -4px rgba(0, 102, 204, 0.45);
 }
 
 .tutor-nav-active {
-  background: linear-gradient(135deg, #6366f1 0%, #7c3aed 55%, #9333ea 100%);
+  background: linear-gradient(135deg, #00aeef 0%, #0066cc 55%, #0054a6 100%);
   color: #ffffff !important;
-  box-shadow: 0 8px 20px -6px rgba(99, 102, 241, 0.45);
+  box-shadow: 0 8px 20px -6px rgba(0, 102, 204, 0.4);
 }
 
 .tutor-nav-active svg {
@@ -27,9 +202,9 @@
 
 .tutor-gradient-btn {
   border: 0 !important;
-  background: linear-gradient(135deg, #6366f1 0%, #7c3aed 55%, #9333ea 100%) !important;
+  background: linear-gradient(135deg, #00aeef 0%, #0066cc 55%, #0054a6 100%) !important;
   color: #ffffff !important;
-  box-shadow: 0 8px 18px -8px rgba(99, 102, 241, 0.55);
+  box-shadow: 0 8px 18px -8px rgba(0, 102, 204, 0.5);
 }
 
 .tutor-gradient-btn:hover:not(:disabled) {
@@ -38,15 +213,70 @@
 
 .tutor-card {
   @apply rounded-2xl border border-slate-100 bg-white shadow-[0_4px_24px_-8px_rgba(15,23,42,0.12)];
+  color: #0f172a;
 }
 
 .tutor-stat-card {
   @apply rounded-2xl border border-slate-100 bg-white p-5 shadow-[0_4px_24px_-8px_rgba(15,23,42,0.1)];
+  color: #0f172a;
 }
 
 .tutor-stat-icon {
-  background: linear-gradient(135deg, rgba(99, 102, 241, 0.14) 0%, rgba(147, 51, 234, 0.12) 100%);
-  color: #6366f1;
+  background: linear-gradient(135deg, rgba(0, 174, 239, 0.16) 0%, rgba(0, 102, 204, 0.12) 100%);
+  color: #0066cc;
+}
+
+.tutor-label {
+  @apply text-sm font-semibold;
+  color: #334155 !important;
+}
+
+.tutor-input {
+  @apply mt-1.5 h-11 w-full rounded-xl border px-3.5 text-sm font-normal shadow-sm transition-colors;
+  @apply focus-visible:outline-none;
+  color: #0f172a !important;
+  -webkit-text-fill-color: #0f172a;
+  background-color: #ffffff !important;
+  border-color: #cbd5e1 !important;
+}
+
+.tutor-input::placeholder {
+  color: #64748b !important;
+  -webkit-text-fill-color: #64748b;
+  opacity: 1;
+}
+
+.tutor-input:focus-visible {
+  border-color: #0066cc !important;
+  box-shadow: 0 0 0 3px rgba(0, 102, 204, 0.18);
+}
+
+.tutor-input:disabled {
+  @apply cursor-not-allowed opacity-70;
+  background-color: #f8fafc !important;
+  color: #94a3b8 !important;
+  -webkit-text-fill-color: #94a3b8;
+}
+
+.tutor-textarea {
+  @apply mt-1.5 min-h-[96px] w-full rounded-xl border px-3.5 py-2.5 text-sm font-normal shadow-sm transition-colors;
+  @apply focus-visible:outline-none;
+  color: #0f172a !important;
+  -webkit-text-fill-color: #0f172a;
+  background-color: #ffffff !important;
+  border-color: #cbd5e1 !important;
+  resize: vertical;
+}
+
+.tutor-textarea::placeholder {
+  color: #64748b !important;
+  -webkit-text-fill-color: #64748b;
+  opacity: 1;
+}
+
+.tutor-textarea:focus-visible {
+  border-color: #0066cc !important;
+  box-shadow: 0 0 0 3px rgba(0, 102, 204, 0.18);
 }
 
 .tutor-table-wrap {
@@ -62,11 +292,13 @@
 }
 
 .tutor-table-wrap th {
-  @apply bg-slate-50/90 px-4 py-3.5 text-left text-xs font-semibold uppercase tracking-wide text-slate-500;
+  @apply bg-slate-50/90 px-4 py-3.5 text-left text-xs font-semibold uppercase tracking-wide;
+  color: #64748b !important;
 }
 
 .tutor-table-wrap td {
-  @apply border-b border-slate-50 px-4 py-4 text-sm text-slate-700;
+  @apply border-b border-slate-50 px-4 py-4 text-sm;
+  color: #334155 !important;
 }
 
 .tutor-table-wrap tbody tr:last-child td {
@@ -78,20 +310,33 @@
 }
 
 .tutor-promo-card {
-  background: linear-gradient(145deg, #eef2ff 0%, #f5f3ff 100%);
-  border: 1px solid #e0e7ff;
+  background: linear-gradient(145deg, #eef7ff 0%, #e8f3ff 100%);
+  border: 1px solid #cfe5ff;
+  color: #0f172a;
 }
 
 .tutor-search {
-  @apply h-10 rounded-xl border-slate-200 bg-slate-50 pl-10 text-sm text-slate-800 placeholder:text-slate-400;
+  @apply h-10 rounded-xl border pl-10 text-sm shadow-none;
+  color: #0f172a !important;
+  -webkit-text-fill-color: #0f172a;
+  background-color: #ffffff !important;
+  border-color: #cbd5e1 !important;
+}
+
+.tutor-search::placeholder {
+  color: #64748b !important;
+  -webkit-text-fill-color: #64748b;
+  opacity: 1;
 }
 
 .tutor-page-content {
   @apply flex-1 overflow-auto px-5 pb-8 pt-4 sm:px-8;
+  color: #0f172a;
 }
 
 .tutor-outline-btn {
-  @apply rounded-xl border-slate-200 bg-white text-slate-700 hover:bg-slate-50;
+  @apply rounded-xl border-slate-200 bg-white hover:bg-slate-50;
+  color: #334155 !important;
 }
 
 .tutor-filter-bar {
@@ -102,8 +347,9 @@
   @apply inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-semibold;
 }
 
-.tutor-tag-violet {
-  @apply bg-violet-100 text-violet-700;
+.tutor-tag-violet,
+.tutor-tag-blue {
+  @apply bg-sky-100 text-sky-800;
 }
 
 .tutor-tag-emerald {
@@ -119,5 +365,6 @@
 }
 
 .tutor-empty {
-  @apply rounded-2xl border border-dashed border-slate-200 bg-slate-50/50 px-6 py-12 text-center text-sm text-slate-500;
+  @apply rounded-2xl border border-dashed border-slate-200 bg-slate-50/50 px-6 py-12 text-center text-sm;
+  color: #64748b !important;
 }

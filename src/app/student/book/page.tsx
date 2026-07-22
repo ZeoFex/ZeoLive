@@ -198,7 +198,7 @@ function BookSessionContent() {
               <label className="text-sm font-medium text-slate-700">Date</label>
               <Input
                 type="date"
-                className="mt-1.5 rounded-xl"
+                className="student-input"
                 disabled={startNow}
                 onChange={(e) => setDate(e.target.value)}
               />

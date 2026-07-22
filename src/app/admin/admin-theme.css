@@ -1,9 +1,137 @@
 @import "tailwindcss" reference;
 
-/* Admin panel — Skillora-style dashboard */
+/*
+ * While any admin shell is mounted, keep the whole document on light tokens.
+ * This also covers Radix portals (select/dropdown) rendered outside .admin-shell.
+ */
+html:has(.admin-shell),
+html:has(.admin-shell).dark {
+  color-scheme: light;
+  --background: 210 40% 99%;
+  --foreground: 215 28% 14%;
+  --card: 0 0% 100%;
+  --card-foreground: 215 28% 14%;
+  --popover: 0 0% 100%;
+  --popover-foreground: 215 28% 14%;
+  --primary: 210 100% 40%;
+  --primary-foreground: 0 0% 100%;
+  --secondary: 210 32% 96%;
+  --secondary-foreground: 215 25% 22%;
+  --muted: 210 28% 96%;
+  --muted-foreground: 215 14% 40%;
+  --accent: 205 55% 94%;
+  --accent-foreground: 215 40% 22%;
+  --border: 214 24% 88%;
+  --input: 214 24% 86%;
+  --ring: 210 100% 40%;
+}
+
+/* Admin panel — blue / white Zeolive theme (always light, even if site is dark) */
 .admin-shell {
-  background: #eef1f8;
+  color-scheme: light;
+  background: #eef4fb;
+  color: #0f172a;
   font-family: var(--font-geist-sans), system-ui, sans-serif;
+  --background: 210 40% 99%;
+  --foreground: 215 28% 14%;
+  --card: 0 0% 100%;
+  --card-foreground: 215 28% 14%;
+  --popover: 0 0% 100%;
+  --popover-foreground: 215 28% 14%;
+  --primary: 210 100% 40%;
+  --primary-foreground: 0 0% 100%;
+  --secondary: 210 32% 96%;
+  --secondary-foreground: 215 25% 22%;
+  --muted: 210 28% 96%;
+  --muted-foreground: 215 14% 40%;
+  --accent: 205 55% 94%;
+  --accent-foreground: 215 40% 22%;
+  --border: 214 24% 88%;
+  --input: 214 24% 86%;
+  --ring: 210 100% 40%;
+}
+
+/* Readable copy everywhere in admin */
+.admin-shell h1,
+.admin-shell h2,
+.admin-shell h3,
+.admin-shell h4,
+.admin-shell h5,
+.admin-shell h6 {
+  color: #0f172a;
+}
+
+.admin-shell .text-muted-foreground,
+.admin-shell [class*="text-muted"] {
+  color: #64748b !important;
+}
+
+.admin-shell .text-slate-400 {
+  color: #94a3b8 !important;
+}
+
+.admin-shell .text-slate-500 {
+  color: #64748b !important;
+}
+
+.admin-shell .text-slate-600,
+.admin-shell .text-slate-700 {
+  color: #334155 !important;
+}
+
+.admin-shell .text-slate-800,
+.admin-shell .text-slate-900 {
+  color: #0f172a !important;
+}
+
+/* All native + shadcn fields: white surface, dark text, clear focus */
+.admin-shell input:not([type="checkbox"]):not([type="radio"]):not([type="range"]),
+.admin-shell textarea,
+.admin-shell select,
+.admin-shell button[role="combobox"] {
+  background-color: #ffffff !important;
+  color: #0f172a !important;
+  -webkit-text-fill-color: #0f172a;
+  border-color: #cbd5e1 !important;
+  caret-color: #0f172a;
+}
+
+.admin-shell input:not([type="checkbox"]):not([type="radio"]):not([type="range"])::placeholder,
+.admin-shell textarea::placeholder {
+  color: #64748b !important;
+  opacity: 1;
+  -webkit-text-fill-color: #64748b;
+}
+
+.admin-shell input:not([type="checkbox"]):not([type="radio"]):not([type="range"]):focus,
+.admin-shell input:not([type="checkbox"]):not([type="radio"]):not([type="range"]):focus-visible,
+.admin-shell textarea:focus,
+.admin-shell textarea:focus-visible,
+.admin-shell select:focus,
+.admin-shell button[role="combobox"]:focus,
+.admin-shell button[role="combobox"]:focus-visible {
+  border-color: #0066cc !important;
+  outline: none;
+  box-shadow: 0 0 0 3px rgba(0, 102, 204, 0.18);
+}
+
+.admin-shell input:-webkit-autofill,
+.admin-shell input:-webkit-autofill:hover,
+.admin-shell input:-webkit-autofill:focus,
+.admin-shell textarea:-webkit-autofill {
+  -webkit-text-fill-color: #0f172a;
+  box-shadow: 0 0 0 1000px #ffffff inset;
+  transition: background-color 9999s ease-in-out 0s;
+}
+
+.admin-shell label,
+.admin-shell [data-slot="label"] {
+  color: #334155 !important;
+  font-weight: 600;
+}
+
+.admin-shell button[role="combobox"] span {
+  color: #0f172a !important;
 }
 
 .admin-sidebar {
@@ -11,14 +139,14 @@
 }
 
 .admin-logo-badge {
-  background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 50%, #a855f7 100%);
-  box-shadow: 0 6px 16px -4px rgba(99, 102, 241, 0.55);
+  background: linear-gradient(135deg, #00aeef 0%, #0066cc 55%, #0054a6 100%);
+  box-shadow: 0 6px 16px -4px rgba(0, 102, 204, 0.45);
 }
 
 .admin-nav-active {
-  background: linear-gradient(135deg, #6366f1 0%, #7c3aed 55%, #9333ea 100%);
+  background: linear-gradient(135deg, #00aeef 0%, #0066cc 55%, #0054a6 100%);
   color: #ffffff !important;
-  box-shadow: 0 8px 20px -6px rgba(99, 102, 241, 0.45);
+  box-shadow: 0 8px 20px -6px rgba(0, 102, 204, 0.4);
 }
 
 .admin-nav-active svg {
@@ -27,9 +155,9 @@
 
 .admin-gradient-btn {
   border: 0 !important;
-  background: linear-gradient(135deg, #6366f1 0%, #7c3aed 55%, #9333ea 100%) !important;
+  background: linear-gradient(135deg, #00aeef 0%, #0066cc 55%, #0054a6 100%) !important;
   color: #ffffff !important;
-  box-shadow: 0 8px 18px -8px rgba(99, 102, 241, 0.55);
+  box-shadow: 0 8px 18px -8px rgba(0, 102, 204, 0.5);
 }
 
 .admin-gradient-btn:hover:not(:disabled) {
@@ -38,15 +166,85 @@
 
 .admin-card {
   @apply rounded-2xl border border-slate-100 bg-white shadow-[0_4px_24px_-8px_rgba(15,23,42,0.12)];
+  color: #0f172a;
 }
 
 .admin-stat-card {
   @apply rounded-2xl border border-slate-100 bg-white p-5 shadow-[0_4px_24px_-8px_rgba(15,23,42,0.1)];
+  color: #0f172a;
 }
 
 .admin-stat-icon {
-  background: linear-gradient(135deg, rgba(99, 102, 241, 0.14) 0%, rgba(147, 51, 234, 0.12) 100%);
-  color: #6366f1;
+  background: linear-gradient(135deg, rgba(0, 174, 239, 0.16) 0%, rgba(0, 102, 204, 0.12) 100%);
+  color: #0066cc;
+}
+
+.admin-label {
+  @apply text-sm font-semibold;
+  color: #334155 !important;
+}
+
+.admin-hint {
+  @apply mt-1 text-[11px] leading-relaxed;
+  color: #64748b !important;
+}
+
+.admin-input {
+  @apply mt-1.5 h-11 w-full rounded-xl border border-slate-200 bg-white px-3.5 text-sm font-normal shadow-sm transition-colors;
+  @apply focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-0;
+  color: #0f172a !important;
+  -webkit-text-fill-color: #0f172a;
+  background-color: #ffffff !important;
+  border-color: #cbd5e1 !important;
+}
+
+.admin-input::placeholder {
+  color: #64748b !important;
+  -webkit-text-fill-color: #64748b;
+  opacity: 1;
+}
+
+.admin-input:focus-visible {
+  border-color: #0066cc !important;
+  box-shadow: 0 0 0 3px rgba(0, 102, 204, 0.18);
+}
+
+.admin-input:disabled {
+  @apply cursor-not-allowed opacity-70;
+  background-color: #f8fafc !important;
+  color: #94a3b8 !important;
+  -webkit-text-fill-color: #94a3b8;
+}
+
+.admin-textarea {
+  @apply mt-1.5 min-h-[96px] w-full rounded-xl border border-slate-200 bg-white px-3.5 py-2.5 text-sm font-normal shadow-sm transition-colors;
+  @apply focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-0;
+  color: #0f172a !important;
+  -webkit-text-fill-color: #0f172a;
+  background-color: #ffffff !important;
+  border-color: #cbd5e1 !important;
+  resize: vertical;
+}
+
+.admin-textarea::placeholder {
+  color: #64748b !important;
+  -webkit-text-fill-color: #64748b;
+  opacity: 1;
+}
+
+.admin-textarea:focus-visible {
+  border-color: #0066cc !important;
+  box-shadow: 0 0 0 3px rgba(0, 102, 204, 0.18);
+}
+
+.admin-field-group {
+  @apply space-y-3 rounded-2xl border border-sky-100 bg-gradient-to-b from-sky-50/80 to-white p-4 shadow-sm;
+  color: #0f172a;
+}
+
+.admin-field-group-title {
+  @apply text-sm font-semibold;
+  color: #0f172a !important;
 }
 
 .admin-table-wrap {
@@ -62,11 +260,13 @@
 }
 
 .admin-table-wrap th {
-  @apply bg-slate-50/90 px-4 py-3.5 text-left text-xs font-semibold uppercase tracking-wide text-slate-500;
+  @apply bg-slate-50/90 px-4 py-3.5 text-left text-xs font-semibold uppercase tracking-wide;
+  color: #64748b !important;
 }
 
 .admin-table-wrap td {
-  @apply border-b border-slate-50 px-4 py-4 text-sm text-slate-700;
+  @apply border-b border-slate-50 px-4 py-4 text-sm;
+  color: #334155 !important;
 }
 
 .admin-table-wrap tbody tr:last-child td {
@@ -78,20 +278,31 @@
 }
 
 .admin-promo-card {
-  background: linear-gradient(145deg, #eef2ff 0%, #f5f3ff 100%);
-  border: 1px solid #e0e7ff;
+  background: linear-gradient(145deg, #eef7ff 0%, #e8f3ff 100%);
+  border: 1px solid #cfe5ff;
+  color: #0f172a;
 }
 
 .admin-search {
-  @apply h-10 rounded-xl border-slate-200 bg-slate-50 pl-10 text-sm text-slate-800 placeholder:text-slate-400;
+  @apply h-10 rounded-xl border-slate-200 bg-white pl-10 text-sm shadow-none;
+  color: #0f172a !important;
+  -webkit-text-fill-color: #0f172a;
+  background-color: #ffffff !important;
+}
+
+.admin-search::placeholder {
+  color: #64748b !important;
+  -webkit-text-fill-color: #64748b;
 }
 
 .admin-page-content {
   @apply flex-1 overflow-auto px-5 pb-8 pt-4 sm:px-8;
+  color: #0f172a;
 }
 
 .admin-outline-btn {
-  @apply rounded-xl border-slate-200 bg-white text-slate-700 hover:bg-slate-50;
+  @apply rounded-xl border-slate-200 bg-white hover:bg-slate-50;
+  color: #334155 !important;
 }
 
 .admin-filter-bar {
@@ -99,15 +310,18 @@
 }
 
 .admin-filter-select {
-  @apply h-10 w-auto min-w-[180px] rounded-xl border-slate-200 bg-white text-sm text-slate-800;
+  @apply h-10 w-auto min-w-[180px] rounded-xl border-slate-200 bg-white text-sm;
+  color: #0f172a !important;
+  background-color: #ffffff !important;
 }
 
 .admin-tag {
   @apply inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-semibold;
 }
 
-.admin-tag-violet {
-  @apply bg-violet-100 text-violet-700;
+.admin-tag-violet,
+.admin-tag-blue {
+  @apply bg-sky-100 text-sky-800;
 }
 
 .admin-tag-emerald {
@@ -127,18 +341,106 @@
 }
 
 .admin-pagination-btn {
-  @apply flex h-9 w-9 items-center justify-center rounded-lg border border-slate-200 bg-white text-sm font-medium text-slate-600 transition-colors hover:bg-slate-50 disabled:opacity-40;
+  @apply flex h-9 w-9 items-center justify-center rounded-lg border border-slate-200 bg-white text-sm font-medium transition-colors hover:bg-slate-50 disabled:opacity-40;
+  color: #475569 !important;
 }
 
 .admin-pagination-btn-active {
-  @apply border-0 text-white;
-  background: linear-gradient(135deg, #6366f1 0%, #7c3aed 100%);
+  @apply border-0;
+  background: linear-gradient(135deg, #00aeef 0%, #0066cc 100%);
+  color: #ffffff !important;
 }
 
 .admin-report-card {
-  @apply rounded-2xl border border-slate-100 bg-white p-5 shadow-[0_4px_20px_-8px_rgba(15,23,42,0.1)] transition-shadow hover:shadow-[0_8px_28px_-8px_rgba(99,102,241,0.2)];
+  @apply rounded-2xl border border-slate-100 bg-white p-5 shadow-[0_4px_20px_-8px_rgba(15,23,42,0.1)] transition-shadow hover:shadow-[0_8px_28px_-8px_rgba(0,102,204,0.18)];
+  color: #0f172a;
 }
 
 .admin-empty {
-  @apply rounded-2xl border border-dashed border-slate-200 bg-slate-50/50 px-6 py-12 text-center text-sm text-slate-500;
+  @apply rounded-2xl border border-dashed border-slate-200 bg-slate-50/50 px-6 py-12 text-center text-sm;
+  color: #64748b !important;
+}
+
+.admin-tabs-list {
+  @apply flex h-auto w-full flex-wrap gap-1 rounded-2xl border border-slate-100 bg-white p-1.5 shadow-[0_4px_24px_-8px_rgba(15,23,42,0.08)];
+}
+
+.admin-tabs-trigger {
+  @apply rounded-xl px-3.5 py-2 text-sm font-medium shadow-none transition-colors;
+  color: #64748b !important;
+  @apply hover:bg-sky-50;
+}
+
+.admin-tabs-trigger:hover {
+  color: #0066cc !important;
+}
+
+.admin-tabs-trigger[data-state="active"] {
+  background: linear-gradient(90deg, #00aeef 0%, #0066cc 100%);
+  color: #ffffff !important;
+  box-shadow: 0 4px 12px -4px rgba(0, 102, 204, 0.45);
+}
+
+.admin-tabs-content {
+  @apply mt-5 space-y-5 focus-visible:outline-none focus-visible:ring-0;
+  color: #0f172a;
+}
+
+/* Portals (dialogs, selects) render outside .admin-shell — keep them readable too */
+html:has(.admin-shell) [role="dialog"],
+html:has(.admin-shell) [data-radix-popper-content-wrapper],
+html:has(.admin-shell) [data-slot="dialog-content"],
+html:has(.admin-shell) [data-slot="select-content"],
+html:has(.admin-shell) [data-slot="popover-content"],
+html:has(.admin-shell) [data-slot="dropdown-menu-content"] {
+  color: #0f172a;
+  --background: 0 0% 100%;
+  --foreground: 215 28% 14%;
+  --popover: 0 0% 100%;
+  --popover-foreground: 215 28% 14%;
+  --muted: 210 28% 96%;
+  --muted-foreground: 215 14% 40%;
+  --border: 214 24% 88%;
+  --input: 214 24% 86%;
+}
+
+html:has(.admin-shell) [role="dialog"] input:not([type="checkbox"]):not([type="radio"]):not([type="range"]),
+html:has(.admin-shell) [role="dialog"] textarea,
+html:has(.admin-shell) [role="dialog"] select,
+html:has(.admin-shell) [role="dialog"] button[role="combobox"],
+html:has(.admin-shell) [data-radix-popper-content-wrapper] {
+  color: #0f172a;
+}
+
+html:has(.admin-shell) [role="dialog"] input:not([type="checkbox"]):not([type="radio"]):not([type="range"]),
+html:has(.admin-shell) [role="dialog"] textarea,
+html:has(.admin-shell) [role="dialog"] select,
+html:has(.admin-shell) [role="dialog"] button[role="combobox"] {
+  background-color: #ffffff !important;
+  color: #0f172a !important;
+  -webkit-text-fill-color: #0f172a;
+  border-color: #cbd5e1 !important;
+  caret-color: #0f172a;
+}
+
+html:has(.admin-shell) [role="dialog"] input::placeholder,
+html:has(.admin-shell) [role="dialog"] textarea::placeholder {
+  color: #64748b !important;
+  opacity: 1;
+  -webkit-text-fill-color: #64748b;
+}
+
+html:has(.admin-shell) [role="dialog"] label,
+html:has(.admin-shell) [role="dialog"] [data-slot="label"] {
+  color: #334155 !important;
+  font-weight: 600;
+}
+
+html:has(.admin-shell) [data-slot="select-item"],
+html:has(.admin-shell) [role="option"] {
+  color: #0f172a !important;
+}
+
+.admin-shell {
+  -webkit-font-smoothing: antialiased;
 }

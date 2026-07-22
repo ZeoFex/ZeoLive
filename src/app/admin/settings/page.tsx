@@ -146,7 +146,7 @@ export default function AdminSettingsPage() {
   if (loading) {
     return (
       <div className="flex justify-center py-24">
-        <Loader2 className="h-10 w-10 animate-spin text-violet-500" />
+        <Loader2 className="h-10 w-10 animate-spin text-sky-500" />
       </div>
     );
   }
@@ -229,6 +229,7 @@ export default function AdminSettingsPage() {
             <Textarea
               id="maintenance-msg"
               rows={3}
+              className="admin-textarea"
               value={settings.maintenanceMessage}
               onChange={(e) => patch({ maintenanceMessage: e.target.value })}
             />
@@ -299,6 +300,7 @@ export default function AdminSettingsPage() {
                 type="number"
                 min={0}
                 max={120}
+                className="admin-input"
                 value={settings.sessionJoinEarlyMinutes}
                 onChange={(e) =>
                   patch({ sessionJoinEarlyMinutes: Number(e.target.value) })
@@ -312,6 +314,7 @@ export default function AdminSettingsPage() {
                 type="number"
                 min={0}
                 max={120}
+                className="admin-input"
                 value={settings.sessionJoinLateMinutes}
                 onChange={(e) =>
                   patch({ sessionJoinLateMinutes: Number(e.target.value) })
@@ -333,6 +336,7 @@ export default function AdminSettingsPage() {
             <Input
               id="support-email"
               type="email"
+              className="admin-input"
               value={settings.supportEmail}
               onChange={(e) => patch({ supportEmail: e.target.value })}
             />
@@ -341,6 +345,7 @@ export default function AdminSettingsPage() {
             <Label htmlFor="contact-phone">Contact phone (optional)</Label>
             <Input
               id="contact-phone"
+              className="admin-input"
               value={settings.contactPhone}
               onChange={(e) => patch({ contactPhone: e.target.value })}
             />
@@ -352,6 +357,7 @@ export default function AdminSettingsPage() {
               type="number"
               min={1}
               max={50}
+              className="admin-input"
               value={settings.maxUploadSizeMb}
               onChange={(e) => patch({ maxUploadSizeMb: Number(e.target.value) })}
             />
@@ -361,7 +367,7 @@ export default function AdminSettingsPage() {
 
       <section className="admin-card mt-6 space-y-4 p-5">
         <div className="flex items-start gap-3">
-          <Database className="mt-0.5 h-5 w-5 text-violet-600" />
+          <Database className="mt-0.5 h-5 w-5 text-blue-600" />
           <div>
             <h3 className="font-semibold text-slate-900">Content management</h3>
             <p className="mt-1 text-sm text-slate-500">
@@ -439,7 +445,7 @@ export default function AdminSettingsPage() {
             value={wipePhrase}
             onChange={(e) => setWipePhrase(e.target.value)}
             placeholder={WIPE_CONFIRM_PHRASE}
-            className="border-red-200 focus-visible:ring-red-500"
+            className="admin-input border-red-200 focus-visible:ring-red-500"
             autoComplete="off"
           />
           <div className="flex justify-end gap-2 pt-2">

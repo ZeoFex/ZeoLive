@@ -146,8 +146,8 @@ export function TutorSidebar({
 
         {upcomingCount > 0 ? (
           <div className="mx-4 mb-6 rounded-2xl p-4 tutor-promo-card">
-            <p className="text-sm font-semibold text-violet-900">Upcoming sessions</p>
-            <p className="mt-1 text-xs text-violet-700/80">
+            <p className="text-sm font-semibold text-blue-900">Upcoming sessions</p>
+            <p className="mt-1 text-xs text-blue-700/80">
               You have {upcomingCount} session{upcomingCount === 1 ? "" : "s"} scheduled soon.
             </p>
             <Button
@@ -160,8 +160,8 @@ export function TutorSidebar({
           </div>
         ) : (
           <div className="mx-4 mb-6 rounded-2xl p-4 tutor-promo-card">
-            <p className="text-sm font-semibold text-violet-900">Grow your reach</p>
-            <p className="mt-1 text-xs text-violet-700/80">
+            <p className="text-sm font-semibold text-blue-900">Grow your reach</p>
+            <p className="mt-1 text-xs text-blue-700/80">
               Keep your availability updated so students can book more sessions with you.
             </p>
             <Button

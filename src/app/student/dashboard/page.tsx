@@ -97,7 +97,7 @@ export default function StudentDashboardPage() {
         <div className="student-card p-4 sm:p-6">
           <div className="mb-4 flex items-center justify-between gap-2">
             <h3 className="font-bold text-slate-900">Upcoming sessions</h3>
-            <Button variant="ghost" size="sm" className="text-violet-600" asChild>
+            <Button variant="ghost" size="sm" className="text-blue-600" asChild>
               <Link href={routes.student.classes}>View all</Link>
             </Button>
           </div>
@@ -106,7 +106,7 @@ export default function StudentDashboardPage() {
           ) : upcoming.length === 0 ? (
             <div className="rounded-xl border border-dashed border-slate-200 bg-slate-50/80 px-4 py-8 text-center text-sm text-slate-500">
               No sessions booked yet.{" "}
-              <Link href={routes.student.book} className="font-medium text-violet-600">
+              <Link href={routes.student.book} className="font-medium text-blue-600">
                 Find a tutor
               </Link>
             </div>
@@ -187,7 +187,7 @@ export default function StudentDashboardPage() {
               <Link
                 key={n.id}
                 href={n.href}
-                className="block rounded-xl border border-slate-100 bg-slate-50/80 px-4 py-3 text-sm transition-colors hover:bg-violet-50/50"
+                className="block rounded-xl border border-slate-100 bg-slate-50/80 px-4 py-3 text-sm transition-colors hover:bg-sky-50/50"
               >
                 <p className="font-medium text-slate-900">{n.title}</p>
                 <p className="mt-0.5 text-xs text-slate-500">{n.message}</p>

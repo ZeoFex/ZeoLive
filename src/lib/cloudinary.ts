@@ -1,5 +1,7 @@
 import { v2 as cloudinary } from "cloudinary";
 
+const CLOUDINARY_TIMEOUT_MS = 20_000;
+
 export function isCloudinaryConfigured() {
   return Boolean(
     process.env.CLOUDINARY_CLOUD_NAME &&
@@ -19,8 +21,27 @@ function getCloudinary() {
     api_key: process.env.CLOUDINARY_API_KEY,
     api_secret: process.env.CLOUDINARY_API_SECRET,
     secure: true,
+    timeout: CLOUDINARY_TIMEOUT_MS,
   });
   return cloudinary;
+}
+
+function withTimeout<T>(promise: Promise<T>, ms: number, label: string): Promise<T> {
+  return new Promise((resolve, reject) => {
+    const timer = setTimeout(() => {
+      reject(new Error(`${label} timed out after ${Math.round(ms / 1000)}s`));
+    }, ms);
+    promise.then(
+      (value) => {
+        clearTimeout(timer);
+        resolve(value);
+      },
+      (error) => {
+        clearTimeout(timer);
+        reject(error);
+      }
+    );
+  });
 }
 
 export async function uploadImage(
@@ -31,6 +52,39 @@ export async function uploadImage(
   return cld.uploader.upload(file, {
     folder,
     resource_type: "image",
+    timeout: CLOUDINARY_TIMEOUT_MS,
+  });
+}
+
+function uploadBufferOnce(file: File, folder: string): Promise<string> {
+  const cld = getCloudinary();
+  const isImage = file.type.startsWith("image/");
+  const resourceType = isImage ? "image" : "auto";
+
+  return file.arrayBuffer().then((bytes) => {
+    const buffer = Buffer.from(bytes);
+    return new Promise<string>((resolve, reject) => {
+      const stream = cld.uploader.upload_stream(
+        {
+          folder: `zoelive/${folder}`,
+          resource_type: resourceType,
+          format: isImage && file.type === "image/jpeg" ? "jpg" : undefined,
+          timeout: CLOUDINARY_TIMEOUT_MS,
+        },
+        (error, result) => {
+          if (error) {
+            reject(error);
+            return;
+          }
+          if (!result?.secure_url) {
+            reject(new Error("Cloudinary did not return a URL"));
+            return;
+          }
+          resolve(result.secure_url);
+        }
+      );
+      stream.end(buffer);
+    });
   });
 }
 
@@ -39,33 +93,27 @@ export async function uploadFileFromBuffer(
   file: File,
   folder: string
 ): Promise<string> {
-  const cld = getCloudinary();
-  const bytes = await file.arrayBuffer();
-  const buffer = Buffer.from(bytes);
-  const isImage = file.type.startsWith("image/");
-  const resourceType = isImage ? "image" : "auto";
+  let lastError: unknown;
 
-  return new Promise((resolve, reject) => {
-    const stream = cld.uploader.upload_stream(
-      {
-        folder: `zoelive/${folder}`,
-        resource_type: resourceType,
-        format: isImage && file.type === "image/jpeg" ? "jpg" : undefined,
-      },
-      (error, result) => {
-        if (error) {
-          reject(error);
-          return;
-        }
-        if (!result?.secure_url) {
-          reject(new Error("Cloudinary did not return a URL"));
-          return;
-        }
-        resolve(result.secure_url);
+  for (let attempt = 1; attempt <= 2; attempt++) {
+    try {
+      return await withTimeout(
+        uploadBufferOnce(file, folder),
+        CLOUDINARY_TIMEOUT_MS,
+        "Cloudinary upload"
+      );
+    } catch (error) {
+      lastError = error;
+      console.error(`Cloudinary upload attempt ${attempt} failed:`, error);
+      if (attempt < 2) {
+        await new Promise((r) => setTimeout(r, 400));
       }
-    );
-    stream.end(buffer);
-  });
+    }
+  }
+
+  throw lastError instanceof Error
+    ? lastError
+    : new Error("Cloudinary upload failed");
 }
 
 export async function uploadVideo(
@@ -76,6 +124,7 @@ export async function uploadVideo(
   return cld.uploader.upload(file, {
     folder,
     resource_type: "video",
+    timeout: CLOUDINARY_TIMEOUT_MS,
   });
 }
 

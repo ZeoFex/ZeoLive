@@ -69,7 +69,7 @@ export default function StudentMaterialsPage() {
         description="Files your tutors have shared with you. Download anytime."
         actions={
           newCount > 0 ? (
-            <Badge className="bg-violet-600 hover:bg-violet-600">
+            <Badge className="bg-blue-600 hover:bg-blue-600">
               {newCount} new
             </Badge>
           ) : undefined
@@ -78,7 +78,7 @@ export default function StudentMaterialsPage() {
 
       {loading ? (
         <div className="flex justify-center py-16">
-          <Loader2 className="h-8 w-8 animate-spin text-violet-500" />
+          <Loader2 className="h-8 w-8 animate-spin text-sky-500" />
         </div>
       ) : materials.length === 0 ? (
         <div className="student-card px-6 py-12 text-center text-sm text-slate-500">
@@ -96,8 +96,8 @@ export default function StudentMaterialsPage() {
               className="student-card flex flex-col gap-4 p-4 sm:flex-row sm:items-center sm:p-5"
             >
               <div className="flex min-w-0 flex-1 items-start gap-4">
-                <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-violet-50">
-                  <FileText className="h-6 w-6 text-violet-600" />
+                <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-sky-50">
+                  <FileText className="h-6 w-6 text-blue-600" />
                 </div>
                 <div className="min-w-0 flex-1">
                   <div className="flex flex-wrap items-center gap-2">

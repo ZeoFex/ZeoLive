@@ -3,7 +3,6 @@ import { FeaturedTutors } from "@/components/landing/featured-tutors";
 import { Features } from "@/components/landing/features";
 import { Hero } from "@/components/landing/hero";
 import { HowItWorks } from "@/components/landing/how-it-works";
-import { Pricing } from "@/components/landing/pricing";
 import { Showcase } from "@/components/landing/showcase";
 import { Stats } from "@/components/landing/stats";
 import { Testimonials } from "@/components/landing/testimonials";
@@ -36,7 +35,6 @@ export default async function HomePage() {
         <HowItWorks content={cms.howItWorks} />
         <FeaturedTutors heading={cms.featuredTutors} tutors={tutors} />
         <Testimonials content={cms.testimonials} />
-        <Pricing content={cms.pricing} />
         <FAQ content={cms.faq} />
       </main>
       <Footer />

@@ -6,11 +6,32 @@ import { siteImages } from "@/lib/site-images";
 export function defaultLandingCms(): LandingCms {
   return {
     hero: {
-      eyebrow: `${BRAND_NAME} — online tutoring for students and tutors`,
-      title: "Live lessons with tutors you can trust",
-      description: `${BRAND_NAME} helps you find a tutor, schedule a session, and meet in a shared classroom. No clutter — just teaching, notes, and a clear record of what you covered.`,
-      imageSrc: siteImages.hero.src,
-      imageAlt: siteImages.hero.alt,
+      autoplayMs: 6500,
+      slides: [
+        {
+          eyebrow: `${BRAND_NAME} — online tutoring`,
+          title: "Live lessons with tutors you can trust",
+          description: `Find a tutor, schedule a session, and meet in a shared classroom — teaching, notes, and a clear record of what you covered.`,
+          imageSrc: siteImages.hero.src,
+          imageAlt: siteImages.hero.alt,
+        },
+        {
+          eyebrow: "Built for real learning",
+          title: "A classroom that stays with you",
+          description:
+            "Video, chat, and materials in one place so every lesson builds on the last.",
+          imageSrc: siteImages.classroom.src,
+          imageAlt: siteImages.classroom.alt,
+        },
+        {
+          eyebrow: "Plan your week",
+          title: "Book around your schedule",
+          description:
+            "Tutors publish open slots. Students book when it fits — no back-and-forth.",
+          imageSrc: siteImages.schedule.src,
+          imageAlt: siteImages.schedule.alt,
+        },
+      ],
       primaryCta: "Create student account",
       primaryCtaHref: "/signup/student",
       secondaryCta: "Apply as a tutor",
@@ -31,8 +52,26 @@ export function defaultLandingCms(): LandingCms {
     showcase: {
       title: "Built for recurring lessons",
       description: `A typical week on ${BRAND_NAME}: live sessions, shared materials, and a clear calendar.`,
-      imageSrc: siteImages.classroom.src,
-      imageAlt: siteImages.classroom.alt,
+      panels: [
+        {
+          title: "Shared classroom",
+          description: "Video, chat, and whiteboard in one browser tab.",
+          imageSrc: siteImages.classroom.src,
+          imageAlt: siteImages.classroom.alt,
+        },
+        {
+          title: "Session materials",
+          description: "Notes and files stay linked to each lesson.",
+          imageSrc: siteImages.study.src,
+          imageAlt: siteImages.study.alt,
+        },
+        {
+          title: "Clear scheduling",
+          description: "Tutors set availability; students book open slots.",
+          imageSrc: siteImages.schedule.src,
+          imageAlt: siteImages.schedule.alt,
+        },
+      ],
     },
     features: {
       heading: {
@@ -40,6 +79,8 @@ export function defaultLandingCms(): LandingCms {
         description:
           "Built for recurring lessons between the same student and tutor, not one-off video calls.",
       },
+      imageSrc: siteImages.classroom.src,
+      imageAlt: siteImages.classroom.alt,
       items: [
         {
           icon: "Video",
@@ -73,6 +114,9 @@ export function defaultLandingCms(): LandingCms {
           description: "Standard encryption for sign-in, payments, and classroom access.",
         },
       ],
+      videoUrl: "",
+      videoTitle: "How to use the platform",
+      videoPosterSrc: siteImages.classroom.src,
     },
     howItWorks: {
       heading: {

@@ -10,6 +10,10 @@ interface LandingImageProps {
   sizes?: string;
 }
 
+function isLocalSrc(src: string) {
+  return src.startsWith("/") && !src.startsWith("//");
+}
+
 export function LandingImage({
   src,
   alt,
@@ -18,6 +22,8 @@ export function LandingImage({
   priority = false,
   sizes = "(max-width: 768px) 100vw, 50vw",
 }: LandingImageProps) {
+  const local = isLocalSrc(src);
+
   return (
     <div className={cn("relative overflow-hidden bg-muted", className)}>
       <Image
@@ -26,6 +32,8 @@ export function LandingImage({
         fill
         priority={priority}
         sizes={sizes}
+        // CMS may point at hosts outside next.config remotePatterns.
+        unoptimized={!local}
         className={cn("object-cover", imageClassName)}
       />
     </div>

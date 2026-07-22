@@ -13,6 +13,7 @@ export function HowItWorks({ content }: { content: LandingCms["howItWorks"] }) {
           title={content.heading.title}
           description={content.heading.description}
         />
+
         <ol className="mt-10 grid gap-10 md:grid-cols-3">
           {content.steps.map((item) => (
             <li key={item.step}>

@@ -256,10 +256,10 @@ export default function TutorMaterialsPage() {
             <label
               htmlFor="material-file"
               className={cn(
-                "flex min-h-[120px] cursor-pointer flex-col items-center justify-center rounded-xl border border-dashed border-violet-200 bg-violet-50/40 px-4 py-6 transition-colors hover:bg-violet-50"
+                "flex min-h-[120px] cursor-pointer flex-col items-center justify-center rounded-xl border border-dashed border-sky-200 bg-sky-50/40 px-4 py-6 transition-colors hover:bg-sky-50"
               )}
             >
-              <Upload className="mb-2 h-8 w-8 text-violet-600" />
+              <Upload className="mb-2 h-8 w-8 text-blue-600" />
               <span className="text-sm font-medium text-slate-800">
                 {file ? file.name : "Choose file or drag here"}
               </span>
@@ -272,18 +272,24 @@ export default function TutorMaterialsPage() {
               />
             </label>
             <div className="space-y-2">
-              <Label htmlFor="material-title">Title (optional)</Label>
+              <Label htmlFor="material-title" className="tutor-label">
+                Title (optional)
+              </Label>
               <Input
                 id="material-title"
+                className="tutor-input"
                 placeholder={file?.name ?? "e.g. Week 3 — Integration notes"}
                 value={title}
                 onChange={(e) => setTitle(e.target.value)}
               />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="material-desc">Note for students (optional)</Label>
+              <Label htmlFor="material-desc" className="tutor-label">
+                Note for students (optional)
+              </Label>
               <Textarea
                 id="material-desc"
+                className="tutor-textarea"
                 rows={2}
                 placeholder="What this file covers…"
                 value={description}
@@ -320,7 +326,7 @@ export default function TutorMaterialsPage() {
       </div>
 
       {shareMaterialId && (
-        <div className="tutor-card mb-6 space-y-4 border-violet-200 p-5 sm:p-6">
+        <div className="tutor-card mb-6 space-y-4 border-sky-200 p-5 sm:p-6">
           <div className="flex items-start justify-between gap-2">
             <div>
               <h3 className="font-semibold text-slate-900">Share with more students</h3>
@@ -360,7 +366,7 @@ export default function TutorMaterialsPage() {
 
       {loading ? (
         <div className="flex justify-center py-16">
-          <Loader2 className="h-8 w-8 animate-spin text-violet-500" />
+          <Loader2 className="h-8 w-8 animate-spin text-sky-500" />
         </div>
       ) : materials.length === 0 ? (
         <div className="tutor-card px-6 py-12 text-center text-sm text-slate-500">
@@ -371,8 +377,8 @@ export default function TutorMaterialsPage() {
           {materials.map((m) => (
             <div key={m.id} className="tutor-card group flex flex-col p-5 sm:p-6">
               <div className="flex items-start gap-3">
-                <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-violet-50">
-                  <FileText className="h-6 w-6 text-violet-600" />
+                <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-sky-50">
+                  <FileText className="h-6 w-6 text-blue-600" />
                 </div>
                 <div className="min-w-0 flex-1">
                   <p className="font-medium text-slate-900">{m.title}</p>
