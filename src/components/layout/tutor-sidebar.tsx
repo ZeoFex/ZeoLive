@@ -3,7 +3,6 @@
 import {
   BookOpen,
   Calendar,
-  ChevronDown,
   FileText,
   HelpCircle,
   LayoutDashboard,

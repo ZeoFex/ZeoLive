@@ -8,11 +8,6 @@ export function roleDashboardPath(role: Role) {
   return dashboardForRole(role);
 }
 
-type TutorOnboardingStatus = {
-  onboardingComplete: boolean;
-  verificationStatus: string;
-};
-
 /** Where to send the user immediately after a successful sign-in. */
 export async function resolvePostLoginPath(
   role: Role,

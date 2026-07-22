@@ -2,7 +2,13 @@ This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-
 
 ## Environment
 
-Copy `.env.example` to `.env.local` and fill in values.
+Copy `.env.example` to `.env.local` and fill in values (at minimum `DATABASE_URL` and `AUTH_SECRET`).
+
+```bash
+cp .env.example .env.local
+```
+
+To test on a phone over your LAN/hotspot, run `npm run dev` (binds to `0.0.0.0`) and open `http://<your-mac-ip>:3000`. If Next.js blocks HMR, add your IP to `allowedDevOrigins` in `next.config.ts` or set `ALLOWED_DEV_ORIGINS` in `.env.local`.
 
 ### Password reset (NextAuth + SMTP)
 

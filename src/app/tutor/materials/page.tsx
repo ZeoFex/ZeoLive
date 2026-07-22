@@ -37,6 +37,61 @@ type StudentOption = {
   sessionCount: number;
 };
 
+function StudentPicker({
+  students,
+  selected,
+  onToggle,
+  onSelectAll,
+}: {
+  students: StudentOption[];
+  selected: Set<string>;
+  onToggle: (id: string) => void;
+  onSelectAll: () => void;
+}) {
+  if (students.length === 0) {
+    return (
+      <p className="rounded-xl border border-dashed border-slate-200 bg-slate-50 px-4 py-6 text-center text-sm text-slate-500">
+        No students yet. Students appear here after they book a session with you.
+      </p>
+    );
+  }
+
+  return (
+    <div className="space-y-2">
+      <Button
+        type="button"
+        variant="outline"
+        size="sm"
+        className="rounded-lg"
+        onClick={onSelectAll}
+      >
+        <Users className="mr-2 h-4 w-4" />
+        {selected.size === students.length ? "Clear all" : "Select all students"}
+      </Button>
+      <ul className="max-h-48 space-y-1 overflow-y-auto rounded-xl border border-slate-200 p-2">
+        {students.map((s) => (
+          <li key={s.id}>
+            <label className="flex cursor-pointer items-center gap-3 rounded-lg px-2 py-2 hover:bg-slate-50">
+              <Checkbox
+                checked={selected.has(s.id)}
+                onCheckedChange={() => onToggle(s.id)}
+              />
+              <Avatar className="h-8 w-8">
+                {s.image ? <AvatarImage src={s.image} alt={s.name} /> : null}
+                <AvatarFallback>{s.name[0]}</AvatarFallback>
+              </Avatar>
+              <span className="min-w-0 flex-1 text-sm font-medium text-slate-900">
+                {s.name}
+              </span>
+              <span className="text-xs text-slate-400">{s.sessionCount} sessions</span>
+            </label>
+          </li>
+        ))}
+      </ul>
+    </div>
+  );
+}
+
 export default function TutorMaterialsPage() {
   const [materials, setMaterials] = useState<StudyMaterialDto[]>([]);
   const [students, setStudents] = useState<StudentOption[]>([]);
@@ -180,59 +235,6 @@ export default function TutorMaterialsPage() {
     }
   };
 
-  const StudentPicker = ({
-    selected,
-    onToggle,
-    onSelectAll,
-  }: {
-    selected: Set<string>;
-    onToggle: (id: string) => void;
-    onSelectAll: () => void;
-  }) => {
-    if (students.length === 0) {
-      return (
-        <p className="rounded-xl border border-dashed border-slate-200 bg-slate-50 px-4 py-6 text-center text-sm text-slate-500">
-          No students yet. Students appear here after they book a session with you.
-        </p>
-      );
-    }
-
-    return (
-      <div className="space-y-2">
-        <Button
-          type="button"
-          variant="outline"
-          size="sm"
-          className="rounded-lg"
-          onClick={onSelectAll}
-        >
-          <Users className="mr-2 h-4 w-4" />
-          {selected.size === students.length ? "Clear all" : "Select all students"}
-        </Button>
-        <ul className="max-h-48 space-y-1 overflow-y-auto rounded-xl border border-slate-200 p-2">
-          {students.map((s) => (
-            <li key={s.id}>
-              <label className="flex cursor-pointer items-center gap-3 rounded-lg px-2 py-2 hover:bg-slate-50">
-                <Checkbox
-                  checked={selected.has(s.id)}
-                  onCheckedChange={() => onToggle(s.id)}
-                />
-                <Avatar className="h-8 w-8">
-                  {s.image ? <AvatarImage src={s.image} alt={s.name} /> : null}
-                  <AvatarFallback>{s.name[0]}</AvatarFallback>
-                </Avatar>
-                <span className="min-w-0 flex-1 text-sm font-medium text-slate-900">
-                  {s.name}
-                </span>
-                <span className="text-xs text-slate-400">{s.sessionCount} sessions</span>
-              </label>
-            </li>
-          ))}
-        </ul>
-      </div>
-    );
-  };
-
   return (
     <>
       <TutorPageHeader
@@ -293,6 +295,7 @@ export default function TutorMaterialsPage() {
           <div className="space-y-2">
             <Label>Share with students</Label>
             <StudentPicker
+              students={students}
               selected={selectedStudentIds}
               onToggle={(id) => toggleStudent(id, selectedStudentIds, setSelectedStudentIds)}
               onSelectAll={() => selectAllStudents(selectedStudentIds, setSelectedStudentIds)}
@@ -338,6 +341,7 @@ export default function TutorMaterialsPage() {
             </Button>
           </div>
           <StudentPicker
+            students={students}
             selected={shareStudentIds}
             onToggle={(id) => toggleStudent(id, shareStudentIds, setShareStudentIds)}
             onSelectAll={() => selectAllStudents(shareStudentIds, setShareStudentIds)}

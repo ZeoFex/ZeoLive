@@ -8,7 +8,6 @@ import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import {
   assessLivePhotoQuality,
-  LIVE_PHOTO_CAPTURE_TIPS,
 } from "@/lib/live-photo-quality";
 import { uploadDocumentFile } from "@/lib/upload-client";
 import { cn } from "@/lib/utils";
@@ -33,7 +32,6 @@ export function LivePhotoCapture({
   const streamRef = useRef<MediaStream | null>(null);
   const [active, setActive] = useState(false);
   const [uploading, setUploading] = useState(false);
-  const [qualityHint, setQualityHint] = useState<string | null>(null);
   const [previewUrl, setPreviewUrl] = useState<string | null>(value ?? null);
 
   const stopCamera = useCallback(() => {
@@ -43,7 +41,6 @@ export function LivePhotoCapture({
       videoRef.current.srcObject = null;
     }
     setActive(false);
-    setQualityHint(null);
   }, []);
 
   useEffect(() => {
@@ -69,7 +66,6 @@ export function LivePhotoCapture({
         videoRef.current.srcObject = stream;
         await videoRef.current.play();
       }
-      setQualityHint(null);
       setActive(true);
     } catch {
       toast.error("Could not access camera. Allow camera permission and try again.");
@@ -122,12 +118,9 @@ export function LivePhotoCapture({
 
     const quality = assessLivePhotoQuality(canvas);
     if (!quality.ok) {
-      setQualityHint(quality.message);
       toast.error(quality.message, { duration: 6000 });
       return;
     }
-
-    setQualityHint(null);
 
     const blob = await new Promise<Blob | null>((resolve) => {
       canvas.toBlob((b) => resolve(b), "image/jpeg", 0.92);

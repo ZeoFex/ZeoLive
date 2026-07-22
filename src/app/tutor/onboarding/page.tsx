@@ -16,7 +16,6 @@ import {
 } from "@/components/auth/recommender-request-fields";
 import {
   tutorRequiresCertificate,
-  tutorRequiresRecommendation,
   type TutorEducationLevelValue,
 } from "@/lib/constants/registration";
 import { buildRecommendationEmailPreview } from "@/lib/recommendation-preview";
@@ -74,8 +73,6 @@ export default function TutorOnboardingPage() {
 
   const needsCertificate =
     educationLevel && tutorRequiresCertificate(educationLevel);
-  const needsRecommendation =
-    educationLevel && tutorRequiresRecommendation(educationLevel);
 
   const submitVerification = async () => {
     if (!educationLevel || !institutionName.trim()) {
