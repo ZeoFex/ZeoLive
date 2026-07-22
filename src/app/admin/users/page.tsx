@@ -187,7 +187,7 @@ export default function AdminUsersPage() {
                   <div>
                     <Label>First name</Label>
                     <Input
-                      className="mt-1.5 rounded-xl"
+                      className="admin-input"
                       value={firstName}
                       onChange={(e) => setFirstName(e.target.value)}
                       required
@@ -196,7 +196,7 @@ export default function AdminUsersPage() {
                   <div>
                     <Label>Last name</Label>
                     <Input
-                      className="mt-1.5 rounded-xl"
+                      className="admin-input"
                       value={lastName}
                       onChange={(e) => setLastName(e.target.value)}
                       required
@@ -207,7 +207,7 @@ export default function AdminUsersPage() {
                   <Label>Email</Label>
                   <Input
                     type="email"
-                    className="mt-1.5 rounded-xl"
+                    className="admin-input"
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
                     required
@@ -216,7 +216,7 @@ export default function AdminUsersPage() {
                 <div>
                   <Label>Password</Label>
                   <PasswordInput
-                    className="mt-1.5 rounded-xl"
+                    className="admin-input"
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
                     required
@@ -231,7 +231,7 @@ export default function AdminUsersPage() {
                       setNewRole(v as "STUDENT" | "TUTOR" | "ADMIN")
                     }
                   >
-                    <SelectTrigger className="mt-1.5 rounded-xl">
+                    <SelectTrigger className="admin-input mt-1.5">
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>

@@ -214,7 +214,7 @@ export function StudentTopbar({ title }: StudentTopbarProps) {
                     className="flex w-full items-start gap-3 px-4 py-3 text-left hover:bg-slate-50"
                     onClick={() => handleSearchSelect(result)}
                   >
-                    <span className="mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-violet-50 text-violet-600">
+                    <span className="mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-sky-50 text-blue-600">
                       <Icon className="h-4 w-4" />
                     </span>
                     <span className="min-w-0">
@@ -249,7 +249,7 @@ export function StudentTopbar({ title }: StudentTopbarProps) {
             size="icon"
             className={cn(
               "student-outline-btn h-9 w-9 rounded-xl",
-              searchExpanded && "border-violet-200 bg-violet-50"
+              searchExpanded && "border-sky-200 bg-sky-50"
             )}
             aria-label={searchExpanded ? "Close search" : "Open search"}
             aria-expanded={searchExpanded}
@@ -294,7 +294,7 @@ export function StudentTopbar({ title }: StudentTopbarProps) {
                   {unreadCount > 0 && (
                     <button
                       type="button"
-                      className="text-xs font-medium text-violet-600 hover:underline"
+                      className="text-xs font-medium text-blue-600 hover:underline"
                       onClick={() => {
                         markStudentNotificationsRead(notifications.map((n) => n.id));
                         setUnreadCount(0);
@@ -318,7 +318,7 @@ export function StudentTopbar({ title }: StudentTopbarProps) {
                             type="button"
                             className={cn(
                               "flex w-full flex-col gap-1 border-b border-slate-50 px-4 py-3 text-left hover:bg-slate-50",
-                              isUnread && "bg-violet-50/40"
+                              isUnread && "bg-sky-50/40"
                             )}
                             onClick={() => {
                               markStudentNotificationRead(item.id);
@@ -356,7 +356,7 @@ export function StudentTopbar({ title }: StudentTopbarProps) {
             >
               <Avatar className="h-8 w-8">
                 {displayImage && <AvatarImage src={displayImage} alt={displayName} />}
-                <AvatarFallback className="bg-violet-100 text-xs font-semibold text-violet-700">
+                <AvatarFallback className="bg-sky-100 text-xs font-semibold text-blue-700">
                   {displayName[0]?.toUpperCase() ?? "S"}
                 </AvatarFallback>
               </Avatar>
@@ -438,7 +438,7 @@ export function StudentTopbar({ title }: StudentTopbarProps) {
                   {unreadCount > 0 && (
                     <button
                       type="button"
-                      className="text-xs font-medium text-violet-600 hover:underline"
+                      className="text-xs font-medium text-blue-600 hover:underline"
                       onClick={() => {
                         markStudentNotificationsRead(notifications.map((n) => n.id));
                         setUnreadCount(0);
@@ -462,7 +462,7 @@ export function StudentTopbar({ title }: StudentTopbarProps) {
                             type="button"
                             className={cn(
                               "flex w-full flex-col gap-1 border-b border-slate-50 px-4 py-3 text-left hover:bg-slate-50",
-                              isUnread && "bg-violet-50/40"
+                              isUnread && "bg-sky-50/40"
                             )}
                             onClick={() => {
                               markStudentNotificationRead(item.id);
@@ -499,7 +499,7 @@ export function StudentTopbar({ title }: StudentTopbarProps) {
             >
               <Avatar className="h-8 w-8">
                 {displayImage && <AvatarImage src={displayImage} alt={displayName} />}
-                <AvatarFallback className="bg-violet-100 text-xs font-semibold text-violet-700">
+                <AvatarFallback className="bg-sky-100 text-xs font-semibold text-blue-700">
                   {displayName[0]?.toUpperCase() ?? "S"}
                 </AvatarFallback>
               </Avatar>

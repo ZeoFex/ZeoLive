@@ -1,17 +1,29 @@
 import type { FAQ, PricingPlan, Testimonial } from "@/types";
 
-export type CmsHero = {
+export type CmsHeroCardItem = {
+  subject: string;
+  time: string;
+  tutor: string;
+};
+
+export type CmsHeroSlide = {
   eyebrow: string;
   title: string;
   description: string;
   imageSrc: string;
   imageAlt: string;
+};
+
+export type CmsHero = {
+  slides: CmsHeroSlide[];
+  /** Auto-advance interval in ms. 0 disables autoplay. */
+  autoplayMs: number;
   primaryCta: string;
   primaryCtaHref: string;
   secondaryCta: string;
   secondaryCtaHref: string;
   cardTitle: string;
-  cardItems: { subject: string; time: string; tutor: string }[];
+  cardItems: CmsHeroCardItem[];
   cardFootnote: string;
 };
 
@@ -27,15 +39,32 @@ export type CmsSectionHeading = {
   description: string;
 };
 
-export type CmsShowcase = CmsSectionHeading & {
+export type CmsShowcasePanel = {
+  title: string;
+  description: string;
   imageSrc: string;
   imageAlt: string;
+};
+
+export type CmsShowcase = CmsSectionHeading & {
+  panels: CmsShowcasePanel[];
 };
 
 export type CmsFeature = {
   title: string;
   description: string;
   icon: string;
+};
+
+export type CmsFeatures = {
+  heading: CmsSectionHeading;
+  imageSrc: string;
+  imageAlt: string;
+  /** When set, replaces the side image with an autoplaying video. */
+  videoUrl: string;
+  videoTitle: string;
+  videoPosterSrc: string;
+  items: CmsFeature[];
 };
 
 export type CmsStep = {
@@ -46,12 +75,17 @@ export type CmsStep = {
   imageAlt: string;
 };
 
+export type CmsHowItWorks = {
+  heading: CmsSectionHeading;
+  steps: CmsStep[];
+};
+
 export type LandingCms = {
   hero: CmsHero;
   stats: CmsStats;
   showcase: CmsShowcase;
-  features: { heading: CmsSectionHeading; items: CmsFeature[] };
-  howItWorks: { heading: CmsSectionHeading; steps: CmsStep[] };
+  features: CmsFeatures;
+  howItWorks: CmsHowItWorks;
   featuredTutors: CmsSectionHeading;
   testimonials: { heading: CmsSectionHeading; items: Testimonial[] };
   pricing: { heading: CmsSectionHeading; plans: PricingPlan[] };

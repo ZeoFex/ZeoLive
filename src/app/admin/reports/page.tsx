@@ -22,7 +22,7 @@ import { AdminPageHeader } from "@/components/layout/admin-page-header";
 import { Button } from "@/components/ui/button";
 import type { AdminAnalytics } from "@/lib/analytics";
 
-const PIE_COLORS = ["#7c3aed", "#10b981", "#f59e0b", "#64748b", "#ef4444"];
+const PIE_COLORS = ["#0066CC", "#10b981", "#f59e0b", "#64748b", "#ef4444"];
 
 export default function AdminReportsPage() {
   const [data, setData] = useState<AdminAnalytics | null>(null);
@@ -87,7 +87,7 @@ export default function AdminReportsPage() {
 
       {loading ? (
         <div className="flex justify-center py-24">
-          <Loader2 className="h-10 w-10 animate-spin text-violet-500" />
+          <Loader2 className="h-10 w-10 animate-spin text-sky-500" />
         </div>
       ) : data ? (
         <div className="space-y-6">
@@ -122,7 +122,7 @@ export default function AdminReportsPage() {
                     <Line
                       type="monotone"
                       dataKey="count"
-                      stroke="#7c3aed"
+                      stroke="#0066CC"
                       strokeWidth={2}
                       dot={{ r: 4 }}
                     />
@@ -170,7 +170,7 @@ export default function AdminReportsPage() {
                     <XAxis dataKey="role" tick={{ fontSize: 11 }} />
                     <YAxis allowDecimals={false} />
                     <Tooltip />
-                    <Bar dataKey="count" fill="#7c3aed" radius={[6, 6, 0, 0]} />
+                    <Bar dataKey="count" fill="#0066CC" radius={[6, 6, 0, 0]} />
                   </BarChart>
                 </ResponsiveContainer>
               </div>
@@ -193,7 +193,7 @@ export default function AdminReportsPage() {
                           ★ {t.rating.toFixed(1)} · {t.reviewCount} reviews
                         </p>
                       </div>
-                      <span className="text-sm font-semibold tabular-nums text-violet-600">
+                      <span className="text-sm font-semibold tabular-nums text-blue-600">
                         {t.sessions} sessions
                       </span>
                     </li>

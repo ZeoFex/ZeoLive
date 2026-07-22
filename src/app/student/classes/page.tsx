@@ -28,7 +28,7 @@ function SessionList({ sessions }: { sessions: PortalSession[] }) {
     return (
       <div className="student-empty py-10 text-center text-sm text-slate-500">
         No sessions found.{" "}
-        <Link href="/student/book" className="font-medium text-violet-600 hover:underline">
+        <Link href="/student/book" className="font-medium text-blue-600 hover:underline">
           Book a tutor
         </Link>
       </div>

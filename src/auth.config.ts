@@ -55,9 +55,25 @@ export const authConfig = {
 
       return safeBase;
     },
-    async jwt({ token, user }) {
+    async jwt({ token, user, trigger, session }) {
+      if (trigger === "update" && session) {
+        const next = session as {
+          name?: string | null;
+          email?: string | null;
+          image?: string | null;
+        };
+        if (typeof next.name === "string") token.name = next.name;
+        if (typeof next.email === "string") token.email = next.email;
+        if (typeof next.image === "string") {
+          token.picture = next.image || undefined;
+        }
+      }
+
       if (user?.id) {
         token.id = user.id;
+        if (user.name) token.name = user.name;
+        if (user.email) token.email = user.email;
+        if (user.image) token.picture = user.image;
         const role = (user as { role?: AppRole }).role;
         if (role) token.role = role;
         const adminTier = (user as { adminTier?: AppAdminTier | null }).adminTier;
@@ -70,6 +86,10 @@ export const authConfig = {
         session.user.id = token.id as string;
         session.user.role = token.role as AppRole;
         session.user.adminTier = token.adminTier as AppAdminTier | undefined;
+        if (typeof token.name === "string") session.user.name = token.name;
+        if (typeof token.email === "string") session.user.email = token.email;
+        session.user.image =
+          typeof token.picture === "string" ? token.picture : null;
       }
       return session;
     },

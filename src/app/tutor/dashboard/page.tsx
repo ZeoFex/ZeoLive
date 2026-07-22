@@ -78,7 +78,7 @@ export default function TutorDashboardPage() {
       <div className="tutor-card mt-6 p-5 sm:p-6">
         <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
           <h3 className="text-base font-bold text-slate-900">Upcoming classes</h3>
-          <Button variant="ghost" size="sm" className="text-violet-600" asChild>
+          <Button variant="ghost" size="sm" className="text-blue-600" asChild>
             <Link href={routes.tutor.sessions}>View all</Link>
           </Button>
         </div>

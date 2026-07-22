@@ -147,8 +147,8 @@ export function AdminSidebar({ items, roleLabel, pendingCount = 0 }: AdminSideba
 
         {pendingCount > 0 ? (
           <div className="mx-4 mb-6 rounded-2xl p-4 admin-promo-card">
-            <p className="text-sm font-semibold text-violet-900">Verification queue</p>
-            <p className="mt-1 text-xs text-violet-700/80">
+            <p className="text-sm font-semibold text-blue-900">Verification queue</p>
+            <p className="mt-1 text-xs text-blue-700/80">
               {pendingCount} tutor application{pendingCount === 1 ? "" : "s"} need attention.
             </p>
             <Button
@@ -161,8 +161,8 @@ export function AdminSidebar({ items, roleLabel, pendingCount = 0 }: AdminSideba
           </div>
         ) : (
           <div className="mx-4 mb-6 rounded-2xl p-4 admin-promo-card">
-            <p className="text-sm font-semibold text-violet-900">Platform admin</p>
-            <p className="mt-1 text-xs text-violet-700/80">
+            <p className="text-sm font-semibold text-blue-900">Platform admin</p>
+            <p className="mt-1 text-xs text-blue-700/80">
               Manage users, verify tutors, and monitor platform activity from one place.
             </p>
             <Button

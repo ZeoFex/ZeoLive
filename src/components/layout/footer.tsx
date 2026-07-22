@@ -6,7 +6,6 @@ import { Input } from "@/components/ui/input";
 const footerLinks = {
   Product: [
     { label: "Features", href: "#features" },
-    { label: "Pricing", href: "#pricing" },
     { label: "Tutors", href: "#tutors" },
   ],
   Company: [

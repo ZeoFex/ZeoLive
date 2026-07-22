@@ -135,7 +135,7 @@ export default function AdminDashboardPage() {
                   </div>
                   {item.subadminReviews.map((review) => (
                     <div key={`${item.id}-${review.reviewerName}-${review.createdAt}`} className="mt-2">
-                      <p className="text-xs font-medium text-violet-700">
+                      <p className="text-xs font-medium text-blue-700">
                         Recommended by {review.reviewerName} · {formatDate(review.createdAt)}
                       </p>
                       <ul className="mt-1 list-inside list-disc text-xs text-slate-500">

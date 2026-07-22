@@ -7,7 +7,7 @@ export default async function MaintenancePage() {
 
   return (
     <div className="flex min-h-screen flex-col items-center justify-center bg-slate-50 px-4 text-center">
-      <p className="text-sm font-semibold uppercase tracking-wide text-violet-600">
+      <p className="text-sm font-semibold uppercase tracking-wide text-blue-600">
         {BRAND_NAME}
       </p>
       <h1 className="mt-3 text-2xl font-bold text-slate-900 sm:text-3xl">
@@ -19,7 +19,7 @@ export default async function MaintenancePage() {
       <div className="mt-8 flex flex-wrap justify-center gap-3">
         <Link
           href="/admin/login"
-          className="rounded-xl bg-violet-600 px-5 py-2.5 text-sm font-medium text-white hover:bg-violet-700"
+          className="rounded-xl bg-blue-600 px-5 py-2.5 text-sm font-medium text-white hover:bg-blue-700"
         >
           Admin sign in
         </Link>
