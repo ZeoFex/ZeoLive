@@ -18,6 +18,7 @@ interface LivePhotoCaptureProps {
   value?: string;
   onCaptured: (url: string) => void;
   className?: string;
+  compact?: boolean;
 }
 
 export function LivePhotoCapture({
@@ -26,6 +27,7 @@ export function LivePhotoCapture({
   value,
   onCaptured,
   className,
+  compact = false,
 }: LivePhotoCaptureProps) {
   const { status: sessionStatus } = useSession();
   const videoRef = useRef<HTMLVideoElement>(null);
@@ -135,25 +137,37 @@ export function LivePhotoCapture({
   const hasPhoto = Boolean(previewUrl && !active);
 
   return (
-    <div className={cn("space-y-3", className)}>
+    <div className={cn(compact ? "space-y-2" : "space-y-3", className)}>
       <div>
         <Label className="text-sm font-semibold text-slate-800">{label} *</Label>
-        <p className="mt-1 text-xs leading-relaxed text-slate-500">
-          Use your device camera now for identity verification. Saved photos cannot be
-          uploaded from your gallery.
-        </p>
+        {!compact && (
+          <p className="mt-1 text-xs leading-relaxed text-slate-500">
+            Use your device camera now for identity verification. Saved photos cannot be
+            uploaded from your gallery.
+          </p>
+        )}
+        {compact && (
+          <p className="mt-0.5 text-[11px] text-slate-500">
+            Capture with your camera — gallery uploads are not allowed.
+          </p>
+        )}
       </div>
 
       <div className="overflow-hidden rounded-xl border border-slate-200 bg-slate-50 shadow-sm">
         {hasPhoto ? (
-          <div className="relative aspect-[4/3] max-h-72 w-full bg-slate-100">
+          <div
+            className={cn(
+              "relative w-full bg-slate-100",
+              compact ? "aspect-video max-h-40" : "aspect-[4/3] max-h-72"
+            )}
+          >
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img
               src={previewUrl!}
               alt="Captured live photo"
               className="h-full w-full object-cover"
             />
-            <span className="absolute bottom-3 left-3 inline-flex items-center gap-1.5 rounded-full bg-white/95 px-2.5 py-1 text-xs font-medium text-emerald-700 shadow-sm">
+            <span className="absolute bottom-2 left-2 inline-flex items-center gap-1.5 rounded-full bg-white/95 px-2 py-0.5 text-[11px] font-medium text-emerald-700 shadow-sm">
               <CheckCircle2 className="h-3.5 w-3.5" />
               Photo saved
             </span>
@@ -165,22 +179,39 @@ export function LivePhotoCapture({
                 ref={videoRef}
                 playsInline
                 muted
-                className="aspect-[4/3] max-h-72 w-full bg-slate-900 object-cover"
+                className={cn(
+                  "w-full bg-slate-900 object-cover",
+                  compact ? "aspect-video max-h-40" : "aspect-[4/3] max-h-72"
+                )}
               />
               {active && (
                 <div
-                  className="pointer-events-none absolute inset-6 rounded-lg border-2 border-white/50"
+                  className="pointer-events-none absolute inset-4 rounded-lg border-2 border-white/50"
                   aria-hidden
                 />
               )}
             </div>
             {!active && (
-              <div className="flex aspect-[4/3] max-h-72 flex-col items-center justify-center gap-2 bg-gradient-to-b from-slate-50 to-slate-100 px-4 text-center">
-                <div className="flex h-14 w-14 items-center justify-center rounded-full bg-white shadow-sm ring-1 ring-slate-200">
-                  <Camera className="h-7 w-7 text-slate-400" />
+              <div
+                className={cn(
+                  "flex flex-col items-center justify-center gap-1.5 bg-gradient-to-b from-slate-50 to-slate-100 px-4 text-center",
+                  compact ? "aspect-video max-h-40" : "aspect-[4/3] max-h-72"
+                )}
+              >
+                <div
+                  className={cn(
+                    "flex items-center justify-center rounded-full bg-white shadow-sm ring-1 ring-slate-200",
+                    compact ? "h-10 w-10" : "h-14 w-14"
+                  )}
+                >
+                  <Camera className={cn(compact ? "h-5 w-5" : "h-7 w-7", "text-slate-400")} />
                 </div>
-                <p className="text-sm font-medium text-slate-700">No photo yet</p>
-                <p className="text-xs text-slate-500">Open your camera when you are ready</p>
+                <p className={cn("font-medium text-slate-700", compact ? "text-xs" : "text-sm")}>
+                  No photo yet
+                </p>
+                {!compact && (
+                  <p className="text-xs text-slate-500">Open your camera when you are ready</p>
+                )}
               </div>
             )}
           </>

@@ -17,27 +17,27 @@ export default function SignupChooserPage() {
 
   return (
     <AuthLayout
+      compact
       title="Create an account"
-      subtitle="Choose your category to access tailored features and resources"
+      subtitle="Choose student or tutor — registration only takes a minute."
       headline="Simplify Learning And Live Tutoring"
       highlightWord="Live Tutoring"
-      footer={
-        <Link href={routes.adminSetup} className="auth-link">
-          Administrators — register your organization here
-        </Link>
-      }
     >
-      <div className="space-y-6">
-        <AuthRoleSelector value={role} onChange={setRole} />
+      <div className="space-y-4">
+        <AuthRoleSelector
+          value={role}
+          onChange={setRole}
+          label="Who are you signing up as?"
+        />
 
         {role === "student" ? (
-          <p className="text-sm text-slate-500">
+          <p className="text-xs leading-snug text-slate-500">
             Book verified tutors, join live classes, and manage your learning schedule.
           </p>
         ) : (
-          <p className="text-sm text-slate-500">
+          <p className="text-xs leading-snug text-slate-500">
             Apply with your education credentials. Admin verification is required before
-            you can teach on the platform.
+            you can teach.
           </p>
         )}
 
@@ -45,7 +45,7 @@ export default function SignupChooserPage() {
           Continue
         </button>
 
-        <p className="text-center text-sm text-slate-500">
+        <p className="text-center text-xs text-slate-500">
           Already have an account?{" "}
           <Link href={routes.login} className="auth-link">
             Log in

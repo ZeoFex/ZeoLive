@@ -247,43 +247,52 @@ export function TutorRegistrationWizard() {
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4">
       <SignedInSignupNotice targetRole="tutor" />
 
       {step !== "not-qualified" && step !== "complete" && (
-        <div className="flex gap-2">
+        <div className="flex items-center gap-2">
           {visibleSteps.slice(0, -1).map((s, i) => (
-            <div
-              key={s}
-              className={`h-1 flex-1 rounded-full ${
-                i <= stepIndex ? "bg-primary" : "bg-muted"
-              }`}
-              title={stepLabels[s]}
-            />
+            <div key={s} className="flex min-w-0 flex-1 flex-col gap-1">
+              <div
+                className={`h-1 rounded-full ${
+                  i <= stepIndex ? "bg-primary" : "bg-muted"
+                }`}
+                title={stepLabels[s]}
+              />
+              <span
+                className={`truncate text-[10px] font-medium ${
+                  i <= stepIndex ? "text-slate-700" : "text-slate-400"
+                }`}
+              >
+                {stepLabels[s]}
+              </span>
+            </div>
           ))}
         </div>
       )}
 
       {step === "account" && (
-        <form onSubmit={handleSubmit(createAccount)} className="space-y-4">
-          <p className="text-sm text-muted-foreground">
-            Step 1 of {visibleSteps.length - 1}: Create your account. Next you will
-            choose your education level (Undergraduate, Diploma/HND, Graduate, or
-            Postgraduate) and upload documents.
+        <form onSubmit={handleSubmit(createAccount)} className="space-y-3">
+          <p className="text-xs text-slate-500">
+            Step 1 of {visibleSteps.length - 1}: Create your account, then upload
+            verification documents.
           </p>
-          <NameFields register={register} errors={errors} />
+          <NameFields register={register} errors={errors} compact />
           <ContactFields
             register={register}
             errors={errors}
             country={country}
+            compact
             onCountryChange={(v) => {
               setCountry(v);
               setValue("country", v as TutorRegistrationInput["country"]);
             }}
           />
-          <PasswordFields register={register} errors={errors} />
+          <PasswordFields register={register} errors={errors} compact />
           <TermsCheckbox
             acceptTerms={acceptTerms}
+            compact
             onAcceptTermsChange={(checked) => {
               setAcceptTerms(checked);
               setValue("acceptTerms", checked as true);
@@ -297,70 +306,85 @@ export function TutorRegistrationWizard() {
       )}
 
       {step === "documents" && (
-        <div className="space-y-4">
-          <p className="text-sm text-muted-foreground">
-            Step 2: Select your education level. Requirements differ for continuing
-            undergraduates, Diploma/HND, graduates, and postgraduates.
+        <div className="space-y-3">
+          <p className="text-xs text-slate-500">
+            Step 2: Choose your education level and upload the required documents.
           </p>
 
-          <EducationLevelFields
-            educationLevel={educationLevel}
-            onEducationLevelChange={setEducationLevel}
-          />
-
-          <div>
-            <Label htmlFor="institution">Tertiary institution *</Label>
-            <Input
-              id="institution"
-              className="mt-1.5"
-              placeholder="University or college name"
-              value={institutionName}
-              onChange={(e) => setInstitutionName(e.target.value)}
+          <div className="grid gap-2.5 sm:grid-cols-2">
+            <EducationLevelFields
+              educationLevel={educationLevel}
+              onEducationLevelChange={setEducationLevel}
+              compact
             />
+            <div>
+              <Label htmlFor="institution">Tertiary institution *</Label>
+              <Input
+                id="institution"
+                placeholder="University or college name"
+                value={institutionName}
+                onChange={(e) => setInstitutionName(e.target.value)}
+              />
+            </div>
           </div>
 
           <div className="auth-verification-panel">
-            <p>Upload documents</p>
+            <p>Documents</p>
             <p>
-              Transcript, national ID, and a live camera photo are required. Certificate
-              uploads apply to Diploma/HND, Graduate, and Postgraduate levels.
+              Transcript, national ID, and live photo are required
+              {needsCertificate ? "; certificate also required for your level" : ""}.
             </p>
-            <DocumentUploadField
-              label="Transcript"
-              accept=".pdf,image/*"
-              folder="tutor/transcripts"
-              value={transcriptUrl}
-              onUploaded={setTranscriptUrl}
-            />
-            {needsCertificate && (
+            <div className="grid gap-2.5 sm:grid-cols-2">
               <DocumentUploadField
-                label="Certificate (Diploma / Degree / Postgraduate)"
+                label="Transcript"
                 accept=".pdf,image/*"
-                folder="tutor/certificates"
-                value={certificateUrl}
-                onUploaded={setCertificateUrl}
+                folder="tutor/transcripts"
+                value={transcriptUrl}
+                onUploaded={setTranscriptUrl}
+                compact
               />
-            )}
-            <DocumentUploadField
-              label="National ID"
-              accept=".pdf,image/*"
-              folder="tutor/national-id"
-              value={nationalIdUrl}
-              onUploaded={setNationalIdUrl}
-            />
-            <LivePhotoCapture value={livePhotoUrl} onCaptured={setLivePhotoUrl} />
+              {needsCertificate && (
+                <DocumentUploadField
+                  label="Certificate"
+                  accept=".pdf,image/*"
+                  folder="tutor/certificates"
+                  value={certificateUrl}
+                  onUploaded={setCertificateUrl}
+                  compact
+                />
+              )}
+              <DocumentUploadField
+                label="National ID"
+                accept=".pdf,image/*"
+                folder="tutor/national-id"
+                value={nationalIdUrl}
+                onUploaded={setNationalIdUrl}
+                compact
+              />
+              <div className={needsCertificate ? "sm:col-span-2" : undefined}>
+                <LivePhotoCapture
+                  value={livePhotoUrl}
+                  onCaptured={setLivePhotoUrl}
+                  compact
+                />
+              </div>
+            </div>
           </div>
 
           <div className="flex gap-2">
             <Button
               type="button"
               variant="outline"
-              className="flex-1"
+              className="h-10 flex-1"
               onClick={() => setStep("account")}
             >
               Back
             </Button>
-            <Button className="auth-primary-btn flex-1 border-0" onClick={submitDocuments} disabled={loading}>
+            <Button
+              className="auth-primary-btn h-10 flex-1 border-0"
+              onClick={submitDocuments}
+              disabled={loading}
+            >
               {loading ? "Saving…" : needsRecommendation ? "Continue" : "Submit"}
             </Button>
           </div>
@@ -368,15 +392,15 @@ export function TutorRegistrationWizard() {
       )}
 
       {step === "recommendation" && (
-        <div className="space-y-4">
-          <p className="text-sm text-muted-foreground">
-            Step 3: As a continuing undergraduate, a faculty member must submit a
-            letter of recommendation. We email them a secure link.
+        <div className="space-y-3">
+          <p className="text-xs text-slate-500">
+            Step 3: Request a faculty recommendation — we email them a secure link.
           </p>
 
           <RecommenderRequestFields
             values={recommender}
             onChange={patchRecommender}
+            compact
             emailPreview={buildRecommendationEmailPreview({
               recommender,
               tutorFullName:
@@ -391,12 +415,16 @@ export function TutorRegistrationWizard() {
             <Button
               type="button"
               variant="outline"
-              className="flex-1"
+              className="h-10 flex-1"
               onClick={() => setStep("documents")}
             >
               Back
             </Button>
-            <Button className="auth-primary-btn flex-1 border-0" onClick={sendRecommendation} disabled={loading}>
+            <Button
+              className="auth-primary-btn h-10 flex-1 border-0"
+              onClick={sendRecommendation}
+              disabled={loading}
+            >
               {loading ? "Sending…" : "Send request"}
             </Button>
           </div>
@@ -404,7 +432,7 @@ export function TutorRegistrationWizard() {
       )}
 
       {step === "not-qualified" && (
-        <div className="space-y-4 text-center">
+        <div className="space-y-3 text-center">
           <p className="text-sm text-muted-foreground">
             Based on your education level, you are not eligible to tutor on Zeolive at
             this time.
@@ -416,10 +444,10 @@ export function TutorRegistrationWizard() {
       )}
 
       {step === "complete" && (
-        <div className="space-y-4 text-center">
+        <div className="space-y-3 text-center">
           <p className="text-sm text-muted-foreground">
-            Your application is submitted. Sign in anytime to check status. We will
-            email you when your profile is approved.
+            Your application is submitted. We will email you when your profile is
+            approved.
           </p>
           <Button onClick={() => router.push("/tutor/dashboard")}>
             Go to tutor dashboard
@@ -428,7 +456,7 @@ export function TutorRegistrationWizard() {
       )}
 
       {step === "account" && (
-        <p className="text-center text-sm text-muted-foreground">
+        <p className="text-center text-xs text-muted-foreground">
           Already have an account?{" "}
           <Link href={routes.login} className="auth-link">
             Log in
