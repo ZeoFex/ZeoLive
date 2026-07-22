@@ -113,11 +113,7 @@ export function LoginForm({ portal = "default" }: { portal?: LoginPortal }) {
           <Link href={routes.login} className="auth-link">
             Student or tutor login
           </Link>
-        ) : (
-          <Link href={routes.adminLogin} className="auth-link">
-            Administrators — sign in here
-          </Link>
-        )
+        ) : undefined
       }
     >
       {session?.user && (

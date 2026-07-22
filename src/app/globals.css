@@ -237,6 +237,54 @@ body {
   @apply text-xs leading-relaxed text-slate-500;
 }
 
+/* Compact tutor registration — denser fields, less scrolling */
+.auth-form-compact {
+  --auth-field-gap: 0.625rem;
+}
+
+.auth-form-compact label {
+  @apply text-xs font-semibold text-slate-700;
+}
+
+.auth-form-compact input:not([type="checkbox"]):not([type="radio"]),
+.auth-form-compact textarea,
+.auth-form-compact button[role="combobox"] {
+  @apply mt-1 h-9 rounded-lg border-slate-300 bg-white text-sm font-normal text-slate-900 shadow-none;
+  @apply placeholder:text-slate-500 focus-visible:border-[#0066CC] focus-visible:ring-2 focus-visible:ring-[#0066CC]/15;
+}
+
+.auth-form-compact .auth-primary-btn {
+  @apply h-10 text-sm;
+}
+
+.auth-form-compact .auth-file-upload {
+  @apply min-h-[72px] gap-0 border-slate-200 bg-white px-3 py-3 hover:border-[#0066CC]/40 hover:bg-slate-50/90;
+}
+
+.auth-form-compact .auth-file-upload svg {
+  @apply mb-1 h-5 w-5;
+}
+
+.auth-form-compact .auth-file-upload p {
+  @apply text-xs;
+}
+
+.auth-form-compact .auth-verification-panel {
+  @apply space-y-2.5 rounded-xl border border-slate-200 bg-white p-3 shadow-sm;
+}
+
+.auth-form-compact .auth-verification-panel > p:first-of-type {
+  @apply text-xs font-semibold text-slate-800;
+}
+
+.auth-form-compact .auth-verification-panel > p:nth-of-type(2) {
+  @apply text-[11px] leading-snug text-slate-500;
+}
+
+.auth-form-compact .rounded-lg.border.bg-muted\/30 {
+  @apply border-slate-200 bg-slate-50/80 p-3;
+}
+
 /* LiveKit classroom — keep video elements in stable containers */
 .lk-screen-stage video,
 .lk-participant-tile video {

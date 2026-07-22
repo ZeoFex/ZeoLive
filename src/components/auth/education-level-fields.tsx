@@ -14,13 +14,16 @@ import {
   tutorRequiresRecommendation,
   type TutorEducationLevelValue,
 } from "@/lib/constants/registration";
+import { cn } from "@/lib/utils";
 
 export function EducationLevelFields({
   educationLevel,
   onEducationLevelChange,
+  compact = false,
 }: {
   educationLevel: TutorEducationLevelValue | "";
   onEducationLevelChange: (value: TutorEducationLevelValue) => void;
+  compact?: boolean;
 }) {
   const needsCertificate =
     educationLevel && tutorRequiresCertificate(educationLevel);
@@ -28,14 +31,14 @@ export function EducationLevelFields({
     educationLevel && tutorRequiresRecommendation(educationLevel);
 
   return (
-    <div className="space-y-3">
+    <div className={cn(compact ? "space-y-2" : "space-y-3")}>
       <div>
         <Label>Level of education *</Label>
         <Select
           value={educationLevel}
           onValueChange={(v) => onEducationLevelChange(v as TutorEducationLevelValue)}
         >
-          <SelectTrigger className="mt-1.5">
+          <SelectTrigger className={compact ? undefined : "mt-1.5"}>
             <SelectValue placeholder="Select your level" />
           </SelectTrigger>
           <SelectContent>
@@ -46,7 +49,7 @@ export function EducationLevelFields({
             ))}
           </SelectContent>
         </Select>
-        {educationLevel && (
+        {educationLevel && !compact && (
           <p className="mt-2 text-sm text-muted-foreground">
             {
               TUTOR_EDUCATION_LEVELS.find((l) => l.value === educationLevel)
@@ -57,14 +60,33 @@ export function EducationLevelFields({
       </div>
 
       {educationLevel && (
-        <ul className="space-y-1 rounded-lg border border-slate-200 bg-slate-50/90 p-3 text-xs text-slate-600">
-          <li>• Transcript and national ID required for all levels</li>
-          <li>• Live photo required for identity verification</li>
-          {needsCertificate && (
-            <li>• Diploma, degree, or postgraduate certificate required</li>
+        <ul
+          className={cn(
+            "rounded-lg border border-slate-200 bg-slate-50/90 text-slate-600",
+            compact
+              ? "space-y-0.5 px-2.5 py-2 text-[11px] leading-snug"
+              : "space-y-1 p-3 text-xs"
           )}
-          {needsRecommendation && (
-            <li>• Letter of recommendation from your institution required</li>
+        >
+          {compact ? (
+            <>
+              <li>
+                Required: transcript, national ID, live photo
+                {needsCertificate ? ", certificate" : ""}
+                {needsRecommendation ? ", faculty recommendation" : ""}.
+              </li>
+            </>
+          ) : (
+            <>
+              <li>• Transcript and national ID required for all levels</li>
+              <li>• Live photo required for identity verification</li>
+              {needsCertificate && (
+                <li>• Diploma, degree, or postgraduate certificate required</li>
+              )}
+              {needsRecommendation && (
+                <li>• Letter of recommendation from your institution required</li>
+              )}
+            </>
           )}
         </ul>
       )}

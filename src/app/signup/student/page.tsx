@@ -19,6 +19,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { SCHOOL_TYPES, type SchoolTypeValue } from "@/lib/constants/registration";
 import { routes } from "@/lib/routes";
+import { cn } from "@/lib/utils";
 import {
   studentRegistrationSchema,
   type StudentRegistrationInput,
@@ -67,111 +68,111 @@ export default function StudentSignupPage() {
     }
 
     toast.success("Account created");
-      router.push("/student/dashboard");
+    router.push("/student/dashboard");
     router.refresh();
   };
 
   return (
     <AuthLayout
+      compact
       title="Create student account"
-      subtitle="Book verified tutors, join live classes, and manage your learning schedule"
+      subtitle="A few details and you’re ready to book tutors and join live classes."
       headline="Learn Smarter With Live Sessions"
       highlightWord="Live Sessions"
-      footer={
-        <Link href={routes.adminSetup} className="auth-link">
-          Administrators — register your organization here
-        </Link>
-      }
     >
       <SignedInSignupNotice targetRole="student" />
 
       {session?.user?.role === "STUDENT" ? null : (
-      <form onSubmit={handleSubmit(onSubmit)} className="auth-form space-y-4">
-        <NameFields register={register} errors={errors} />
-        <ContactFields
-          register={register}
-          errors={errors}
-          country={country}
-          onCountryChange={(v) => {
-            setCountry(v);
-            setValue("country", v as StudentRegistrationInput["country"]);
-          }}
-        />
-        <PasswordFields register={register} errors={errors} />
+        <form
+          onSubmit={handleSubmit(onSubmit)}
+          className="auth-form auth-form-compact space-y-3"
+        >
+          <NameFields register={register} errors={errors} compact />
+          <ContactFields
+            register={register}
+            errors={errors}
+            country={country}
+            compact
+            onCountryChange={(v) => {
+              setCountry(v);
+              setValue("country", v as StudentRegistrationInput["country"]);
+            }}
+          />
+          <PasswordFields register={register} errors={errors} compact />
 
-        <div className="space-y-3 rounded-lg border p-4">
-          <p className="text-sm font-medium">School information</p>
-          <div className="space-y-2">
-            {SCHOOL_TYPES.map((type) => (
-              <label
-                key={type.value}
-                className="flex cursor-pointer items-center gap-2 text-sm"
-              >
-                <input
-                  type="radio"
-                  name="schoolType"
-                  value={type.value}
-                  checked={schoolType === type.value}
-                  onChange={() => {
-                    setSchoolType(type.value);
-                    setValue("schoolType", type.value);
-                  }}
-                />
-                {type.label}
-              </label>
-            ))}
-          </div>
-          {errors.schoolType && (
-            <p className="text-sm text-destructive">{errors.schoolType.message}</p>
-          )}
-
-          {schoolType && schoolType !== "HOME_SCHOOL" && (
-            <div className="grid gap-4 pt-2 sm:grid-cols-2">
-              <div>
-                <Label htmlFor="schoolName">School name *</Label>
-                <Input id="schoolName" className="mt-1.5" {...register("schoolName")} />
-                {errors.schoolName && (
-                  <p className="mt-1 text-sm text-destructive">
-                    {errors.schoolName.message}
-                  </p>
-                )}
-              </div>
-              <div>
-                <Label htmlFor="schoolRegionState">Region / State of school *</Label>
-                <Input
-                  id="schoolRegionState"
-                  className="mt-1.5"
-                  {...register("schoolRegionState")}
-                />
-                {errors.schoolRegionState && (
-                  <p className="mt-1 text-sm text-destructive">
-                    {errors.schoolRegionState.message}
-                  </p>
-                )}
-              </div>
+          <div className="space-y-2 rounded-xl border border-slate-200 bg-white p-3 shadow-sm">
+            <p className="text-xs font-semibold text-slate-700">School type *</p>
+            <div className="grid gap-2 sm:grid-cols-3">
+              {SCHOOL_TYPES.map((type) => {
+                const selected = schoolType === type.value;
+                return (
+                  <button
+                    key={type.value}
+                    type="button"
+                    onClick={() => {
+                      setSchoolType(type.value);
+                      setValue("schoolType", type.value, { shouldValidate: true });
+                    }}
+                    className={cn(
+                      "rounded-lg border px-2.5 py-2 text-left text-xs font-medium transition-colors",
+                      selected
+                        ? "border-[#0066CC] bg-sky-50 text-[#0066CC]"
+                        : "border-slate-200 bg-slate-50/80 text-slate-600 hover:border-slate-300"
+                    )}
+                  >
+                    {type.label.replace(" student", "")}
+                  </button>
+                );
+              })}
             </div>
-          )}
-        </div>
+            {errors.schoolType && (
+              <p className="text-xs text-destructive">{errors.schoolType.message}</p>
+            )}
 
-        <TermsCheckbox
-          acceptTerms={acceptTerms}
-          onAcceptTermsChange={(checked) => {
-            setAcceptTerms(checked);
-            setValue("acceptTerms", checked as true);
-          }}
-          error={errors.acceptTerms?.message}
-        />
+            {schoolType && schoolType !== "HOME_SCHOOL" && (
+              <div className="grid gap-2.5 pt-1 sm:grid-cols-2">
+                <div>
+                  <Label htmlFor="schoolName">School name *</Label>
+                  <Input id="schoolName" {...register("schoolName")} />
+                  {errors.schoolName && (
+                    <p className="mt-0.5 text-xs text-destructive">
+                      {errors.schoolName.message}
+                    </p>
+                  )}
+                </div>
+                <div>
+                  <Label htmlFor="schoolRegionState">School region / state *</Label>
+                  <Input id="schoolRegionState" {...register("schoolRegionState")} />
+                  {errors.schoolRegionState && (
+                    <p className="mt-0.5 text-xs text-destructive">
+                      {errors.schoolRegionState.message}
+                    </p>
+                  )}
+                </div>
+              </div>
+            )}
+          </div>
 
-        <button type="submit" className="auth-primary-btn" disabled={isSubmitting}>
-          {isSubmitting ? "Creating account…" : "Create account"}
-        </button>
-        <p className="text-center text-sm text-slate-500">
-          Already have an account?{" "}
-          <Link href={routes.login} className="auth-link">
-            Log in
-          </Link>
-        </p>
-      </form>
+          <TermsCheckbox
+            acceptTerms={acceptTerms}
+            compact
+            onAcceptTermsChange={(checked) => {
+              setAcceptTerms(checked);
+              setValue("acceptTerms", checked as true);
+            }}
+            error={errors.acceptTerms?.message}
+          />
+
+          <button type="submit" className="auth-primary-btn" disabled={isSubmitting}>
+            {isSubmitting ? "Creating account…" : "Create account"}
+          </button>
+          <p className="text-center text-xs text-slate-500">
+            Already have an account?{" "}
+            <Link href={routes.login} className="auth-link">
+              Log in
+            </Link>
+          </p>
+        </form>
       )}
     </AuthLayout>
   );

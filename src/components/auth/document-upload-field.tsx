@@ -13,6 +13,7 @@ interface DocumentUploadFieldProps {
   value?: string;
   onUploaded: (url: string) => void;
   className?: string;
+  compact?: boolean;
 }
 
 export function DocumentUploadField({
@@ -22,6 +23,7 @@ export function DocumentUploadField({
   value,
   onUploaded,
   className,
+  compact = false,
 }: DocumentUploadFieldProps) {
   const [uploading, setUploading] = useState(false);
 
@@ -40,16 +42,16 @@ export function DocumentUploadField({
   };
 
   return (
-    <div className={cn("space-y-2", className)}>
+    <div className={cn(compact ? "space-y-1" : "space-y-2", className)}>
       <FileUpload
         label={uploading ? `Uploading ${label}…` : label}
         accept={accept}
         onFileSelect={handleFile}
-        className="auth-file-upload"
+        className={cn("auth-file-upload", compact && "min-h-[72px]")}
       />
       {value && (
-        <p className="text-xs text-emerald-700">
-          ✓ {label} uploaded successfully
+        <p className={cn("text-emerald-700", compact ? "text-[11px]" : "text-xs")}>
+          ✓ {label} uploaded
         </p>
       )}
     </div>
