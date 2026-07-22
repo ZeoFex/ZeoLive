@@ -120,6 +120,7 @@ export const config = {
   matcher: [
     "/student/:path*",
     "/tutor/:path*",
+    "/admin",
     "/admin/:path*",
     "/classroom/:path*",
     "/login",
