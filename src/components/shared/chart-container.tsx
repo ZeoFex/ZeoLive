@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useSyncExternalStore } from "react";
 import { ResponsiveContainer } from "recharts";
 
 interface ChartContainerProps {
@@ -9,17 +9,19 @@ interface ChartContainerProps {
   className?: string;
 }
 
+const emptySubscribe = () => () => {};
+
+function useIsClient() {
+  return useSyncExternalStore(emptySubscribe, () => true, () => false);
+}
+
 /** Defers Recharts until mount so SSR/prerender never sees width/height -1. */
 export function ChartContainer({
   height = 300,
   children,
   className,
 }: ChartContainerProps) {
-  const [mounted, setMounted] = useState(false);
-
-  useEffect(() => {
-    setMounted(true);
-  }, []);
+  const mounted = useIsClient();
 
   if (!mounted) {
     return (

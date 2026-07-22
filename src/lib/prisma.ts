@@ -9,7 +9,9 @@ const globalForPrisma = globalThis as unknown as {
 function createPrismaClient() {
   const connectionString = process.env.DATABASE_URL;
   if (!connectionString) {
-    throw new Error("DATABASE_URL is not set");
+    throw new Error(
+      "DATABASE_URL is not set. Copy .env.example to .env.local and set DATABASE_URL, then restart the dev server."
+    );
   }
   const pool = new Pool({ connectionString });
   const adapter = new PrismaPg(pool);
@@ -34,8 +36,14 @@ function getPrismaClient(): PrismaClient {
   return client;
 }
 
-export const prisma = getPrismaClient();
-
-if (process.env.NODE_ENV !== "production") {
-  globalForPrisma.prisma = prisma;
-}
+/**
+ * Lazy Prisma access so importing this module does not crash when DATABASE_URL
+ * is missing (e.g. homepage CMS fallbacks). First real query still requires env.
+ */
+export const prisma = new Proxy({} as PrismaClient, {
+  get(_target, prop, receiver) {
+    const client = getPrismaClient();
+    const value = Reflect.get(client, prop, receiver);
+    return typeof value === "function" ? value.bind(client) : value;
+  },
+});

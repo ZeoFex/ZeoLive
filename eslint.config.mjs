@@ -12,7 +12,16 @@ const eslintConfig = defineConfig([
     "out/**",
     "build/**",
     "next-env.d.ts",
+    // Prisma client output — not hand-written source
+    "src/generated/**",
   ]),
+  {
+    rules: {
+      // Fetch-on-mount and hydration gates commonly set state in effects;
+      // keep as warn so real issues stay visible without failing CI.
+      "react-hooks/set-state-in-effect": "warn",
+    },
+  },
 ]);
 
 export default eslintConfig;

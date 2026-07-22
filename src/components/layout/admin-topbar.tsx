@@ -70,7 +70,6 @@ export function AdminTopbar({ title }: AdminTopbarProps) {
   const userRef = useRef<HTMLDivElement>(null);
 
   const updateUnreadCount = useCallback((items: NotificationItem[]) => {
-    const read = getReadNotificationIds();
     pruneStaleReadIds(items.map((item) => item.id));
     const freshRead = getReadNotificationIds();
     setUnreadCount(items.filter((item) => !freshRead.has(item.id)).length);

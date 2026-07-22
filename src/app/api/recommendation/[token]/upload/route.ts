@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
-import { saveUploadedFile, validateUploadFile } from "@/lib/upload-document";
+import { saveUploadedFile } from "@/lib/upload-document";
 
 export async function POST(
   request: Request,

@@ -1,6 +1,5 @@
 import { routes } from "@/lib/routes";
 import {
-  displayUserName,
   listPortalSessionsForUser,
   listTutorStudents,
 } from "@/lib/portal-data";
