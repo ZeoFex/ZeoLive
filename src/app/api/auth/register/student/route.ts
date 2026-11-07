@@ -3,6 +3,7 @@ import { ZodError } from "zod";
 import { getPlatformSettings } from "@/lib/platform-settings";
 import { prisma } from "@/lib/prisma";
 import { hashPassword } from "@/lib/password";
+import { sendWelcomeEmail } from "@/lib/email/welcome";
 import { studentRegistrationSchema } from "@/lib/validations/registration";
 import { buildDisplayName, parseDateOfBirth } from "@/lib/user-name";
 import type { SchoolType } from "@/generated/prisma";
@@ -59,6 +60,12 @@ export async function POST(request: Request) {
         },
       },
     });
+
+    try {
+      await sendWelcomeEmail({ to: email, name: displayName, role: "STUDENT" });
+    } catch (emailError) {
+      console.error("Student welcome email failed:", emailError);
+    }
 
     return NextResponse.json({ success: true }, { status: 201 });
   } catch (error) {

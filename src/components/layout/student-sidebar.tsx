@@ -88,7 +88,7 @@ export function StudentSidebar({ items }: StudentSidebarProps) {
 
       <aside
         className={cn(
-          "student-sidebar student-sidebar-drawer fixed inset-y-0 left-0 z-50 flex w-[min(100vw-3rem,280px)] flex-col border-r border-slate-100 transition-transform duration-300 ease-out lg:static lg:w-[260px] lg:translate-x-0 lg:rounded-3xl lg:border lg:shadow-[0_4px_24px_-8px_rgba(15,23,42,0.12)]",
+          "student-sidebar student-sidebar-drawer fixed inset-y-0 left-0 z-50 flex w-[min(100vw-3rem,280px)] flex-col overflow-hidden border-r border-slate-100 transition-transform duration-300 ease-out lg:sticky lg:top-0 lg:h-full lg:w-[260px] lg:shrink-0 lg:translate-x-0 lg:rounded-3xl lg:border lg:shadow-[0_4px_24px_-8px_rgba(15,23,42,0.12)]",
           sidebarOpen ? "translate-x-0" : "-translate-x-full lg:translate-x-0"
         )}
       >
@@ -118,7 +118,7 @@ export function StudentSidebar({ items }: StudentSidebarProps) {
           Student portal
         </p>
 
-        <nav className="flex-1 space-y-1 overflow-y-auto overscroll-contain px-3 pt-5 sm:px-4 sm:pt-6">
+        <nav className="min-h-0 flex-1 space-y-1 overflow-hidden px-3 pt-5 sm:px-4 sm:pt-6">
           <p className="px-3 pb-2 text-xs font-semibold uppercase tracking-wider text-slate-400">
             Main
           </p>

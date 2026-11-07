@@ -1,9 +1,12 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
 import { auth } from "@/auth";
+import { getAppBaseUrl } from "@/lib/app-url";
+import { sendBookingNotificationEmails } from "@/lib/email/booking";
 import { getOrCreateConversation } from "@/lib/messaging";
 import { listPortalSessionsForUser } from "@/lib/portal-data";
 import { prisma } from "@/lib/prisma";
+import { buildDisplayName } from "@/lib/user-name";
 import { randomBytes } from "crypto";
 
 const createSchema = z.object({
@@ -33,13 +36,29 @@ export async function POST(request: Request) {
     const body = await request.json();
     const data = createSchema.parse(body);
 
-    const tutor = await prisma.user.findFirst({
-      where: { id: data.tutorId, role: "TUTOR" },
-      include: { tutorProfile: true },
-    });
+    const [tutor, student] = await Promise.all([
+      prisma.user.findFirst({
+        where: { id: data.tutorId, role: "TUTOR" },
+        include: { tutorProfile: true },
+      }),
+      prisma.user.findUnique({
+        where: { id: session.user.id },
+        select: {
+          email: true,
+          name: true,
+          firstName: true,
+          middleName: true,
+          lastName: true,
+        },
+      }),
+    ]);
 
     if (!tutor) {
       return NextResponse.json({ error: "Tutor not found" }, { status: 404 });
+    }
+
+    if (!student?.email) {
+      return NextResponse.json({ error: "Student account not found" }, { status: 404 });
     }
 
     if (tutor.tutorProfile?.verificationStatus !== "APPROVED") {
@@ -61,12 +80,14 @@ export async function POST(request: Request) {
       }
     }
 
+    const title = data.title ?? "Live tutoring session";
+
     const tutoringSession = await prisma.tutoringSession.create({
       data: {
         roomId,
         studentId: session.user.id,
         tutorId: tutor.id,
-        title: data.title ?? "Live tutoring session",
+        title,
         subject: data.subject,
         scheduledAt,
         status: "SCHEDULED",
@@ -75,10 +96,42 @@ export async function POST(request: Request) {
 
     await getOrCreateConversation(session.user.id, tutor.id);
 
+    const classroomPath = `/classroom/${tutoringSession.roomId}`;
+    const classroomUrl = `${getAppBaseUrl()}${classroomPath}`;
+    const studentName =
+      student.name ??
+      buildDisplayName({
+        firstName: student.firstName ?? "",
+        middleName: student.middleName,
+        lastName: student.lastName ?? "",
+      }) ??
+      "Student";
+    const tutorName =
+      tutor.name ??
+      buildDisplayName({
+        firstName: tutor.firstName ?? "",
+        middleName: tutor.middleName,
+        lastName: tutor.lastName ?? "",
+      }) ??
+      "Tutor";
+
+    try {
+      await sendBookingNotificationEmails({
+        student: { email: student.email, name: studentName },
+        tutor: { email: tutor.email, name: tutorName },
+        title,
+        subject: data.subject,
+        scheduledAt,
+        classroomUrl,
+      });
+    } catch (emailError) {
+      console.error("Booking notification email failed:", emailError);
+    }
+
     return NextResponse.json({
       id: tutoringSession.id,
       roomId: tutoringSession.roomId,
-      classroomUrl: `/classroom/${tutoringSession.roomId}`,
+      classroomUrl: classroomPath,
     });
   } catch (error) {
     if (error instanceof z.ZodError) {

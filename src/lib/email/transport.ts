@@ -1,41 +1,128 @@
 import nodemailer from "nodemailer";
+import type SMTPTransport from "nodemailer/lib/smtp-transport";
 
-const DEFAULT_FROM = "zoefex.tech@gmail.com";
+export type EmailChannel = "welcome" | "support";
 
-export function getEmailFrom() {
-  return process.env.SMTP_FROM ?? process.env.SMTP_USER ?? DEFAULT_FROM;
+const DEFAULT_FROM = "Zeohost <support@zeohost.store>";
+
+type ChannelConfig = {
+  user: string;
+  pass: string | undefined;
+  from: string;
+};
+
+function cleanPass(value: string | undefined) {
+  return value?.replace(/\s/g, "") || undefined;
 }
 
-function createTransport() {
-  const user = (process.env.SMTP_USER ?? DEFAULT_FROM).trim();
-  const pass = process.env.SMTP_PASS?.replace(/\s/g, "");
+function channelConfig(channel: EmailChannel): ChannelConfig {
+  if (channel === "welcome") {
+    return {
+      user: (
+        process.env.SMTP_USER_WELCOME ??
+        process.env.SMTP_USER ??
+        "welcome@zeohost.store"
+      ).trim(),
+      pass: cleanPass(
+        process.env.SMTP_PASS_WELCOME ?? process.env.SMTP_PASS
+      ),
+      from: (
+        process.env.SMTP_FROM_WELCOME ??
+        process.env.SMTP_FROM ??
+        "Zeohost <welcome@zeohost.store>"
+      ).trim(),
+    };
+  }
+
+  return {
+    user: (
+      process.env.SMTP_USER_SUPPORT ??
+      process.env.SMTP_USER ??
+      "support@zeohost.store"
+    ).trim(),
+    pass: cleanPass(process.env.SMTP_PASS_SUPPORT ?? process.env.SMTP_PASS),
+    from: (
+      process.env.SMTP_FROM_SUPPORT ??
+      process.env.SMTP_FROM ??
+      DEFAULT_FROM
+    ).trim(),
+  };
+}
+
+function resolveSmtpEndpoint(user: string) {
+  const configuredHost = (process.env.SMTP_HOST ?? "").trim().toLowerCase();
+  const isZeohostMailbox = user.toLowerCase().endsWith("@zeohost.store");
+  const staleGmailHost =
+    !configuredHost ||
+    configuredHost === "smtp.gmail.com" ||
+    process.env.SMTP_SERVICE === "gmail";
+
+  // Prefer Namecheap Private Email for zeohost mailboxes even if an old
+  // Gmail SMTP_HOST is still present in the process environment.
+  if (isZeohostMailbox && staleGmailHost) {
+    return {
+      host: "mail.privateemail.com",
+      port: 465,
+      secure: true,
+      useGmailService: false,
+    };
+  }
+
+  const port = Number(process.env.SMTP_PORT ?? (configuredHost ? 587 : 465));
+  const secure =
+    process.env.SMTP_SECURE === "true" ||
+    port === 465 ||
+    (!process.env.SMTP_PORT && !configuredHost);
+
+  return {
+    host: configuredHost || "mail.privateemail.com",
+    port,
+    secure,
+    useGmailService:
+      configuredHost === "smtp.gmail.com" || process.env.SMTP_SERVICE === "gmail",
+  };
+}
+
+function createTransport(channel: EmailChannel) {
+  const { user, pass } = channelConfig(channel);
 
   if (!pass) {
     return null;
   }
 
-  const host = (process.env.SMTP_HOST ?? "smtp.gmail.com").trim().toLowerCase();
-  const port = Number(process.env.SMTP_PORT ?? 587);
-  const secure = process.env.SMTP_SECURE === "true";
+  const endpoint = resolveSmtpEndpoint(user);
 
-  // Manual host/port for smtp.gmail.com often causes "socket close" — use service preset.
-  if (host === "smtp.gmail.com" || process.env.SMTP_SERVICE === "gmail") {
+  if (endpoint.useGmailService) {
     return nodemailer.createTransport({
       service: "gmail",
       auth: { user, pass },
     });
   }
 
-  return nodemailer.createTransport({
-    host,
-    port,
-    secure,
+  const options: SMTPTransport.Options = {
+    host: endpoint.host,
+    port: endpoint.port,
+    secure: endpoint.secure,
     auth: { user, pass },
-    requireTLS: !secure && port === 587,
+    requireTLS: !endpoint.secure && endpoint.port === 587,
     connectionTimeout: 15_000,
     greetingTimeout: 15_000,
     socketTimeout: 15_000,
-  });
+  };
+
+  return nodemailer.createTransport(options);
+}
+
+/** Prefer the configured From header; fall back to mailbox user. */
+export function getEmailFrom(channel: EmailChannel = "support") {
+  const config = channelConfig(channel);
+  if (config.from.includes("<") && config.from.includes(">")) {
+    return config.from;
+  }
+  if (config.from.includes("@")) {
+    return `Zeohost <${config.from}>`;
+  }
+  return `Zeohost <${config.user}>`;
 }
 
 export async function sendEmail(params: {
@@ -43,36 +130,39 @@ export async function sendEmail(params: {
   subject: string;
   text: string;
   html?: string;
+  /** welcome = account/login; support = bookings, recovery, ops */
+  channel?: EmailChannel;
 }) {
-  const transport = createTransport();
-  const from = getEmailFrom();
+  const channel = params.channel ?? "support";
+  const transport = createTransport(channel);
+  const from = getEmailFrom(channel);
 
   if (!transport) {
     console.warn(
-      "[Zeolive email] SMTP_PASS not set — logging email instead of sending:",
-      { to: params.to, subject: params.subject }
+      `[Zeolive email] SMTP pass not set for ${channel} — logging email instead of sending:`,
+      { to: params.to, subject: params.subject, channel }
     );
     console.info(params.text);
-    return { ok: true, devMode: true };
+    return { ok: true, devMode: true, channel };
   }
 
   await transport.sendMail({
-    from: `Zeolive <${from}>`,
+    from,
     to: params.to,
     subject: params.subject,
     text: params.text,
     html: params.html ?? params.text.replace(/\n/g, "<br>"),
   });
 
-  return { ok: true, devMode: false };
+  return { ok: true, devMode: false, channel };
 }
 
-/** Verify SMTP credentials (use in scripts or admin diagnostics). */
-export async function verifySmtpConnection() {
-  const transport = createTransport();
+/** Verify SMTP credentials for a channel (scripts / diagnostics). */
+export async function verifySmtpConnection(channel: EmailChannel = "support") {
+  const transport = createTransport(channel);
   if (!transport) {
-    return { ok: false, error: "SMTP_PASS is not set" };
+    return { ok: false, error: `SMTP pass is not set for ${channel}` };
   }
   await transport.verify();
-  return { ok: true };
+  return { ok: true, channel };
 }

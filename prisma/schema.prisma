@@ -163,12 +163,56 @@ model StudentProfile {
   updatedAt         DateTime   @updatedAt
 }
 
+model Programme {
+  id        String    @id @default(cuid())
+  name      String    @unique
+  slug      String    @unique
+  active    Boolean   @default(true)
+  sortOrder Int       @default(0)
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+
+  subjects Subject[]
+  tutors   TutorProfile[]
+}
+
+model Subject {
+  id          String    @id @default(cuid())
+  programmeId String
+  programme   Programme @relation(fields: [programmeId], references: [id], onDelete: Cascade)
+  name        String
+  slug        String
+  active      Boolean   @default(true)
+  sortOrder   Int       @default(0)
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  tutorSubjects TutorSubject[]
+
+  @@unique([programmeId, name])
+  @@unique([programmeId, slug])
+  @@index([programmeId, active])
+}
+
+model TutorSubject {
+  tutorProfileId String
+  subjectId      String
+  tutorProfile   TutorProfile @relation(fields: [tutorProfileId], references: [id], onDelete: Cascade)
+  subject        Subject      @relation(fields: [subjectId], references: [id], onDelete: Cascade)
+  createdAt      DateTime     @default(now())
+
+  @@id([tutorProfileId, subjectId])
+  @@index([subjectId])
+}
+
 model TutorProfile {
   id                 String                  @id @default(cuid())
   userId             String                  @unique
   user               User                    @relation(fields: [userId], references: [id], onDelete: Cascade)
   bio                String?
   subjects           String[]                @default([])
+  programmeId        String?
+  programme          Programme?              @relation(fields: [programmeId], references: [id], onDelete: SetNull)
   hourlyRate         Float?
   experience         String?
   educationLevel     TutorEducationLevel?
@@ -186,8 +230,11 @@ model TutorProfile {
   createdAt          DateTime                @default(now())
   updatedAt          DateTime                @updatedAt
 
+  tutorSubjects   TutorSubject[]
   recommendations TutorRecommendation[]
   subadminReviews TutorSubadminReview[]
+
+  @@index([programmeId])
 }
 
 model TutorSubadminReview {

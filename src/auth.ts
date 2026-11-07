@@ -3,6 +3,7 @@ import Credentials from "next-auth/providers/credentials";
 import { z } from "zod";
 import { authConfig } from "@/auth.config";
 import { requireAuthSecret } from "@/lib/auth-env";
+import { sendLoginNoticeEmail } from "@/lib/email/welcome";
 import { prisma } from "@/lib/prisma";
 import { verifyPassword } from "@/lib/password";
 
@@ -45,6 +46,13 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
             data: { adminTier },
           });
         }
+
+        void sendLoginNoticeEmail({
+          to: user.email,
+          name: user.name ?? user.email,
+        }).catch((error) => {
+          console.error("Login welcome email failed:", error);
+        });
 
         return {
           id: user.id,

@@ -36,6 +36,7 @@ export const routes = {
     dashboard: "/admin/dashboard",
     verification: "/admin/verification",
     conversations: "/admin/conversations",
+    programmes: "/admin/programmes",
     settings: "/admin/settings",
     root: "/admin",
   },

@@ -23,6 +23,7 @@ import {
   RecommenderRequestFields,
   type RecommenderFormValues,
 } from "@/components/auth/recommender-request-fields";
+import { TeachingProgrammeFields } from "@/components/auth/teaching-programme-fields";
 import {
   tutorRequiresCertificate,
   tutorRequiresRecommendation,
@@ -36,11 +37,18 @@ import {
 } from "@/lib/validations/registration";
 import { routes } from "@/lib/routes";
 
-type WizardStep = "account" | "documents" | "recommendation" | "complete" | "not-qualified";
+type WizardStep =
+  | "account"
+  | "documents"
+  | "teaching"
+  | "recommendation"
+  | "complete"
+  | "not-qualified";
 
 const stepLabels: Record<WizardStep, string> = {
   account: "Account",
   documents: "Education & documents",
+  teaching: "Programme & subjects",
   recommendation: "Recommendation",
   complete: "Done",
   "not-qualified": "Not eligible",
@@ -61,6 +69,9 @@ export function TutorRegistrationWizard() {
   const [certificateUrl, setCertificateUrl] = useState("");
   const [nationalIdUrl, setNationalIdUrl] = useState("");
   const [livePhotoUrl, setLivePhotoUrl] = useState("");
+
+  const [programmeId, setProgrammeId] = useState("");
+  const [subjectIds, setSubjectIds] = useState<string[]>([]);
 
   const [recommender, setRecommender] = useState<RecommenderFormValues>({
     title: "DR",
@@ -96,8 +107,8 @@ export function TutorRegistrationWizard() {
     educationLevel && tutorRequiresRecommendation(educationLevel);
 
   const visibleSteps: WizardStep[] = needsRecommendation
-    ? ["account", "documents", "recommendation", "complete"]
-    : ["account", "documents", "complete"];
+    ? ["account", "documents", "teaching", "recommendation", "complete"]
+    : ["account", "documents", "teaching", "complete"];
 
   const stepIndex = visibleSteps.indexOf(step === "not-qualified" ? "documents" : step);
 
@@ -177,6 +188,37 @@ export function TutorRegistrationWizard() {
       if (json.notQualified) {
         setStep("not-qualified");
         return;
+      }
+
+      setStep("teaching");
+      toast.message("Select your programme and up to three subjects");
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Could not save");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const submitTeaching = async () => {
+    if (!programmeId) {
+      toast.error("Select the programme you studied");
+      return;
+    }
+    if (subjectIds.length === 0) {
+      toast.error("Select at least one subject you can teach");
+      return;
+    }
+
+    setLoading(true);
+    try {
+      const res = await fetch("/api/tutor/teaching", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ programmeId, subjectIds }),
+      });
+      const json = await res.json();
+      if (!res.ok) {
+        throw new Error(json.error ?? "Could not save teaching subjects");
       }
 
       if (json.needsRecommendation) {
@@ -385,7 +427,46 @@ export function TutorRegistrationWizard() {
               onClick={submitDocuments}
               disabled={loading}
             >
-              {loading ? "Saving…" : needsRecommendation ? "Continue" : "Submit"}
+              {loading ? "Saving…" : "Continue"}
+            </Button>
+          </div>
+        </div>
+      )}
+
+      {step === "teaching" && (
+        <div className="space-y-3">
+          <p className="text-xs text-slate-500">
+            Step 3: Choose the tertiary programme you studied and up to three subjects
+            you can teach.
+          </p>
+
+          <TeachingProgrammeFields
+            programmeId={programmeId}
+            subjectIds={subjectIds}
+            onProgrammeChange={setProgrammeId}
+            onSubjectIdsChange={setSubjectIds}
+            compact
+          />
+
+          <div className="flex gap-2">
+            <Button
+              type="button"
+              variant="outline"
+              className="h-10 flex-1"
+              onClick={() => setStep("documents")}
+            >
+              Back
+            </Button>
+            <Button
+              className="auth-primary-btn h-10 flex-1 border-0"
+              onClick={submitTeaching}
+              disabled={loading}
+            >
+              {loading
+                ? "Saving…"
+                : needsRecommendation
+                  ? "Continue"
+                  : "Submit for review"}
             </Button>
           </div>
         </div>
@@ -394,7 +475,7 @@ export function TutorRegistrationWizard() {
       {step === "recommendation" && (
         <div className="space-y-3">
           <p className="text-xs text-slate-500">
-            Step 3: Request a faculty recommendation — we email them a secure link.
+            Step 4: Request a faculty recommendation — we email them a secure link.
           </p>
 
           <RecommenderRequestFields
@@ -416,7 +497,7 @@ export function TutorRegistrationWizard() {
               type="button"
               variant="outline"
               className="h-10 flex-1"
-              onClick={() => setStep("documents")}
+              onClick={() => setStep("teaching")}
             >
               Back
             </Button>

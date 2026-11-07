@@ -45,6 +45,7 @@ export const adminNav: NavItemConfig[] = [
   { href: "/admin/users", label: "Users", icon: "users" },
   { href: "/admin/conversations", label: "Conversations", icon: "message-square" },
   { href: "/admin/verification", label: "Verification", icon: "shield" },
+  { href: "/admin/programmes", label: "Programmes", icon: "book-open" },
   { href: "/admin/payments", label: "Payments", icon: "credit-card" },
   { href: "/admin/reports", label: "Analytics", icon: "bar-chart" },
   { href: "/admin/cms", label: "CMS", icon: "clipboard-list" },

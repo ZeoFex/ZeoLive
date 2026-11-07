@@ -7,6 +7,7 @@ import { DocumentUploadField } from "@/components/auth/document-upload-field";
 import { EducationLevelFields } from "@/components/auth/education-level-fields";
 import { LivePhotoCapture } from "@/components/auth/live-photo-capture";
 import { AuthLayout } from "@/components/auth/auth-layout";
+import { TeachingProgrammeFields } from "@/components/auth/teaching-programme-fields";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -16,11 +17,12 @@ import {
 } from "@/components/auth/recommender-request-fields";
 import {
   tutorRequiresCertificate,
+  tutorRequiresRecommendation,
   type TutorEducationLevelValue,
 } from "@/lib/constants/registration";
 import { buildRecommendationEmailPreview } from "@/lib/recommendation-preview";
 
-type Step = "verification" | "recommendation" | "not-qualified" | "complete";
+type Step = "verification" | "teaching" | "recommendation" | "not-qualified" | "complete";
 
 export default function TutorOnboardingPage() {
   const router = useRouter();
@@ -33,6 +35,8 @@ export default function TutorOnboardingPage() {
   const [certificateUrl, setCertificateUrl] = useState("");
   const [nationalIdUrl, setNationalIdUrl] = useState("");
   const [livePhotoUrl, setLivePhotoUrl] = useState("");
+  const [programmeId, setProgrammeId] = useState("");
+  const [subjectIds, setSubjectIds] = useState<string[]>([]);
 
   const [recommender, setRecommender] = useState<RecommenderFormValues>({
     title: "DR",
@@ -59,6 +63,24 @@ export default function TutorOnboardingPage() {
       .then((data) => {
         if (data.verificationStatus === "APPROVED") {
           router.replace("/tutor/dashboard");
+          return;
+        }
+        if (data.verificationStatus === "AWAITING_RECOMMENDATION") {
+          setStep("recommendation");
+          if (data.educationLevel) {
+            setEducationLevel(data.educationLevel);
+          }
+          return;
+        }
+        if (
+          data.hasDocuments &&
+          !data.hasTeaching &&
+          data.verificationStatus === "PENDING"
+        ) {
+          setStep("teaching");
+          if (data.educationLevel) {
+            setEducationLevel(data.educationLevel);
+          }
         }
       })
       .catch(() => {});
@@ -67,12 +89,15 @@ export default function TutorOnboardingPage() {
       .then((r) => r.json())
       .then((data) => {
         if (data.fullName) setTutorFullName(data.fullName);
+        if (data.institutionName) setInstitutionName(data.institutionName);
       })
       .catch(() => {});
   }, [router]);
 
   const needsCertificate =
     educationLevel && tutorRequiresCertificate(educationLevel);
+  const needsRecommendation =
+    educationLevel && tutorRequiresRecommendation(educationLevel);
 
   const submitVerification = async () => {
     if (!educationLevel || !institutionName.trim()) {
@@ -110,6 +135,37 @@ export default function TutorOnboardingPage() {
       if (json.notQualified) {
         setStep("not-qualified");
         return;
+      }
+
+      setStep("teaching");
+      toast.message("Select your programme and up to three subjects");
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Could not save");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const submitTeaching = async () => {
+    if (!programmeId) {
+      toast.error("Select the programme you studied");
+      return;
+    }
+    if (subjectIds.length === 0) {
+      toast.error("Select at least one subject you can teach");
+      return;
+    }
+
+    setLoading(true);
+    try {
+      const res = await fetch("/api/tutor/teaching", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ programmeId, subjectIds }),
+      });
+      const json = await res.json();
+      if (!res.ok) {
+        throw new Error(json.error ?? "Could not save teaching subjects");
       }
 
       if (json.needsRecommendation) {
@@ -178,7 +234,7 @@ export default function TutorOnboardingPage() {
   return (
     <AuthLayout
       title="Tutor verification"
-      subtitle="Complete education verification: Undergraduate, Diploma/HND, Graduate, or Postgraduate."
+      subtitle="Complete education verification, choose what you teach, then finish the last review step."
       headline="Complete Your Tutor Verification"
       highlightWord="Verification"
     >
@@ -241,6 +297,40 @@ export default function TutorOnboardingPage() {
         </div>
       )}
 
+      {step === "teaching" && (
+        <div className="space-y-6">
+          <p className="text-sm text-muted-foreground">
+            Select the tertiary programme you studied and choose up to three subjects
+            you can teach. This comes before the final verification step.
+          </p>
+
+          <TeachingProgrammeFields
+            programmeId={programmeId}
+            subjectIds={subjectIds}
+            onProgrammeChange={setProgrammeId}
+            onSubjectIdsChange={setSubjectIds}
+          />
+
+          <div className="flex gap-2">
+            <Button
+              type="button"
+              variant="outline"
+              className="flex-1"
+              onClick={() => setStep("verification")}
+            >
+              Back
+            </Button>
+            <Button className="flex-1" onClick={submitTeaching} disabled={loading}>
+              {loading
+                ? "Saving…"
+                : needsRecommendation
+                  ? "Continue"
+                  : "Submit for review"}
+            </Button>
+          </div>
+        </div>
+      )}
+
       {step === "recommendation" && (
         <div className="space-y-4">
           <p className="text-sm text-muted-foreground">
@@ -258,9 +348,19 @@ export default function TutorOnboardingPage() {
             })}
           />
 
-          <Button className="w-full" onClick={sendRecommendation} disabled={loading}>
-            {loading ? "Sending…" : "Send recommendation request"}
-          </Button>
+          <div className="flex gap-2">
+            <Button
+              type="button"
+              variant="outline"
+              className="flex-1"
+              onClick={() => setStep("teaching")}
+            >
+              Back
+            </Button>
+            <Button className="flex-1" onClick={sendRecommendation} disabled={loading}>
+              {loading ? "Sending…" : "Send recommendation request"}
+            </Button>
+          </div>
         </div>
       )}
 

@@ -4,7 +4,7 @@ import { getPlatformSettings } from "@/lib/platform-settings";
 import { prisma } from "@/lib/prisma";
 import { hashPassword } from "@/lib/password";
 import { tutorRegistrationSchema } from "@/lib/validations/registration";
-import { sendTutorAccountEmail } from "@/lib/email/tutor";
+import { sendWelcomeEmail } from "@/lib/email/welcome";
 import { buildDisplayName, parseDateOfBirth } from "@/lib/user-name";
 
 export async function POST(request: Request) {
@@ -57,7 +57,7 @@ export async function POST(request: Request) {
     });
 
     try {
-      await sendTutorAccountEmail({ to: email, tutorName: displayName });
+      await sendWelcomeEmail({ to: email, name: displayName, role: "TUTOR" });
     } catch (emailError) {
       console.error("Tutor welcome email failed:", emailError);
     }

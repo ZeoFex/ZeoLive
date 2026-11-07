@@ -11,6 +11,7 @@ const PAGE_TITLES: Record<string, string> = {
   "/admin/dashboard": "Dashboard",
   "/admin/users": "Users & Accounts",
   "/admin/verification": "Tutor Verification",
+  "/admin/programmes": "Programmes & Subjects",
   "/admin/payments": "Payments",
   "/admin/reports": "Analytics & Reports",
   "/admin/cms": "CMS",
@@ -53,15 +54,15 @@ export function AdminShell({ roleLabel, navItems, children }: AdminShellProps) {
   }, [pathname, isSuperAdmin]);
 
   return (
-    <div className="admin-shell min-h-screen p-0 lg:p-4">
-      <div className="flex min-h-screen flex-col lg:min-h-[calc(100vh-2rem)] lg:flex-row lg:gap-4">
+    <div className="admin-shell h-dvh overflow-hidden p-0 lg:h-screen lg:p-4">
+      <div className="flex h-full flex-col lg:flex-row lg:gap-4">
         <AdminSidebar
           items={navItems}
           roleLabel={roleLabel}
           pendingCount={pendingCount}
         />
 
-        <main className="flex min-h-0 flex-1 flex-col overflow-hidden bg-white lg:rounded-3xl lg:border lg:border-slate-100 lg:shadow-[0_4px_24px_-8px_rgba(15,23,42,0.12)]">
+        <main className="relative flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden bg-white lg:rounded-3xl lg:border lg:border-slate-100 lg:shadow-[0_4px_24px_-8px_rgba(15,23,42,0.12)]">
           <AdminTopbar title={titleForPath(pathname)} />
           <div className="admin-page-content">{children}</div>
         </main>
