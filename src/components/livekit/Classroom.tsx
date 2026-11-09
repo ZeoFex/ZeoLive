@@ -11,6 +11,8 @@ import { toast } from "sonner";
 import { ChatPanel } from "@/components/livekit/ChatPanel";
 import { Controls } from "@/components/livekit/Controls";
 import { ParticipantGrid } from "@/components/livekit/ParticipantGrid";
+import { ScreenShareStage } from "@/components/livekit/ScreenShareStage";
+import { Whiteboard } from "@/components/livekit/Whiteboard";
 import { ClassroomLayoutProvider, useClassroomLayout } from "@/components/livekit/classroom-layout-context";
 import { SessionHeader } from "@/components/livekit/SessionHeader";
 import { WaitingRoom } from "@/components/livekit/WaitingRoom";
@@ -84,12 +86,17 @@ function ClassroomRoomInner({
 }) {
   const router = useRouter();
   const containerRef = useRef<HTMLDivElement>(null);
-  const { isScreenSharing, screenExpanded } = useClassroomLayout();
+  const { isScreenSharing, screenExpanded, setScreenExpanded } = useClassroomLayout();
   const mobilePanelsCollapsed = useRef(false);
 
   const [showChat, setShowChat] = useState(true);
   const [showParticipants, setShowParticipants] = useState(false);
+  const [boardOn, setBoardOn] = useState(true);
   const [ended, setEnded] = useState(false);
+  const saveWhiteboardRef = useRef<(() => Promise<void>) | null>(null);
+  const bindWhiteboardSave = useCallback((save: (() => Promise<void>) | null) => {
+    saveWhiteboardRef.current = save;
+  }, []);
 
   const { showWaitingRoom, isReconnecting, isConnected } = useSessionPresence(
     session.participantRole
@@ -127,6 +134,7 @@ function ClassroomRoomInner({
 
   const endSession = useCallback(async () => {
     try {
+      await saveWhiteboardRef.current?.();
       const res = await fetch(`/api/classroom/${session.roomId}`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
@@ -158,6 +166,16 @@ function ClassroomRoomInner({
   }
 
   const showSidePanel = showParticipants || showChat;
+  const whiteboardVisible = boardOn && !(isScreenSharing && screenExpanded);
+
+  const toggleWhiteboard = () => {
+    if (whiteboardVisible) {
+      setBoardOn(false);
+      return;
+    }
+    setBoardOn(true);
+    setScreenExpanded(false);
+  };
 
   return (
     <div ref={containerRef} className="flex h-full min-h-0 flex-1 flex-col bg-background">
@@ -177,6 +195,18 @@ function ClassroomRoomInner({
         <main className="flex min-h-0 min-w-0 flex-1 flex-col">
           {showWaitingRoom ? (
             <WaitingRoom />
+          ) : whiteboardVisible ? (
+            <div className="flex min-h-0 flex-1 flex-col">
+              <div className="flex min-h-0 flex-1 flex-col gap-2 p-2 md:flex-row md:p-3">
+                <Whiteboard
+                  roomId={session.roomId}
+                  role={session.participantRole}
+                  onBindSave={bindWhiteboardSave}
+                />
+                {isScreenSharing && <ScreenShareStage layout="side" />}
+              </div>
+              <ParticipantGrid variant="filmstrip" />
+            </div>
           ) : (
             <ParticipantGrid className="min-h-0 flex-1" />
           )}
@@ -214,6 +244,8 @@ function ClassroomRoomInner({
         onToggleChat={() => setShowChat((v) => !v)}
         showParticipants={showParticipants}
         onToggleParticipants={() => setShowParticipants((v) => !v)}
+        showWhiteboard={!showWaitingRoom && whiteboardVisible}
+        onToggleWhiteboard={showWaitingRoom ? undefined : toggleWhiteboard}
         containerRef={containerRef}
       />
     </div>

@@ -1,6 +1,7 @@
 import type { Role, TutoringSession, TutoringSessionStatus, User } from "@/generated/prisma";
 import { getPlatformSettings } from "@/lib/platform-settings";
 import { prisma } from "@/lib/prisma";
+import { clearWhiteboard } from "@/lib/whiteboard-store";
 
 export type ClassroomParticipantRole = "student" | "tutor";
 
@@ -178,4 +179,5 @@ export async function markSessionCompleted(roomId: string) {
     where: { roomId, status: { in: ["SCHEDULED", "ACTIVE"] } },
     data: { status: "COMPLETED", endedAt: new Date() },
   });
+  await clearWhiteboard(roomId);
 }

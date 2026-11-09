@@ -14,6 +14,7 @@ import {
   MicOff,
   Monitor,
   MonitorOff,
+  PenLine,
   PhoneOff,
   Users,
   Video,
@@ -37,6 +38,8 @@ interface ControlsProps {
   onToggleChat: () => void;
   showParticipants: boolean;
   onToggleParticipants: () => void;
+  showWhiteboard?: boolean;
+  onToggleWhiteboard?: () => void;
   containerRef?: React.RefObject<HTMLElement | null>;
   className?: string;
 }
@@ -64,6 +67,8 @@ export function Controls({
   onToggleChat,
   showParticipants,
   onToggleParticipants,
+  showWhiteboard,
+  onToggleWhiteboard,
   containerRef,
   className,
 }: ControlsProps) {
@@ -182,6 +187,20 @@ export function Controls({
           ) : (
             <Monitor className="h-5 w-5" />
           )}
+        </Button>
+      )}
+
+      {onToggleWhiteboard && (
+        <Button
+          type="button"
+          size="icon"
+          variant={showWhiteboard ? "default" : "secondary"}
+          className="h-11 w-11 shrink-0 rounded-full sm:h-12 sm:w-12"
+          onClick={onToggleWhiteboard}
+          aria-label={showWhiteboard ? "Hide whiteboard" : "Show whiteboard"}
+          aria-pressed={showWhiteboard}
+        >
+          <PenLine className="h-5 w-5" />
         </Button>
       )}
 

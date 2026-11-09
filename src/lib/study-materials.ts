@@ -130,6 +130,76 @@ export async function createStudyMaterial(input: {
   return material.id;
 }
 
+/** Keep one whiteboard image per lesson and share it with the students in that lesson. */
+export async function saveSessionWhiteboard(input: {
+  tutorId: string;
+  studentId: string;
+  roomId: string;
+  title: string;
+  fileUrl: string;
+  mimeType: string;
+  fileSizeBytes: number;
+  extraStudentIds: string[];
+}) {
+  const studentIds = new Set<string>([input.studentId]);
+  const extras = input.extraStudentIds.filter((id) => id && id !== input.studentId);
+  if (extras.length > 0) {
+    const allowed = await prisma.user.findMany({
+      where: {
+        id: { in: extras },
+        role: "STUDENT",
+        tutoringSessionsAsStudent: { some: { tutorId: input.tutorId } },
+      },
+      select: { id: true },
+    });
+    for (const student of allowed) studentIds.add(student.id);
+  }
+
+  const fileName = `whiteboard-${input.roomId}.jpg`;
+  const description = "Whiteboard from your live lesson. It updates while the tutor teaches.";
+  const ids = [...studentIds];
+  const existing = await prisma.studyMaterial.findFirst({
+    where: { tutorId: input.tutorId, fileName },
+    select: { id: true },
+  });
+
+  if (!existing) {
+    const material = await prisma.studyMaterial.create({
+      data: {
+        tutorId: input.tutorId,
+        title: input.title,
+        description,
+        fileUrl: input.fileUrl,
+        fileName,
+        mimeType: input.mimeType,
+        fileSizeBytes: input.fileSizeBytes,
+        shares: { create: ids.map((studentId) => ({ studentId })) },
+      },
+    });
+    return material.id;
+  }
+
+  await prisma.studyMaterial.update({
+    where: { id: existing.id },
+    data: {
+      title: input.title,
+      description,
+      fileUrl: input.fileUrl,
+      mimeType: input.mimeType,
+      fileSizeBytes: input.fileSizeBytes,
+    },
+  });
+  await prisma.materialShare.createMany({
+    data: ids.map((studentId) => ({ materialId: existing.id, studentId })),
+    skipDuplicates: true,
+  });
+  await prisma.materialShare.updateMany({
+    where: { materialId: existing.id, studentId: { in: ids } },
+    data: { sharedAt: new Date() },
+  });
+  return existing.id;
+}
+
 export async function shareMaterialWithStudents(
   materialId: string,
   tutorId: string,
