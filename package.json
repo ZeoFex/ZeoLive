@@ -12,7 +12,9 @@
     "db:push": "prisma db push",
     "db:migrate": "prisma migrate dev",
     "db:studio": "prisma studio",
-    "test:smtp": "node --env-file=.env.local scripts/test-smtp.mjs"
+    "test:smtp": "node --env-file=.env.local scripts/test-smtp.mjs",
+    "test:smtp:welcome": "node --env-file=.env.local scripts/test-smtp.mjs welcome",
+    "test:smtp:support": "node --env-file=.env.local scripts/test-smtp.mjs support"
   },
   "dependencies": {
     "@auth/prisma-adapter": "^2.11.2",

@@ -7,8 +7,13 @@ import { signOut as nextAuthSignOut } from "next-auth/react";
  * Always returns to a path on the current origin (production or local dev).
  */
 export async function signOutToAppPath(path: string) {
-  await nextAuthSignOut({ redirect: false });
+  const nextPath = path.startsWith("/") ? path : `/${path}`;
+  try {
+    await nextAuthSignOut({ redirect: false });
+  } catch {
+    // Still leave the app even if the session revoke call fails.
+  }
   if (typeof window !== "undefined") {
-    window.location.assign(path);
+    window.location.assign(`${window.location.origin}${nextPath}`);
   }
 }

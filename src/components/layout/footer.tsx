@@ -1,5 +1,5 @@
-import Link from "next/link";
-import { BRAND_EMAIL, BRAND_NAME } from "@/lib/brand";
+import { Logo } from "@/components/brand/logo";
+import { BRAND_EMAIL, BRAND_FULL_NAME, BRAND_NAME } from "@/lib/brand";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 
@@ -26,12 +26,10 @@ export function Footer() {
       <div className="mx-auto max-w-6xl px-4 py-14 sm:px-6 lg:px-8">
         <div className="grid gap-10 lg:grid-cols-5">
           <div className="lg:col-span-2">
-            <Link href="/" className="text-base font-semibold">
-              {BRAND_NAME}
-            </Link>
+            <Logo href="/" size="md" />
             <p className="mt-3 max-w-sm text-sm leading-relaxed text-muted-foreground">
-              Scheduling, classrooms, and payouts for tutors working with
-              students online.
+              {BRAND_FULL_NAME} — scheduling, classrooms, and payouts for tutors
+              working with students online.
             </p>
             <p className="mt-6 text-sm text-muted-foreground">
               {BRAND_EMAIL}

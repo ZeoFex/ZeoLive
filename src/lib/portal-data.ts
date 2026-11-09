@@ -20,20 +20,26 @@ export async function listApprovedTutors(): Promise<Tutor[]> {
       role: "TUTOR",
       tutorProfile: { verificationStatus: "APPROVED" },
     },
-    include: { tutorProfile: true },
+    include: { tutorProfile: true, lectureSubjects: { select: { name: true } } },
     orderBy: { createdAt: "desc" },
   });
 
   return tutors.map((user) => {
     const profile = user.tutorProfile!;
-    const subjects = profile.subjects.length > 0 ? profile.subjects : ["General"];
+    const subjects = [
+      ...new Set([
+        ...profile.subjects,
+        ...user.lectureSubjects.map((subject) => subject.name),
+      ].map((name) => name.trim()).filter(Boolean)),
+    ];
+    const subjectList = subjects.length > 0 ? subjects : ["General"];
     return {
       id: user.id,
       name: displayUserName(user),
       email: user.email,
       avatar: user.image ?? "",
-      subject: subjects[0]!,
-      subjects,
+      subject: subjectList[0]!,
+      subjects: subjectList,
       rating: profile.rating ?? 5,
       reviewCount: profile.reviewCount ?? 0,
       hourlyRate: profile.hourlyRate ?? 0,

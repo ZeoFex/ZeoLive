@@ -14,11 +14,11 @@ interface AuthRoleSelectorProps {
 export function AuthRoleSelector({
   value,
   onChange,
-  label = "Select a role to access tailored features",
+  label,
 }: AuthRoleSelectorProps) {
   return (
     <div className="space-y-3">
-      <p className="text-sm text-slate-500">{label}</p>
+      {label ? <p className="text-sm text-slate-500">{label}</p> : null}
       <div className="grid grid-cols-2 gap-3">
         <RoleCard
           selected={value === "student"}

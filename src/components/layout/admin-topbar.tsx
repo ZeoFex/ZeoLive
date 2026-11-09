@@ -79,11 +79,13 @@ export function AdminTopbar({ title }: AdminTopbarProps) {
     setNotificationsLoading(true);
     try {
       const res = await fetch("/api/admin/notifications");
-      const data = await res.json();
       if (!res.ok) return;
+      const data = await res.json().catch(() => ({}));
       const items = (data.items ?? []) as NotificationItem[];
       setNotifications(items);
       updateUnreadCount(items);
+    } catch {
+      // Ignore network/abort errors during polling or HMR.
     } finally {
       setNotificationsLoading(false);
     }

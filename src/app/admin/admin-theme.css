@@ -7,6 +7,8 @@
 html:has(.admin-shell),
 html:has(.admin-shell).dark {
   color-scheme: light;
+  height: 100%;
+  overflow: hidden;
   --background: 210 40% 99%;
   --foreground: 215 28% 14%;
   --card: 0 0% 100%;
@@ -24,6 +26,11 @@ html:has(.admin-shell).dark {
   --border: 214 24% 88%;
   --input: 214 24% 86%;
   --ring: 210 100% 40%;
+}
+
+html:has(.admin-shell) body {
+  height: 100%;
+  overflow: hidden;
 }
 
 /* Admin panel — blue / white Zeolive theme (always light, even if site is dark) */
@@ -136,6 +143,17 @@ html:has(.admin-shell).dark {
 
 .admin-sidebar {
   background: #ffffff;
+  overscroll-behavior: none;
+}
+
+@media (min-width: 1024px) {
+  .admin-sidebar {
+    position: sticky;
+    top: 0;
+    height: 100%;
+    max-height: 100%;
+    overflow: hidden;
+  }
 }
 
 .admin-logo-badge {
@@ -296,8 +314,20 @@ html:has(.admin-shell).dark {
 }
 
 .admin-page-content {
-  @apply flex-1 overflow-auto px-5 pb-8 pt-4 sm:px-8;
+  flex: 1;
+  min-height: 0;
+  overflow-x: hidden;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  padding: 1rem 1.25rem 2rem;
+  -webkit-overflow-scrolling: touch;
   color: #0f172a;
+}
+
+@media (min-width: 640px) {
+  .admin-page-content {
+    padding: 1rem 2rem 2rem;
+  }
 }
 
 .admin-outline-btn {

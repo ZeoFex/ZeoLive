@@ -19,27 +19,12 @@ export default function SignupChooserPage() {
     <AuthLayout
       compact
       title="Create an account"
-      subtitle="Choose student or tutor — registration only takes a minute."
+      subtitle=""
       headline="Simplify Learning And Live Tutoring"
       highlightWord="Live Tutoring"
     >
       <div className="space-y-4">
-        <AuthRoleSelector
-          value={role}
-          onChange={setRole}
-          label="Who are you signing up as?"
-        />
-
-        {role === "student" ? (
-          <p className="text-xs leading-snug text-slate-500">
-            Book verified tutors, join live classes, and manage your learning schedule.
-          </p>
-        ) : (
-          <p className="text-xs leading-snug text-slate-500">
-            Apply with your education credentials. Admin verification is required before
-            you can teach.
-          </p>
-        )}
+        <AuthRoleSelector value={role} onChange={setRole} />
 
         <button type="button" className="auth-primary-btn" onClick={continueSignup}>
           Continue

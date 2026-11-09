@@ -14,12 +14,57 @@ export async function GET() {
       onboardingComplete: true,
       verificationStatus: true,
       educationLevel: true,
+      institutionName: true,
+      programmeId: true,
+      transcriptUrl: true,
+      certificateUrl: true,
+      nationalIdUrl: true,
+      livePhotoUrl: true,
+      subjects: true,
+      tutorSubjects: {
+        select: { subjectId: true },
+      },
+      user: {
+        select: {
+          firstName: true,
+          middleName: true,
+          lastName: true,
+        },
+      },
     },
   });
+
+  const hasDocuments = Boolean(
+    profile?.transcriptUrl && profile?.nationalIdUrl && profile?.livePhotoUrl
+  );
+  const subjectIds =
+    profile?.tutorSubjects?.map((row) => row.subjectId) ?? [];
+  const hasTeaching = Boolean(
+    profile?.programmeId &&
+      ((profile?.subjects?.length ?? 0) > 0 || subjectIds.length > 0)
+  );
+
+  const fullName = [
+    profile?.user?.firstName,
+    profile?.user?.middleName,
+    profile?.user?.lastName,
+  ]
+    .filter(Boolean)
+    .join(" ");
 
   return NextResponse.json({
     onboardingComplete: profile?.onboardingComplete ?? false,
     verificationStatus: profile?.verificationStatus ?? "PENDING",
     educationLevel: profile?.educationLevel ?? null,
+    institutionName: profile?.institutionName ?? "",
+    programmeId: profile?.programmeId ?? "",
+    subjectIds,
+    transcriptUrl: profile?.transcriptUrl ?? "",
+    certificateUrl: profile?.certificateUrl ?? "",
+    nationalIdUrl: profile?.nationalIdUrl ?? "",
+    livePhotoUrl: profile?.livePhotoUrl ?? "",
+    hasDocuments,
+    hasTeaching,
+    tutorFullName: fullName,
   });
 }

@@ -45,13 +45,8 @@ export async function POST(request: Request) {
       );
     }
 
-    let verificationStatus: TutorVerificationStatus = "AWAITING_REVIEW";
-    let onboardingComplete = true;
-
-    if (tutorRequiresRecommendation(level)) {
-      verificationStatus = "AWAITING_RECOMMENDATION";
-      onboardingComplete = false;
-    }
+    // Documents are saved first; teaching subjects + final verification come next.
+    const verificationStatus: TutorVerificationStatus = "PENDING";
 
     await prisma.tutorProfile.update({
       where: { userId: session.user.id },
@@ -63,12 +58,13 @@ export async function POST(request: Request) {
         nationalIdUrl: data.nationalIdUrl,
         livePhotoUrl: data.livePhotoUrl,
         verificationStatus,
-        onboardingComplete,
+        onboardingComplete: false,
       },
     });
 
     return NextResponse.json({
       success: true,
+      needsTeaching: true,
       needsRecommendation: tutorRequiresRecommendation(level),
       verificationStatus,
     });

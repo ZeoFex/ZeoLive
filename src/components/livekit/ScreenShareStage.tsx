@@ -8,9 +8,10 @@ import { useClassroomLayout } from "@/components/livekit/classroom-layout-contex
 
 interface ScreenShareStageProps {
   className?: string;
+  layout?: "stage" | "side";
 }
 
-export function ScreenShareStage({ className }: ScreenShareStageProps) {
+export function ScreenShareStage({ className, layout = "stage" }: ScreenShareStageProps) {
   const {
     isScreenSharing,
     screenTrack,
@@ -31,9 +32,11 @@ export function ScreenShareStage({ className }: ScreenShareStageProps) {
       data-expanded={screenExpanded ? "true" : "false"}
       className={cn(
         "lk-screen-stage group relative flex min-h-0 min-w-0 flex-col overflow-hidden rounded-xl bg-slate-950 md:rounded-2xl",
-        screenExpanded
-          ? "min-h-0 flex-1"
-          : "min-h-[38dvh] flex-1 md:min-h-0",
+        layout === "side"
+          ? "h-full min-h-[12rem] w-full md:w-[min(44%,32rem)]"
+          : screenExpanded
+            ? "min-h-0 flex-1"
+            : "min-h-[38dvh] flex-1 md:min-h-0",
         className
       )}
     >

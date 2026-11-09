@@ -18,6 +18,8 @@ export const routes = {
     payments: "/student/payments",
     messages: "/student/messages",
     materials: "/student/materials",
+    lectures: "/student/lectures",
+    recordings: "/student/recordings",
     settings: "/student/settings",
     root: "/student",
   },
@@ -28,6 +30,8 @@ export const routes = {
     earnings: "/tutor/earnings",
     availability: "/tutor/availability",
     materials: "/tutor/materials",
+    lectures: "/tutor/lectures",
+    recordings: "/tutor/recordings",
     settings: "/tutor/settings",
     onboarding: "/tutor/onboarding",
     root: "/tutor",
@@ -36,6 +40,8 @@ export const routes = {
     dashboard: "/admin/dashboard",
     verification: "/admin/verification",
     conversations: "/admin/conversations",
+    recordings: "/admin/recordings",
+    programmes: "/admin/programmes",
     settings: "/admin/settings",
     root: "/admin",
   },
@@ -69,12 +75,35 @@ export function loginUrlWithCallback(callbackPath: string, area: "default" | "ad
   return `${url.pathname}${url.search}`;
 }
 
+const authOnlyPaths = [
+  routes.login,
+  routes.adminLogin,
+  routes.signup,
+  routes.signupStudent,
+  routes.signupTutor,
+  routes.forgotPassword,
+  routes.adminSetup,
+  "/reset-password",
+  "/verify-otp",
+];
+
+function isAuthOnlyPath(pathname: string) {
+  return authOnlyPaths.some(
+    (path) => pathname === path || pathname.startsWith(`${path}/`)
+  );
+}
+
 /** Only allow same-origin relative callbacks that match the user's role. */
 export function safeCallbackForRole(
   callbackUrl: string | null | undefined,
   role: Role
 ): string | null {
   if (!callbackUrl || !callbackUrl.startsWith("/") || callbackUrl.startsWith("//")) {
+    return null;
+  }
+
+  // Never send users back to a login/signup screen after auth.
+  if (isAuthOnlyPath(callbackUrl.split("?")[0] ?? callbackUrl)) {
     return null;
   }
 

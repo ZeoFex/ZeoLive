@@ -10,7 +10,8 @@ export type NavIconName =
   | "file-text"
   | "shield"
   | "bar-chart"
-  | "clipboard-list";
+  | "clipboard-list"
+  | "video";
 
 export interface NavItemConfig {
   href: string;
@@ -26,6 +27,8 @@ export const studentNav: NavItemConfig[] = [
   { href: "/student/payments", label: "Payments", icon: "credit-card" },
   { href: "/student/messages", label: "Messages", icon: "message-square" },
   { href: "/student/materials", label: "Materials", icon: "file-text" },
+  { href: "/student/lectures", label: "Lectures", icon: "video" },
+  { href: "/student/recordings", label: "Recordings", icon: "video" },
   { href: "/student/settings", label: "Settings", icon: "settings" },
 ];
 
@@ -37,6 +40,8 @@ export const tutorNav: NavItemConfig[] = [
   { href: "/tutor/earnings", label: "Earnings", icon: "wallet" },
   { href: "/tutor/availability", label: "Availability", icon: "calendar" },
   { href: "/tutor/materials", label: "Materials", icon: "file-text" },
+  { href: "/tutor/lectures", label: "Lectures", icon: "video" },
+  { href: "/tutor/recordings", label: "Recordings", icon: "video" },
   { href: "/tutor/settings", label: "Settings", icon: "settings" },
 ];
 
@@ -45,6 +50,8 @@ export const adminNav: NavItemConfig[] = [
   { href: "/admin/users", label: "Users", icon: "users" },
   { href: "/admin/conversations", label: "Conversations", icon: "message-square" },
   { href: "/admin/verification", label: "Verification", icon: "shield" },
+  { href: "/admin/recordings", label: "Recordings", icon: "video" },
+  { href: "/admin/programmes", label: "Programmes", icon: "book-open" },
   { href: "/admin/payments", label: "Payments", icon: "credit-card" },
   { href: "/admin/reports", label: "Analytics", icon: "bar-chart" },
   { href: "/admin/cms", label: "CMS", icon: "clipboard-list" },

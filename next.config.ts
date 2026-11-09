@@ -12,6 +12,10 @@ const nextConfig: NextConfig = {
   turbopack: {
     root: process.cwd(),
   },
+  experimental: {
+    // Lecture uploads are videos up to 200MB and pass through proxy.
+    proxyClientMaxBodySize: "200mb",
+  },
   images: {
     remotePatterns: [
       {

@@ -35,6 +35,7 @@ export async function sendPasswordResetEmail(params: {
   const resetUrl = resetPasswordUrl(params.rawToken, params.baseUrl);
   const email = buildPasswordResetEmail({ resetUrl });
   return sendEmail({
+    channel: "support",
     to: params.to,
     subject: email.subject,
     text: email.text,

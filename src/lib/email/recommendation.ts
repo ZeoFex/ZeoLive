@@ -70,6 +70,7 @@ export async function sendRecommendationEmail(params: {
   });
 
   const result = await sendEmail({
+    channel: "support",
     to: params.recommenderEmail.toLowerCase(),
     subject: email.subject,
     text: email.text,

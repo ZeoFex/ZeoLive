@@ -1,5 +1,5 @@
-import Image from "next/image";
-import Link from "next/link";
+import { Logo } from "@/components/brand/logo";
+import { BRAND_FULL_NAME } from "@/lib/brand";
 
 interface AuthBrandPanelProps {
   headline?: string;
@@ -17,18 +17,9 @@ export function AuthBrandPanel({
       <div className="auth-brand-waves pointer-events-none absolute inset-0" aria-hidden />
 
       <div className="relative z-10 flex flex-1 flex-col p-10 xl:p-12">
-        <Link href="/" className="inline-flex w-fit">
-          <Image
-            src="/images/zoelive-logo.png"
-            alt="Zeolive"
-            width={160}
-            height={64}
-            className="h-12 w-auto object-contain"
-            priority
-          />
-        </Link>
+        <Logo href="/" size="lg" className="w-fit" />
 
-        <div className="mt-auto space-y-6 pb-4">
+        <div className="flex flex-1 items-center">
           <h2 className="max-w-md text-4xl font-bold leading-tight tracking-tight text-[#0B4F8A] xl:text-[2.75rem]">
             {parts[0]}
             <span className="relative inline-block whitespace-nowrap">
@@ -54,21 +45,10 @@ export function AuthBrandPanel({
             </span>
             {parts[1] ?? ""}
           </h2>
-
-          <div className="relative -mx-4 max-w-md xl:-mx-0">
-            <Image
-              src="/images/zoelive-logo.png"
-              alt=""
-              width={480}
-              height={320}
-              className="w-full object-contain drop-shadow-md"
-              aria-hidden
-            />
-          </div>
         </div>
 
-        <p className="relative z-10 text-xs tracking-wide text-[#0B4F8A]/60">
-          TECHNOLOGY · INNOVATION · IMPACT
+        <p className="text-xs tracking-wide text-[#0B4F8A]/60">
+          {BRAND_FULL_NAME.toUpperCase()}
         </p>
       </div>
     </aside>

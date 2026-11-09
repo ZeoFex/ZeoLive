@@ -2,7 +2,7 @@
 
 import { zodResolver } from "@hookform/resolvers/zod";
 import Link from "next/link";
-import { useRouter, useSearchParams } from "next/navigation";
+import { useSearchParams } from "next/navigation";
 import { signIn, signOut, useSession } from "next-auth/react";
 import { signOutToAppPath } from "@/lib/auth-client";
 import { useEffect, useState } from "react";
@@ -15,6 +15,7 @@ import { PasswordInput } from "@/components/shared/password-input";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { adminDashboardPath } from "@/lib/admin-permissions";
 import { resolveAuthRedirect } from "@/lib/auth-utils";
 import { routes } from "@/lib/routes";
 import { cn } from "@/lib/utils";
@@ -29,7 +30,6 @@ type FormData = z.infer<typeof schema>;
 type LoginPortal = "default" | "admin";
 
 export function LoginForm({ portal = "default" }: { portal?: LoginPortal }) {
-  const router = useRouter();
   const searchParams = useSearchParams();
   const callbackUrl = searchParams.get("callbackUrl");
   const reset = searchParams.get("reset");
@@ -51,11 +51,45 @@ export function LoginForm({ portal = "default" }: { portal?: LoginPortal }) {
     }
   }, [reset]);
 
+  // If an admin session already exists on the admin login page, leave immediately.
+  useEffect(() => {
+    if (!session?.user?.role) return;
+
+    if (isAdminPortal && session.user.role === "ADMIN") {
+      const dest = adminDashboardPath(session.user.adminTier);
+      if (window.location.pathname !== dest) {
+        window.location.replace(dest);
+      }
+      return;
+    }
+
+    if (!isAdminPortal && session.user.role !== "ADMIN") {
+      // Keep student/tutor login usable while signed in; no forced redirect here.
+    }
+  }, [isAdminPortal, session]);
+
   const {
     register,
     handleSubmit,
     formState: { errors, isSubmitting },
   } = useForm<FormData>({ resolver: zodResolver(schema) });
+
+  const readSessionRole = async () => {
+    for (let attempt = 0; attempt < 5; attempt++) {
+      const sessionRes = await fetch("/api/auth/session", {
+        cache: "no-store",
+        credentials: "same-origin",
+      });
+      const sessionData = await sessionRes.json().catch(() => null);
+      const userRole = sessionData?.user?.role as Role | undefined;
+      const adminTier = sessionData?.user?.adminTier as AdminTier | undefined;
+      if (userRole) {
+        return { userRole, adminTier };
+      }
+      await new Promise((resolve) => setTimeout(resolve, 150 * (attempt + 1)));
+    }
+    return null;
+  };
 
   const onSubmit = async (data: FormData) => {
     const result = await signIn("credentials", {
@@ -69,15 +103,13 @@ export function LoginForm({ portal = "default" }: { portal?: LoginPortal }) {
       return;
     }
 
-    const sessionRes = await fetch("/api/auth/session");
-    const sessionData = await sessionRes.json();
-    const userRole = sessionData?.user?.role as Role | undefined;
-    const adminTier = sessionData?.user?.adminTier as AdminTier | undefined;
-
-    if (!userRole) {
-      toast.error("Could not read your account role");
+    const sessionInfo = await readSessionRole();
+    if (!sessionInfo?.userRole) {
+      toast.error("Signed in, but session was not ready. Please try again.");
       return;
     }
+
+    const { userRole, adminTier } = sessionInfo;
 
     if (isAdminPortal && userRole !== "ADMIN") {
       await signOut({ redirect: false });
@@ -94,8 +126,8 @@ export function LoginForm({ portal = "default" }: { portal?: LoginPortal }) {
     toast.success("Signed in");
 
     const dest = await resolveAuthRedirect(userRole, callbackUrl, adminTier);
-    router.push(dest);
-    router.refresh();
+    // Full navigation ensures the auth cookie is applied before protected routes run.
+    window.location.assign(dest);
   };
 
   return (
@@ -104,7 +136,7 @@ export function LoginForm({ portal = "default" }: { portal?: LoginPortal }) {
       subtitle={
         isAdminPortal
           ? "Super admins manage the platform. Sub-admins sign in here for tutor review only."
-          : "Choose your category to access tailored features and resources"
+          : ""
       }
       headline="Connect With Expert Tutors Anytime"
       highlightWord="Expert Tutors"
@@ -144,11 +176,6 @@ export function LoginForm({ portal = "default" }: { portal?: LoginPortal }) {
       {!isAdminPortal && (
         <div className="mb-6">
           <AuthRoleSelector value={role} onChange={setRole} />
-          {role === "tutor" && (
-            <p className="mt-3 rounded-lg border border-dashed border-slate-200 bg-slate-50 p-3 text-xs text-slate-500">
-              Tutors must complete verification and receive admin approval before teaching.
-            </p>
-          )}
         </div>
       )}
 

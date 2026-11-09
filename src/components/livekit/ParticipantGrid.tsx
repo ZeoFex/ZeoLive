@@ -63,7 +63,13 @@ function CameraStrip({
   );
 }
 
-export function ParticipantGrid({ className }: { className?: string }) {
+export function ParticipantGrid({
+  className,
+  variant = "stage",
+}: {
+  className?: string;
+  variant?: "stage" | "filmstrip";
+}) {
   const { isScreenSharing, screenExpanded } = useClassroomLayout();
 
   const cameraTracks = useTracks(
@@ -77,6 +83,14 @@ export function ParticipantGrid({ className }: { className?: string }) {
   );
 
   const count = sortedCameras.length;
+
+  if (variant === "filmstrip") {
+    return (
+      <div className={cn("shrink-0 border-t border-border/60 px-2 py-2", className)}>
+        <CameraStrip tracks={sortedCameras} variant="filmstrip" label="Cameras" />
+      </div>
+    );
+  }
 
   if (isScreenSharing) {
     return (

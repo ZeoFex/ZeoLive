@@ -1,6 +1,19 @@
 import { sendEmail } from "@/lib/email/transport";
 import { adminVerificationUrl, loginUrl } from "@/lib/app-url";
 import { checklistLabel } from "@/lib/constants/tutor-verification-checklist";
+import { sendWelcomeEmail } from "@/lib/email/welcome";
+
+/** @deprecated Prefer sendWelcomeEmail — kept for callers that still import this name. */
+export async function sendTutorAccountEmail(params: {
+  to: string;
+  tutorName: string;
+}) {
+  return sendWelcomeEmail({
+    to: params.to,
+    name: params.tutorName,
+    role: "TUTOR",
+  });
+}
 
 export function buildTutorAccountEmail(params: {
   tutorName: string;
@@ -19,24 +32,12 @@ ${loginPage}
 If you did not create this account, you can ignore this email.
 
 Regards,
-Zeolive Admin`;
+Zeolive`;
 
   return {
-    subject: "Zeolive — Complete your tutor account verification",
+    subject: "Welcome to Zeolive — your account is ready",
     body,
   };
-}
-
-export async function sendTutorAccountEmail(params: {
-  to: string;
-  tutorName: string;
-}) {
-  const email = buildTutorAccountEmail({ tutorName: params.tutorName });
-  return sendEmail({
-    to: params.to,
-    subject: email.subject,
-    text: email.body,
-  });
 }
 
 export function buildTutorDecisionEmail(params: {
@@ -81,6 +82,7 @@ export async function sendTutorDecisionEmail(params: {
     approved: params.approved,
   });
   return sendEmail({
+    channel: "support",
     to: params.to,
     subject: email.subject,
     text: email.body,
@@ -140,7 +142,12 @@ export async function notifySuperadminsOfTutorRecommendation(params: {
 
   await Promise.all(
     params.superadminEmails.map((to) =>
-      sendEmail({ to, subject: email.subject, text: email.body })
+      sendEmail({
+        channel: "support",
+        to,
+        subject: email.subject,
+        text: email.body,
+      })
     )
   );
 }

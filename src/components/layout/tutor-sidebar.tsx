@@ -8,16 +8,19 @@ import {
   LayoutDashboard,
   LogOut,
   Menu,
+  MessageSquare,
   Settings,
   Users,
+  Video,
   Wallet,
   X,
   type LucideIcon,
 } from "lucide-react";
-import Image from "next/image";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { signOutToAppPath } from "@/lib/auth-client";
+import { useEffect } from "react";
+import { Logo } from "@/components/brand/logo";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import type { NavItemConfig } from "@/lib/navigation";
@@ -31,63 +34,68 @@ const navIcons: Record<string, LucideIcon> = {
   wallet: Wallet,
   calendar: Calendar,
   "file-text": FileText,
+  "message-square": MessageSquare,
   settings: Settings,
+  video: Video,
+  "help-circle": HelpCircle,
 };
 
 interface TutorSidebarProps {
   items: NavItemConfig[];
   roleLabel: string;
-  upcomingCount?: number;
 }
 
 export function TutorSidebar({
   items,
   roleLabel,
-  upcomingCount = 0,
 }: TutorSidebarProps) {
   const pathname = usePathname();
   const { sidebarOpen, setSidebarOpen, toggleSidebar } = useUIStore();
 
+  useEffect(() => {
+    setSidebarOpen(false);
+  }, [pathname, setSidebarOpen]);
+
+  useEffect(() => {
+    if (!sidebarOpen) return;
+    const prev = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    return () => {
+      document.body.style.overflow = prev;
+    };
+  }, [sidebarOpen]);
+
   return (
     <>
-      <div className="tutor-shell flex h-14 items-center justify-between px-4 lg:hidden">
-        <Image
-          src="/images/zoelive-logo.png"
-          alt="Zeolive"
-          width={120}
-          height={40}
-          className="h-8 w-auto object-contain"
-        />
-        <Button variant="ghost" size="icon" onClick={toggleSidebar}>
+      <div className="tutor-shell flex h-14 shrink-0 items-center justify-between px-4 pt-[env(safe-area-inset-top,0px)] lg:hidden">
+        <Logo href={routes.tutor.dashboard} size="sm" />
+        <Button variant="ghost" size="icon" onClick={toggleSidebar} aria-label="Open menu">
           <Menu className="h-5 w-5" />
         </Button>
       </div>
 
       {sidebarOpen && (
         <div
-          className="fixed inset-0 z-40 bg-black/40 lg:hidden"
+          className="fixed inset-0 z-40 bg-black/40 backdrop-blur-[1px] lg:hidden"
           onClick={() => setSidebarOpen(false)}
+          aria-hidden
         />
       )}
 
       <aside
         className={cn(
-          "tutor-sidebar fixed inset-y-0 left-0 z-50 flex w-[260px] flex-col rounded-none border-r border-slate-100 transition-transform lg:static lg:translate-x-0 lg:rounded-3xl lg:border lg:shadow-[0_4px_24px_-8px_rgba(15,23,42,0.12)]",
+          "tutor-sidebar fixed inset-y-0 left-0 z-50 flex w-[min(100vw-3rem,280px)] flex-col overflow-hidden border-r border-slate-100 transition-transform duration-300 ease-out lg:sticky lg:top-0 lg:h-full lg:w-[260px] lg:shrink-0 lg:translate-x-0 lg:rounded-3xl lg:border lg:shadow-[0_4px_24px_-8px_rgba(15,23,42,0.12)]",
           sidebarOpen ? "translate-x-0" : "-translate-x-full lg:translate-x-0"
         )}
       >
         <div className="flex items-center justify-between px-6 pt-7">
-          <Link href={routes.tutor.dashboard} className="flex items-center gap-2.5">
-            <div className="tutor-logo-badge flex h-9 w-9 shrink-0 items-center justify-center rounded-xl">
-              <span className="text-base font-bold text-white">Z</span>
-            </div>
-            <span className="text-lg font-bold tracking-tight text-slate-900">Zeolive</span>
-          </Link>
+          <Logo href={routes.tutor.dashboard} size="md" />
           <Button
             variant="ghost"
             size="icon"
             className="lg:hidden"
             onClick={() => setSidebarOpen(false)}
+            aria-label="Close menu"
           >
             <X className="h-5 w-5" />
           </Button>
@@ -97,7 +105,7 @@ export function TutorSidebar({
           {roleLabel}
         </p>
 
-        <nav className="flex-1 space-y-1 px-4 pt-6">
+        <nav className="min-h-0 flex-1 space-y-1 overflow-y-auto px-4 pb-6 pt-6">
           <p className="px-3 pb-2 text-xs font-semibold uppercase tracking-wider text-slate-400">
             Main
           </p>
@@ -143,37 +151,6 @@ export function TutorSidebar({
             Logout
           </button>
         </nav>
-
-        {upcomingCount > 0 ? (
-          <div className="mx-4 mb-6 rounded-2xl p-4 tutor-promo-card">
-            <p className="text-sm font-semibold text-blue-900">Upcoming sessions</p>
-            <p className="mt-1 text-xs text-blue-700/80">
-              You have {upcomingCount} session{upcomingCount === 1 ? "" : "s"} scheduled soon.
-            </p>
-            <Button
-              asChild
-              size="sm"
-              className="tutor-gradient-btn mt-3 w-full rounded-xl"
-            >
-              <Link href={routes.tutor.sessions}>View schedule</Link>
-            </Button>
-          </div>
-        ) : (
-          <div className="mx-4 mb-6 rounded-2xl p-4 tutor-promo-card">
-            <p className="text-sm font-semibold text-blue-900">Grow your reach</p>
-            <p className="mt-1 text-xs text-blue-700/80">
-              Keep your availability updated so students can book more sessions with you.
-            </p>
-            <Button
-              asChild
-              size="sm"
-              variant="outline"
-              className="tutor-outline-btn mt-3 w-full rounded-xl"
-            >
-              <Link href={routes.tutor.availability}>Set availability</Link>
-            </Button>
-          </div>
-        )}
       </aside>
     </>
   );

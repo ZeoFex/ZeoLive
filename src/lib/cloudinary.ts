@@ -56,10 +56,20 @@ export async function uploadImage(
   });
 }
 
+function uploadTimeoutMs(file: File) {
+  if (file.type.startsWith("image/") || file.size < 8 * 1024 * 1024) {
+    return CLOUDINARY_TIMEOUT_MS;
+  }
+  const bySize = Math.ceil(file.size / (1024 * 1024)) * 1500;
+  return Math.min(180_000, Math.max(60_000, bySize));
+}
+
 function uploadBufferOnce(file: File, folder: string): Promise<string> {
   const cld = getCloudinary();
   const isImage = file.type.startsWith("image/");
-  const resourceType = isImage ? "image" : "auto";
+  const isVideo = file.type.startsWith("video/");
+  const resourceType = isImage ? "image" : isVideo ? "video" : "auto";
+  const timeout = uploadTimeoutMs(file);
 
   return file.arrayBuffer().then((bytes) => {
     const buffer = Buffer.from(bytes);
@@ -69,7 +79,7 @@ function uploadBufferOnce(file: File, folder: string): Promise<string> {
           folder: `zoelive/${folder}`,
           resource_type: resourceType,
           format: isImage && file.type === "image/jpeg" ? "jpg" : undefined,
-          timeout: CLOUDINARY_TIMEOUT_MS,
+          timeout,
         },
         (error, result) => {
           if (error) {
@@ -99,7 +109,7 @@ export async function uploadFileFromBuffer(
     try {
       return await withTimeout(
         uploadBufferOnce(file, folder),
-        CLOUDINARY_TIMEOUT_MS,
+        uploadTimeoutMs(file) + 5_000,
         "Cloudinary upload"
       );
     } catch (error) {
