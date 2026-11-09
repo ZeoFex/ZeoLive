@@ -13,6 +13,7 @@ import {
   Settings,
   Shield,
   Users,
+  Video,
   Wallet,
   X,
   type LucideIcon,
@@ -40,6 +41,7 @@ const navIcons: Record<NavIconName, LucideIcon> = {
   shield: Shield,
   "bar-chart": BarChart3,
   "clipboard-list": ClipboardList,
+  video: Video,
 };
 
 interface DashboardSidebarProps {

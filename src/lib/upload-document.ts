@@ -143,3 +143,49 @@ export async function saveUploadedFile(
 
   return uploadWithCloudinaryFallback(file, subfolder);
 }
+
+const RECORDING_TYPES = new Set([
+  "video/mp4",
+  "video/webm",
+  "video/quicktime",
+  "video/x-matroska",
+]);
+
+export function validateRecordingFile(file: File, maxMb = 200): string | null {
+  const maxBytes = maxMb * 1024 * 1024;
+  if (file.size > maxBytes) {
+    return `Recording must be ${maxMb}MB or smaller`;
+  }
+  if (file.type && !RECORDING_TYPES.has(file.type)) {
+    return "Upload an MP4, WebM, or MOV video";
+  }
+  if (!file.type && file.name) {
+    const ext = path.extname(file.name).toLowerCase();
+    if (![".mp4", ".webm", ".mov", ".mkv"].includes(ext)) {
+      return "Upload an MP4, WebM, or MOV video";
+    }
+  }
+  return null;
+}
+
+export async function saveLectureFile(file: File, tutorId: string, maxMb = 200): Promise<string> {
+  const validationError = validateRecordingFile(file, maxMb);
+  if (validationError) {
+    throw new Error(validationError);
+  }
+
+  return uploadWithCloudinaryFallback(file, `lectures/${tutorId}`);
+}
+
+export async function saveRecordingFile(
+  file: File,
+  sessionId: string,
+  maxMb = 200
+): Promise<string> {
+  const validationError = validateRecordingFile(file, maxMb);
+  if (validationError) {
+    throw new Error(validationError);
+  }
+
+  return uploadWithCloudinaryFallback(file, `recordings/${sessionId}`);
+}

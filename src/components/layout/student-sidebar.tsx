@@ -10,14 +10,15 @@ import {
   MessageSquare,
   Settings as SettingsIcon,
   Users,
+  Video,
   X,
   type LucideIcon,
 } from "lucide-react";
-import Image from "next/image";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { signOutToAppPath } from "@/lib/auth-client";
 import { useEffect } from "react";
+import { Logo } from "@/components/brand/logo";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import type { NavIconName, NavItemConfig } from "@/lib/navigation";
@@ -37,6 +38,7 @@ const navIcons: Record<NavIconName, LucideIcon> = {
   shield: BookOpen,
   "bar-chart": BookOpen,
   "clipboard-list": BookOpen,
+  video: Video,
 };
 
 interface StudentSidebarProps {
@@ -63,16 +65,7 @@ export function StudentSidebar({ items }: StudentSidebarProps) {
   return (
     <>
       <div className="student-shell flex h-14 shrink-0 items-center justify-between px-4 pt-[env(safe-area-inset-top,0px)] lg:hidden">
-        <Link href={routes.student.dashboard} className="flex min-w-0 items-center gap-2">
-          <Image
-            src="/images/zoelive-logo.png"
-            alt="Zeolive"
-            width={120}
-            height={40}
-            className="h-8 w-auto object-contain"
-            priority
-          />
-        </Link>
+        <Logo href={routes.student.dashboard} size="sm" />
         <Button variant="ghost" size="icon" onClick={toggleSidebar} aria-label="Open menu">
           <Menu className="h-5 w-5" />
         </Button>
@@ -93,16 +86,7 @@ export function StudentSidebar({ items }: StudentSidebarProps) {
         )}
       >
         <div className="flex items-center justify-between px-5 pt-6 sm:px-6 sm:pt-7">
-          <Link
-            href={routes.student.dashboard}
-            className="flex items-center gap-2.5"
-            onClick={() => setSidebarOpen(false)}
-          >
-            <div className="student-logo-badge flex h-9 w-9 shrink-0 items-center justify-center rounded-xl">
-              <span className="text-base font-bold text-white">Z</span>
-            </div>
-            <span className="text-lg font-bold tracking-tight text-slate-900">Zeolive</span>
-          </Link>
+          <Logo href={routes.student.dashboard} size="md" className="min-w-0" />
           <Button
             variant="ghost"
             size="icon"
@@ -118,7 +102,7 @@ export function StudentSidebar({ items }: StudentSidebarProps) {
           Student portal
         </p>
 
-        <nav className="min-h-0 flex-1 space-y-1 overflow-hidden px-3 pt-5 sm:px-4 sm:pt-6">
+        <nav className="min-h-0 flex-1 space-y-1 overflow-y-auto px-3 pb-6 pt-5 sm:px-4 sm:pt-6">
           <p className="px-3 pb-2 text-xs font-semibold uppercase tracking-wider text-slate-400">
             Main
           </p>
@@ -157,18 +141,6 @@ export function StudentSidebar({ items }: StudentSidebarProps) {
             Logout
           </button>
         </nav>
-
-        <div className="student-promo-card mx-3 mb-4 rounded-2xl p-4 sm:mx-4 sm:mb-6">
-          <p className="text-sm font-semibold text-blue-900">Book your next session</p>
-          <p className="mt-1 text-xs text-blue-700/80">
-            Browse verified tutors and schedule live classes in minutes.
-          </p>
-          <Button asChild size="sm" className="student-gradient-btn mt-3 w-full rounded-xl">
-            <Link href={routes.student.book} onClick={() => setSidebarOpen(false)}>
-              Book now
-            </Link>
-          </Button>
-        </div>
       </aside>
     </>
   );

@@ -35,6 +35,7 @@ function BookSessionContent() {
   const [tutors, setTutors] = useState<Tutor[]>([]);
   const [loadingTutors, setLoadingTutors] = useState(true);
   const [startNow, setStartNow] = useState(true);
+  const [bookingSubject, setBookingSubject] = useState("");
   const { selectedTutorId, selectedDate, selectedTime, setTutor, setDate, setTime, reset } =
     useBookingStore();
 
@@ -67,8 +68,17 @@ function BookSessionContent() {
 
   const selectedTutor = tutors.find((t) => t.id === selectedTutorId);
 
+  useEffect(() => {
+    if (!selectedTutor) return;
+    const preferred =
+      subjectFilter !== "all" && selectedTutor.subjects.includes(subjectFilter)
+        ? subjectFilter
+        : selectedTutor.subjects[0] ?? "";
+    setBookingSubject(preferred);
+  }, [selectedTutor, subjectFilter]);
+
   const handleBook = async () => {
-    if (!selectedTutorId || !selectedDate || !selectedTime) return;
+    if (!selectedTutorId || !selectedDate || !selectedTime || !bookingSubject) return;
 
     const timeMatch = selectedTime.match(/(\d+):(\d+)\s*(AM|PM)/i);
     let hour = 12;
@@ -95,7 +105,7 @@ function BookSessionContent() {
         body: JSON.stringify({
           tutorId: selectedTutorId,
           title: selectedTutor ? `Session with ${selectedTutor.name}` : "Tutoring session",
-          subject: selectedTutor?.subject,
+          subject: bookingSubject,
           scheduledAt: scheduledAt.toISOString(),
           startNow,
         }),
@@ -179,6 +189,24 @@ function BookSessionContent() {
             <DialogDescription>Select date and time for your session</DialogDescription>
           </DialogHeader>
           <div className="space-y-4">
+            <div>
+              <label className="text-sm font-medium text-slate-700">Subject</label>
+              <Select value={bookingSubject} onValueChange={setBookingSubject}>
+                <SelectTrigger className="mt-1 h-10 w-full rounded-xl">
+                  <SelectValue placeholder="Choose a subject" />
+                </SelectTrigger>
+                <SelectContent>
+                  {(selectedTutor?.subjects ?? []).map((subject) => (
+                    <SelectItem key={subject} value={subject}>
+                      {subject}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              <p className="mt-1 text-xs text-slate-500">
+                You will see this tutor&apos;s lecture videos for the subject you book.
+              </p>
+            </div>
             <div className="flex items-start gap-3 rounded-xl border border-slate-200 bg-slate-50/80 p-3">
               <Checkbox
                 id="startNow"
@@ -226,7 +254,7 @@ function BookSessionContent() {
             </div>
             <Button
               className="student-gradient-btn w-full rounded-xl"
-              disabled={!selectedDate || !selectedTime}
+              disabled={!selectedDate || !selectedTime || !bookingSubject}
               onClick={handleBook}
             >
               Confirm booking

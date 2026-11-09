@@ -4,6 +4,7 @@ import { auth } from "@/auth";
 import { getAppBaseUrl } from "@/lib/app-url";
 import { sendBookingNotificationEmails } from "@/lib/email/booking";
 import { getOrCreateConversation } from "@/lib/messaging";
+import { tutorTeachesSubject } from "@/lib/lectures";
 import { listPortalSessionsForUser } from "@/lib/portal-data";
 import { prisma } from "@/lib/prisma";
 import { buildDisplayName } from "@/lib/user-name";
@@ -80,6 +81,18 @@ export async function POST(request: Request) {
       }
     }
 
+    const subject = data.subject?.trim();
+    if (!subject) {
+      return NextResponse.json({ error: "Choose a subject for this session" }, { status: 400 });
+    }
+    const teaches = await tutorTeachesSubject(tutor.id, subject);
+    if (!teaches) {
+      return NextResponse.json(
+        { error: "Choose a subject this tutor teaches" },
+        { status: 400 }
+      );
+    }
+
     const title = data.title ?? "Live tutoring session";
 
     const tutoringSession = await prisma.tutoringSession.create({
@@ -88,7 +101,7 @@ export async function POST(request: Request) {
         studentId: session.user.id,
         tutorId: tutor.id,
         title,
-        subject: data.subject,
+        subject,
         scheduledAt,
         status: "SCHEDULED",
       },
@@ -120,7 +133,7 @@ export async function POST(request: Request) {
         student: { email: student.email, name: studentName },
         tutor: { email: tutor.email, name: tutorName },
         title,
-        subject: data.subject,
+        subject,
         scheduledAt,
         classroomUrl,
       });

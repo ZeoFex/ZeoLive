@@ -12,14 +12,15 @@ import {
   Settings2,
   Shield,
   Users,
+  Video,
   X,
   type LucideIcon,
 } from "lucide-react";
-import Image from "next/image";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { signOutToAppPath } from "@/lib/auth-client";
 import { useEffect } from "react";
+import { Logo } from "@/components/brand/logo";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import type { NavIconName, NavItemConfig } from "@/lib/navigation";
@@ -39,15 +40,15 @@ const navIcons: Record<NavIconName, LucideIcon> = {
   shield: Shield,
   "bar-chart": BarChart3,
   "clipboard-list": ClipboardList,
+  video: Video,
 };
 
 interface AdminSidebarProps {
   items: NavItemConfig[];
   roleLabel: string;
-  pendingCount?: number;
 }
 
-export function AdminSidebar({ items, roleLabel, pendingCount = 0 }: AdminSidebarProps) {
+export function AdminSidebar({ items, roleLabel }: AdminSidebarProps) {
   const pathname = usePathname();
   const { sidebarOpen, setSidebarOpen, toggleSidebar } = useUIStore();
 
@@ -67,13 +68,7 @@ export function AdminSidebar({ items, roleLabel, pendingCount = 0 }: AdminSideba
   return (
     <>
       <div className="admin-shell flex h-14 shrink-0 items-center justify-between px-4 pt-[env(safe-area-inset-top,0px)] lg:hidden">
-        <Image
-          src="/images/zoelive-logo.png"
-          alt="Zeolive"
-          width={120}
-          height={40}
-          className="h-8 w-auto object-contain"
-        />
+        <Logo href={routes.admin.dashboard} size="sm" />
         <Button variant="ghost" size="icon" onClick={toggleSidebar} aria-label="Open menu">
           <Menu className="h-5 w-5" />
         </Button>
@@ -94,12 +89,7 @@ export function AdminSidebar({ items, roleLabel, pendingCount = 0 }: AdminSideba
         )}
       >
         <div className="flex items-center justify-between px-6 pt-7">
-          <Link href={routes.admin.dashboard} className="flex items-center gap-2.5">
-            <div className="admin-logo-badge flex h-9 w-9 shrink-0 items-center justify-center rounded-xl">
-              <span className="text-base font-bold text-white">Z</span>
-            </div>
-            <span className="text-lg font-bold tracking-tight text-slate-900">Zeolive</span>
-          </Link>
+          <Logo href={routes.admin.dashboard} size="md" />
           <Button
             variant="ghost"
             size="icon"
@@ -115,7 +105,7 @@ export function AdminSidebar({ items, roleLabel, pendingCount = 0 }: AdminSideba
           {roleLabel}
         </p>
 
-        <nav className="min-h-0 flex-1 space-y-1 overflow-hidden px-4 pt-6">
+        <nav className="min-h-0 flex-1 space-y-1 overflow-y-auto px-4 pb-6 pt-6">
           <p className="px-3 pb-2 text-xs font-semibold uppercase tracking-wider text-slate-400">
             Main
           </p>
@@ -161,37 +151,6 @@ export function AdminSidebar({ items, roleLabel, pendingCount = 0 }: AdminSideba
             Logout
           </button>
         </nav>
-
-        {pendingCount > 0 ? (
-          <div className="mx-4 mb-6 rounded-2xl p-4 admin-promo-card">
-            <p className="text-sm font-semibold text-blue-900">Verification queue</p>
-            <p className="mt-1 text-xs text-blue-700/80">
-              {pendingCount} tutor application{pendingCount === 1 ? "" : "s"} need attention.
-            </p>
-            <Button
-              asChild
-              size="sm"
-              className="admin-gradient-btn mt-3 w-full rounded-xl"
-            >
-              <Link href={`${routes.admin.verification}?status=pending`}>Review now</Link>
-            </Button>
-          </div>
-        ) : (
-          <div className="mx-4 mb-6 rounded-2xl p-4 admin-promo-card">
-            <p className="text-sm font-semibold text-blue-900">Platform admin</p>
-            <p className="mt-1 text-xs text-blue-700/80">
-              Manage users, verify tutors, and monitor platform activity from one place.
-            </p>
-            <Button
-              asChild
-              size="sm"
-              variant="outline"
-              className="admin-outline-btn mt-3 w-full rounded-xl"
-            >
-              <Link href={routes.admin.dashboard}>View overview</Link>
-            </Button>
-          </div>
-        )}
       </aside>
     </>
   );

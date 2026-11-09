@@ -80,6 +80,13 @@ model User {
 
   studyMaterialsAsTutor    StudyMaterial[] @relation("TutorStudyMaterials")
   materialSharesReceived   MaterialShare[] @relation("StudentMaterialShares")
+
+  lectureSubjects LectureSubject[] @relation("TutorLectureSubjects")
+  lectureVideos   LectureVideo[]   @relation("TutorLectureVideos")
+
+  sessionRecordingsUploaded SessionRecording[]        @relation("RecordingUploader")
+  recordingDownloadRequests RecordingDownloadRequest[] @relation("RecordingDownloadRequester")
+  recordingDownloadsReviewed RecordingDownloadRequest[] @relation("RecordingDownloadReviewer")
 }
 
 enum TutoringSessionStatus {
@@ -106,10 +113,69 @@ model TutoringSession {
   updatedAt   DateTime              @updatedAt
 
   storedMessages StoredMessage[]
+  recordings     SessionRecording[]
 
   @@index([studentId])
   @@index([tutorId])
   @@index([status])
+}
+
+enum RecordingSource {
+  MANUAL
+  EGRESS
+}
+
+enum RecordingDownloadStatus {
+  PENDING
+  APPROVED
+  REJECTED
+  DOWNLOADED
+}
+
+model SessionRecording {
+  id                String          @id @default(cuid())
+  tutoringSessionId String
+  tutoringSession   TutoringSession @relation(fields: [tutoringSessionId], references: [id], onDelete: Cascade)
+  uploadedById      String
+  uploadedBy        User            @relation("RecordingUploader", fields: [uploadedById], references: [id], onDelete: Cascade)
+  title             String
+  description       String?
+  fileUrl           String
+  fileName          String
+  mimeType          String?
+  fileSizeBytes     Int
+  durationSeconds   Int?
+  source            RecordingSource @default(MANUAL)
+  createdAt         DateTime        @default(now())
+  updatedAt         DateTime        @updatedAt
+
+  downloadRequests RecordingDownloadRequest[]
+
+  @@index([tutoringSessionId, createdAt])
+  @@index([uploadedById])
+  @@index([createdAt])
+}
+
+model RecordingDownloadRequest {
+  id              String                  @id @default(cuid())
+  recordingId     String
+  recording       SessionRecording        @relation(fields: [recordingId], references: [id], onDelete: Cascade)
+  requesterId     String
+  requester       User                    @relation("RecordingDownloadRequester", fields: [requesterId], references: [id], onDelete: Cascade)
+  requesterEmail  String
+  status          RecordingDownloadStatus @default(PENDING)
+  accessCode      String?
+  reviewedById    String?
+  reviewedBy      User?                   @relation("RecordingDownloadReviewer", fields: [reviewedById], references: [id], onDelete: SetNull)
+  reviewedAt      DateTime?
+  downloadToken   String?                 @unique
+  downloadedAt    DateTime?
+  createdAt       DateTime                @default(now())
+  updatedAt       DateTime                @updatedAt
+
+  @@index([recordingId, requesterId])
+  @@index([status, createdAt])
+  @@index([requesterEmail])
 }
 
 enum MessageChannel {
@@ -313,6 +379,38 @@ model PasswordResetToken {
   createdAt DateTime @default(now())
 
   @@index([email])
+}
+
+model LectureSubject {
+  id        String         @id @default(cuid())
+  tutorId   String
+  tutor     User           @relation("TutorLectureSubjects", fields: [tutorId], references: [id], onDelete: Cascade)
+  name      String
+  nameKey   String
+  createdAt DateTime       @default(now())
+  videos    LectureVideo[]
+
+  @@unique([tutorId, nameKey])
+  @@index([tutorId])
+}
+
+model LectureVideo {
+  id            String         @id @default(cuid())
+  tutorId       String
+  tutor         User           @relation("TutorLectureVideos", fields: [tutorId], references: [id], onDelete: Cascade)
+  subjectId     String
+  subject       LectureSubject @relation(fields: [subjectId], references: [id], onDelete: Cascade)
+  title         String
+  description   String?
+  fileUrl       String
+  fileName      String
+  mimeType      String?
+  fileSizeBytes Int
+  createdAt     DateTime       @default(now())
+  updatedAt     DateTime       @updatedAt
+
+  @@index([tutorId, createdAt])
+  @@index([subjectId, createdAt])
 }
 
 model StudyMaterial {

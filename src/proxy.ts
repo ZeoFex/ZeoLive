@@ -42,16 +42,46 @@ function isPublicAuthPath(pathname: string) {
   );
 }
 
+async function readAuthToken(req: NextRequest) {
+  const secret = getAuthSecret();
+  const forwardedProto = req.headers.get("x-forwarded-proto");
+  const preferSecure =
+    forwardedProto === "https" || req.nextUrl.protocol === "https:";
+
+  // Try the expected cookie first, then the alternate. Mismatched Secure cookie
+  // prefixes are a common cause of "login succeeds then bounce back to login".
+  const attempts = [preferSecure, !preferSecure];
+  for (const secureCookie of attempts) {
+    const token = (await getToken({
+      req,
+      secret,
+      secureCookie,
+    })) as TokenWithRole | null;
+    if (token?.sub) return token;
+  }
+
+  // Explicit cookie names used by Auth.js v5 (chunked tokens included via store).
+  for (const cookieName of [
+    "__Secure-authjs.session-token",
+    "authjs.session-token",
+    "__Secure-next-auth.session-token",
+    "next-auth.session-token",
+  ]) {
+    const token = (await getToken({
+      req,
+      secret,
+      cookieName,
+    })) as TokenWithRole | null;
+    if (token?.sub) return token;
+  }
+
+  return null;
+}
+
 export async function proxy(req: NextRequest) {
   const { pathname } = req.nextUrl;
 
-  const token = (await getToken({
-    req,
-    secret: getAuthSecret(),
-    // Auth.js prefixes the session cookie with `__Secure-` on HTTPS; without
-    // this, getToken looks for `authjs.session-token` and portals bounce to login.
-    secureCookie: req.nextUrl.protocol === "https:",
-  })) as TokenWithRole | null;
+  const token = await readAuthToken(req);
 
   const isLoggedIn = !!token?.sub;
   const role = token?.role;

@@ -67,10 +67,12 @@ export function StudentTopbar({ title }: StudentTopbarProps) {
   const [unreadCount, setUnreadCount] = useState(0);
 
   const [userMenuOpen, setUserMenuOpen] = useState(false);
+  const [loggingOut, setLoggingOut] = useState(false);
 
   const searchRef = useRef<HTMLDivElement>(null);
   const notifRef = useRef<HTMLDivElement>(null);
-  const userRef = useRef<HTMLDivElement>(null);
+  const userRefMobile = useRef<HTMLDivElement>(null);
+  const userRefDesktop = useRef<HTMLDivElement>(null);
 
   const updateUnreadCount = useCallback((items: NotificationItem[]) => {
     pruneStaleStudentReadIds(items.map((item) => item.id));
@@ -82,11 +84,13 @@ export function StudentTopbar({ title }: StudentTopbarProps) {
     setNotificationsLoading(true);
     try {
       const res = await fetch("/api/student/notifications");
-      const data = await res.json();
       if (!res.ok) return;
+      const data = await res.json().catch(() => ({}));
       const items = (data.items ?? []) as NotificationItem[];
       setNotifications(items);
       updateUnreadCount(items);
+    } catch {
+      // Ignore network/abort errors during polling or HMR.
     } finally {
       setNotificationsLoading(false);
     }
@@ -111,11 +115,12 @@ export function StudentTopbar({ title }: StudentTopbarProps) {
         const res = await fetch(
           `/api/student/search?q=${encodeURIComponent(query.trim())}`
         );
-        const data = await res.json();
-        if (res.ok) {
-          setSearchResults(data.results ?? []);
-          setSearchOpen(true);
-        }
+        if (!res.ok) return;
+        const data = await res.json().catch(() => ({}));
+        setSearchResults(data.results ?? []);
+        setSearchOpen(true);
+      } catch {
+        // Ignore network errors while typing.
       } finally {
         setSearchLoading(false);
       }
@@ -133,13 +138,25 @@ export function StudentTopbar({ title }: StudentTopbarProps) {
       if (notifRef.current && !notifRef.current.contains(target)) {
         setNotificationsOpen(false);
       }
-      if (userRef.current && !userRef.current.contains(target)) {
+      const inUserMenu =
+        Boolean(userRefMobile.current?.contains(target)) ||
+        Boolean(userRefDesktop.current?.contains(target));
+      if (!inUserMenu) {
         setUserMenuOpen(false);
       }
     }
     document.addEventListener("mousedown", handleClickOutside);
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
+
+  const handleLogout = async (event: React.MouseEvent<HTMLButtonElement>) => {
+    event.preventDefault();
+    event.stopPropagation();
+    if (loggingOut) return;
+    setLoggingOut(true);
+    setUserMenuOpen(false);
+    await signOutToAppPath(routes.login);
+  };
 
   const handleSearchSelect = (result: SearchResult) => {
     setQuery("");
@@ -344,7 +361,7 @@ export function StudentTopbar({ title }: StudentTopbarProps) {
             )}
           </div>
 
-          <div ref={userRef} className="relative">
+          <div ref={userRefMobile} className="relative">
             <button
               type="button"
               className="flex items-center rounded-xl border border-slate-200 bg-white p-1 transition-colors hover:bg-slate-50"
@@ -376,11 +393,13 @@ export function StudentTopbar({ title }: StudentTopbarProps) {
                 </Link>
                 <button
                   type="button"
-                  className="flex w-full items-center gap-2 px-4 py-2.5 text-sm text-red-600 hover:bg-red-50"
-                  onClick={() => void signOutToAppPath(routes.login)}
+                  className="flex w-full items-center gap-2 px-4 py-2.5 text-sm text-red-600 hover:bg-red-50 disabled:opacity-60"
+                  disabled={loggingOut}
+                  onMouseDown={(event) => event.stopPropagation()}
+                  onClick={(event) => void handleLogout(event)}
                 >
                   <LogOut className="h-4 w-4" />
-                  Logout
+                  {loggingOut ? "Signing out…" : "Logout"}
                 </button>
               </div>
             )}
@@ -488,7 +507,7 @@ export function StudentTopbar({ title }: StudentTopbarProps) {
             )}
           </div>
 
-          <div ref={userRef} className="relative">
+          <div ref={userRefDesktop} className="relative">
             <button
               type="button"
               className="flex items-center gap-2 rounded-xl border border-slate-200 bg-white py-1.5 pl-1.5 pr-2 transition-colors hover:bg-slate-50"
@@ -523,11 +542,13 @@ export function StudentTopbar({ title }: StudentTopbarProps) {
                 </Link>
                 <button
                   type="button"
-                  className="flex w-full items-center gap-2 px-4 py-2.5 text-sm text-red-600 hover:bg-red-50"
-                  onClick={() => void signOutToAppPath(routes.login)}
+                  className="flex w-full items-center gap-2 px-4 py-2.5 text-sm text-red-600 hover:bg-red-50 disabled:opacity-60"
+                  disabled={loggingOut}
+                  onMouseDown={(event) => event.stopPropagation()}
+                  onClick={(event) => void handleLogout(event)}
                 >
                   <LogOut className="h-4 w-4" />
-                  Logout
+                  {loggingOut ? "Signing out…" : "Logout"}
                 </button>
               </div>
             )}

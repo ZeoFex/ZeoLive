@@ -1,0 +1,18 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 96" role="img" aria-label="ZTL  Zeofex Teaching and Learning">
+  <defs>
+    <linearGradient id="ztlGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#19b7f5"/>
+      <stop offset="48%" stop-color="#0066cc"/>
+      <stop offset="100%" stop-color="#004f9a"/>
+    </linearGradient>
+    <linearGradient id="ztlSheen" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#ffffff" stop-opacity="0.32"/>
+      <stop offset="45%" stop-color="#ffffff" stop-opacity="0"/>
+    </linearGradient>
+  </defs>
+  <rect x="0" y="8" width="80" height="80" rx="20" fill="url(#ztlGrad)"/>
+  <rect x="1.5" y="9.5" width="77" height="77" rx="18.5" fill="url(#ztlSheen)"/>
+  <text x="40" y="58" text-anchor="middle" fill="#ffffff" font-size="26" font-weight="800" font-family="system-ui, -apple-system, Segoe UI, sans-serif" letter-spacing="1.5">ZTL</text>
+  <text x="100" y="48" fill="#0f172a" font-size="34" font-weight="800" font-family="system-ui, -apple-system, Segoe UI, sans-serif" letter-spacing="-0.5">ZTL</text>
+  <text x="100" y="72" fill="#64748b" font-size="11" font-weight="600" font-family="system-ui, -apple-system, Segoe UI, sans-serif" letter-spacing="2.2">TEACHING &amp; LEARNING</text>
+</svg>

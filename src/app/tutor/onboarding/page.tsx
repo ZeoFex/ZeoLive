@@ -1,13 +1,14 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
 import { DocumentUploadField } from "@/components/auth/document-upload-field";
 import { EducationLevelFields } from "@/components/auth/education-level-fields";
 import { LivePhotoCapture } from "@/components/auth/live-photo-capture";
 import { AuthLayout } from "@/components/auth/auth-layout";
 import { TeachingProgrammeFields } from "@/components/auth/teaching-programme-fields";
+import { WizardStepper } from "@/components/auth/wizard-stepper";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -21,6 +22,12 @@ import {
   type TutorEducationLevelValue,
 } from "@/lib/constants/registration";
 import { buildRecommendationEmailPreview } from "@/lib/recommendation-preview";
+import {
+  clearTutorSignupDraft,
+  readTutorSignupDraft,
+  writeTutorSignupDraft,
+  emptyTutorSignupDraft,
+} from "@/lib/tutor-signup-draft";
 
 type Step = "verification" | "teaching" | "recommendation" | "not-qualified" | "complete";
 
@@ -58,30 +65,48 @@ export default function TutorOnboardingPage() {
   const [tutorFullName, setTutorFullName] = useState("");
 
   useEffect(() => {
+    const localDraft = readTutorSignupDraft();
+    if (localDraft) {
+      if (localDraft.educationLevel) setEducationLevel(localDraft.educationLevel);
+      if (localDraft.institutionName) setInstitutionName(localDraft.institutionName);
+      if (localDraft.transcriptUrl) setTranscriptUrl(localDraft.transcriptUrl);
+      if (localDraft.certificateUrl) setCertificateUrl(localDraft.certificateUrl);
+      if (localDraft.nationalIdUrl) setNationalIdUrl(localDraft.nationalIdUrl);
+      if (localDraft.livePhotoUrl) setLivePhotoUrl(localDraft.livePhotoUrl);
+      if (localDraft.programmeId) setProgrammeId(localDraft.programmeId);
+      if (localDraft.subjectIds?.length) setSubjectIds(localDraft.subjectIds);
+      if (localDraft.recommender) setRecommender(localDraft.recommender);
+      if (localDraft.tutorFullName) setTutorFullName(localDraft.tutorFullName);
+    }
+
     fetch("/api/tutor/onboarding/status")
       .then((r) => r.json())
       .then((data) => {
-        if (data.verificationStatus === "APPROVED") {
+        if (data.verificationStatus === "APPROVED" || data.onboardingComplete) {
+          clearTutorSignupDraft();
           router.replace("/tutor/dashboard");
           return;
         }
+        if (data.educationLevel) setEducationLevel(data.educationLevel);
+        if (data.institutionName) setInstitutionName(data.institutionName);
+        if (data.transcriptUrl) setTranscriptUrl(data.transcriptUrl);
+        if (data.certificateUrl) setCertificateUrl(data.certificateUrl);
+        if (data.nationalIdUrl) setNationalIdUrl(data.nationalIdUrl);
+        if (data.livePhotoUrl) setLivePhotoUrl(data.livePhotoUrl);
+        if (data.programmeId) setProgrammeId(data.programmeId);
+        if (data.subjectIds?.length) setSubjectIds(data.subjectIds);
+        if (data.tutorFullName) setTutorFullName(data.tutorFullName);
+
         if (data.verificationStatus === "AWAITING_RECOMMENDATION") {
           setStep("recommendation");
-          if (data.educationLevel) {
-            setEducationLevel(data.educationLevel);
-          }
           return;
         }
-        if (
-          data.hasDocuments &&
-          !data.hasTeaching &&
-          data.verificationStatus === "PENDING"
-        ) {
+        if (data.hasDocuments && !data.hasTeaching) {
           setStep("teaching");
-          if (data.educationLevel) {
-            setEducationLevel(data.educationLevel);
-          }
+          return;
         }
+        if (localDraft?.step === "teaching") setStep("teaching");
+        if (localDraft?.step === "recommendation") setStep("recommendation");
       })
       .catch(() => {});
 
@@ -94,10 +119,57 @@ export default function TutorOnboardingPage() {
       .catch(() => {});
   }, [router]);
 
+  useEffect(() => {
+    if (step === "complete" || step === "not-qualified") return;
+    writeTutorSignupDraft(
+      emptyTutorSignupDraft({
+        step:
+          step === "verification"
+            ? "documents"
+            : step === "teaching"
+              ? "teaching"
+              : "recommendation",
+        educationLevel,
+        institutionName,
+        transcriptUrl,
+        certificateUrl,
+        nationalIdUrl,
+        livePhotoUrl,
+        programmeId,
+        subjectIds,
+        recommender,
+        tutorFullName,
+      })
+    );
+  }, [
+    step,
+    educationLevel,
+    institutionName,
+    transcriptUrl,
+    certificateUrl,
+    nationalIdUrl,
+    livePhotoUrl,
+    programmeId,
+    subjectIds,
+    recommender,
+    tutorFullName,
+  ]);
+
   const needsCertificate =
     educationLevel && tutorRequiresCertificate(educationLevel);
   const needsRecommendation =
     educationLevel && tutorRequiresRecommendation(educationLevel);
+
+  const progressSteps = useMemo(() => {
+    const base = [
+      { id: "verification", label: "Education & documents" },
+      { id: "teaching", label: "Programme & subjects" },
+    ];
+    if (needsRecommendation) {
+      return [...base, { id: "recommendation", label: "Recommendation" }];
+    }
+    return base;
+  }, [needsRecommendation]);
 
   const submitVerification = async () => {
     if (!educationLevel || !institutionName.trim()) {
@@ -174,6 +246,7 @@ export default function TutorOnboardingPage() {
         return;
       }
 
+      clearTutorSignupDraft();
       setStep("complete");
       toast.success("Verification submitted for review");
     } catch (e) {
@@ -223,6 +296,7 @@ export default function TutorOnboardingPage() {
       } else {
         toast.success("Recommendation request emailed to your recommender");
       }
+      clearTutorSignupDraft();
       setStep("complete");
     } catch (e) {
       toast.error(e instanceof Error ? e.message : "Could not send");
@@ -238,7 +312,10 @@ export default function TutorOnboardingPage() {
       headline="Complete Your Tutor Verification"
       highlightWord="Verification"
     >
-      <div className="auth-form">
+      <div className="auth-form space-y-5">
+      {step !== "not-qualified" && step !== "complete" ? (
+        <WizardStepper steps={progressSteps} currentStepId={step} />
+      ) : null}
       {step === "verification" && (
         <div className="space-y-6">
           <EducationLevelFields
@@ -378,6 +455,11 @@ export default function TutorOnboardingPage() {
 
       {step === "complete" && (
         <div className="space-y-4 text-center">
+          <WizardStepper
+            steps={progressSteps}
+            currentStepId={progressSteps[progressSteps.length - 1]?.id ?? "teaching"}
+            allComplete
+          />
           <p className="text-sm text-muted-foreground">
             Your verification has been submitted. Check your email for login instructions.
             Our team will review your documents and notify you when your profile is approved.

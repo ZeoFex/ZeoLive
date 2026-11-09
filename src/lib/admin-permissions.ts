@@ -21,7 +21,8 @@ export function canAccessAdminPath(
   pathname: string,
   tier: AdminTier | null | undefined
 ) {
-  if (isSuperAdmin(tier)) return true;
+  // Missing tier = legacy/full admin (treat like super admin).
+  if (!tier || isSuperAdmin(tier)) return true;
   if (tier === "SUBADMIN") return isSubAdminPath(pathname);
   return false;
 }

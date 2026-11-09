@@ -1,8 +1,6 @@
 "use client";
 
 import { usePathname } from "next/navigation";
-import { useEffect, useState } from "react";
-import { useSession } from "next-auth/react";
 import { AdminSidebar } from "@/components/layout/admin-sidebar";
 import { AdminTopbar } from "@/components/layout/admin-topbar";
 import type { NavItemConfig } from "@/lib/navigation";
@@ -31,36 +29,11 @@ interface AdminShellProps {
 
 export function AdminShell({ roleLabel, navItems, children }: AdminShellProps) {
   const pathname = usePathname();
-  const { data: session } = useSession();
-  const [pendingCount, setPendingCount] = useState(0);
-  const isSuperAdmin = session?.user?.adminTier === "SUPERADMIN";
-
-  useEffect(() => {
-    if (isSuperAdmin) {
-      fetch("/api/admin/stats")
-        .then((r) => r.json())
-        .then((data) => {
-          const pending = (data.pendingTutors ?? 0) + (data.awaitingFinal ?? 0);
-          setPendingCount(pending);
-        })
-        .catch(() => {});
-      return;
-    }
-
-    fetch("/api/admin/verification?status=pending")
-      .then((r) => r.json())
-      .then((data) => setPendingCount(data.items?.length ?? 0))
-      .catch(() => {});
-  }, [pathname, isSuperAdmin]);
 
   return (
     <div className="admin-shell h-dvh overflow-hidden p-0 lg:h-screen lg:p-4">
       <div className="flex h-full flex-col lg:flex-row lg:gap-4">
-        <AdminSidebar
-          items={navItems}
-          roleLabel={roleLabel}
-          pendingCount={pendingCount}
-        />
+        <AdminSidebar items={navItems} roleLabel={roleLabel} />
 
         <main className="relative flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden bg-white lg:rounded-3xl lg:border lg:border-slate-100 lg:shadow-[0_4px_24px_-8px_rgba(15,23,42,0.12)]">
           <AdminTopbar title={titleForPath(pathname)} />
