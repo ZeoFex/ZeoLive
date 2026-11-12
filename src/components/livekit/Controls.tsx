@@ -4,7 +4,7 @@ import {
   useLocalParticipant,
   useRoomContext,
 } from "@livekit/components-react";
-import { ConnectionState } from "livekit-client";
+import { ConnectionState, ParticipantEvent } from "livekit-client";
 import {
   Circle,
   Loader2,
@@ -22,7 +22,7 @@ import {
   Video,
   VideoOff,
 } from "lucide-react";
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import type { ClassroomRole } from "@/lib/livekit";
@@ -98,8 +98,43 @@ export function Controls({
     isScreenShareEnabled,
   } = useLocalParticipant();
   const [screenShareBusy, setScreenShareBusy] = useState(false);
+  const [micLocked, setMicLocked] = useState(false);
+  const micLockNotice = useRef(false);
 
   const isConnected = room.state === ConnectionState.Connected;
+
+  useEffect(() => {
+    const sync = () => {
+      const sources = localParticipant.permissions?.canPublishSources;
+      const allowsMic =
+        !Array.isArray(sources) ||
+        sources.length === 0 ||
+        sources.some((source) => {
+          const value = String(source).toLowerCase();
+          return value === "microphone" || value === "2";
+        });
+      const locked = !allowsMic;
+      setMicLocked(locked);
+      if (locked) {
+        if (localParticipant.isMicrophoneEnabled) {
+          void localParticipant.setMicrophoneEnabled(false);
+        }
+        if (!micLockNotice.current) {
+          micLockNotice.current = true;
+          toast.message("The host muted your microphone");
+        }
+      } else if (micLockNotice.current) {
+        micLockNotice.current = false;
+        toast.message("You can turn your microphone on");
+      }
+    };
+
+    sync();
+    localParticipant.on(ParticipantEvent.ParticipantPermissionsChanged, sync);
+    return () => {
+      localParticipant.off(ParticipantEvent.ParticipantPermissionsChanged, sync);
+    };
+  }, [localParticipant]);
 
   const toggleMic = async () => {
     try {
@@ -166,8 +201,14 @@ export function Controls({
         variant={isMicrophoneEnabled ? "secondary" : "destructive"}
         className="h-11 w-11 shrink-0 rounded-full sm:h-12 sm:w-12"
         onClick={toggleMic}
-        disabled={!isConnected}
-        aria-label={isMicrophoneEnabled ? "Mute microphone" : "Unmute microphone"}
+        disabled={!isConnected || micLocked}
+        aria-label={
+          micLocked
+            ? "The host muted your microphone"
+            : isMicrophoneEnabled
+              ? "Mute microphone"
+              : "Unmute microphone"
+        }
       >
         {isMicrophoneEnabled ? <Mic className="h-5 w-5" /> : <MicOff className="h-5 w-5" />}
       </Button>

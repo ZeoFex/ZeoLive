@@ -110,6 +110,7 @@ export async function listPortalSessionsForUser(
     roomId: row.roomId,
     title: row.title,
     subject: row.subject,
+    shareable: row.shareable,
     status: row.status,
     scheduledAt: row.scheduledAt.toISOString(),
     startedAt: row.startedAt?.toISOString() ?? null,
@@ -143,6 +144,21 @@ export async function listTutorStudents(tutorUserId: string) {
           image: true,
         },
       },
+      participants: {
+        select: {
+          student: {
+            select: {
+              id: true,
+              role: true,
+              name: true,
+              firstName: true,
+              lastName: true,
+              email: true,
+              image: true,
+            },
+          },
+        },
+      },
     },
     orderBy: { scheduledAt: "desc" },
   });
@@ -158,21 +174,31 @@ export async function listTutorStudents(tutorUserId: string) {
     }
   >();
 
-  for (const s of sessions) {
-    if (s.student.role !== "STUDENT") continue;
-    const existing = byStudent.get(s.studentId);
-    const subject = s.subject ?? s.title ?? "Session";
+  const remember = (
+    student: (typeof sessions)[number]["student"],
+    subject: string
+  ) => {
+    if (student.role !== "STUDENT") return;
+    const existing = byStudent.get(student.id);
     if (existing) {
       existing.subjects.add(subject);
       existing.sessionCount += 1;
-    } else {
-      byStudent.set(s.studentId, {
-        id: s.student.id,
-        name: displayUserName(s.student),
-        image: s.student.image,
-        subjects: new Set([subject]),
-        sessionCount: 1,
-      });
+      return;
+    }
+    byStudent.set(student.id, {
+      id: student.id,
+      name: displayUserName(student),
+      image: student.image,
+      subjects: new Set([subject]),
+      sessionCount: 1,
+    });
+  };
+
+  for (const s of sessions) {
+    const subject = s.subject ?? s.title ?? "Session";
+    remember(s.student, subject);
+    for (const participant of s.participants) {
+      remember(participant.student, subject);
     }
   }
 

@@ -1,36 +1,21 @@
 import { NextResponse } from "next/server";
 import { auth } from "@/auth";
-import {
-  markSessionCompleted,
-  participantDisplayName,
-  verifyClassroomAccess,
-} from "@/lib/classroom-access";
+import { markSessionCompleted, participantDisplayName } from "@/lib/classroom-access";
+import { resolveClassroomActor } from "@/lib/classroom-connection";
 import { prisma } from "@/lib/prisma";
 
 export async function GET(
-  _request: Request,
+  request: Request,
   { params }: { params: Promise<{ roomId: string }> }
 ) {
-  const session = await auth();
-  if (!session?.user?.id) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-  }
-
   const { roomId } = await params;
-  const access = await verifyClassroomAccess(
-    roomId,
-    session.user.id,
-    session.user.role
-  );
-
-  if (!access.allowed || !access.session) {
-    return NextResponse.json(
-      { error: access.error ?? "Access denied" },
-      { status: access.status }
-    );
+  const resolved = await resolveClassroomActor(roomId, request);
+  if ("error" in resolved) {
+    return NextResponse.json({ error: resolved.error }, { status: resolved.status });
   }
 
-  const { session: tutoringSession, participantRole } = access;
+  const { actor } = resolved;
+  const tutoringSession = actor.session;
 
   return NextResponse.json({
     roomId: tutoringSession.roomId,
@@ -38,10 +23,9 @@ export async function GET(
     subject: tutoringSession.subject,
     status: tutoringSession.status,
     scheduledAt: tutoringSession.scheduledAt.toISOString(),
-    participantRole,
-    participantName: participantDisplayName(
-      participantRole === "tutor" ? tutoringSession.tutor : tutoringSession.student
-    ),
+    participantRole: actor.role,
+    participantName: actor.name,
+    guest: actor.guest,
     student: {
       id: tutoringSession.student.id,
       name: participantDisplayName(tutoringSession.student),

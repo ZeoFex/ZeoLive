@@ -106,6 +106,7 @@ model TutoringSession {
   tutor       User                  @relation("TutorTutoringSessions", fields: [tutorId], references: [id], onDelete: Cascade)
   title       String?
   subject     String?
+  shareable   Boolean               @default(false)
   status      TutoringSessionStatus @default(SCHEDULED)
   scheduledAt DateTime
   startedAt   DateTime?

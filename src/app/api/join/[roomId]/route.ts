@@ -1,20 +1,22 @@
 import { NextResponse } from "next/server";
 import { auth } from "@/auth";
+import {
+  cleanDisplayName,
+  createMeetingGuest,
+  MEETING_GUEST_COOKIE,
+  meetingGuestCookieOptions,
+  sealMeetingGuest,
+} from "@/lib/meeting-guest";
 import { prisma } from "@/lib/prisma";
 
 export async function POST(
-  _request: Request,
+  request: Request,
   { params }: { params: Promise<{ roomId: string }> }
 ) {
-  const session = await auth();
-  if (!session?.user?.id || !session.user.role) {
-    return NextResponse.json({ error: "Sign in to join this meeting" }, { status: 401 });
-  }
-
   const { roomId } = await params;
   const tutoring = await prisma.tutoringSession.findUnique({
     where: { roomId },
-    select: { id: true, tutorId: true, studentId: true, status: true },
+    select: { id: true, tutorId: true, status: true },
   });
 
   if (!tutoring) {
@@ -24,34 +26,32 @@ export async function POST(
     return NextResponse.json({ error: "This meeting has ended" }, { status: 403 });
   }
 
-  const isHost = session.user.id === tutoring.tutorId || session.user.role === "ADMIN";
-  if (!isHost) {
-    if (session.user.role !== "STUDENT") {
-      return NextResponse.json(
-        { error: "Sign in with a student account to join this meeting" },
-        { status: 403 }
-      );
-    }
-    await prisma.sessionParticipant.upsert({
-      where: {
-        tutoringSessionId_studentId: {
-          tutoringSessionId: tutoring.id,
-          studentId: session.user.id,
-        },
-      },
-      create: {
-        tutoringSessionId: tutoring.id,
-        studentId: session.user.id,
-      },
-      update: {},
-    });
-    if (tutoring.studentId === tutoring.tutorId) {
-      await prisma.tutoringSession.update({
-        where: { id: tutoring.id },
-        data: { studentId: session.user.id },
-      });
-    }
+  const session = await auth();
+  const isHost =
+    !!session?.user?.id &&
+    (session.user.id === tutoring.tutorId || session.user.role === "ADMIN");
+  if (isHost) {
+    return NextResponse.json({ classroomPath: `/classroom/${roomId}` });
   }
 
-  return NextResponse.json({ classroomPath: `/classroom/${roomId}` });
+  const body = await request.json().catch(() => null);
+  const name = cleanDisplayName(
+    body && typeof body === "object" && "displayName" in body
+      ? (body as { displayName?: unknown }).displayName
+      : null
+  );
+  if (!name) {
+    return NextResponse.json(
+      { error: "Enter the name you want people to see. Use 2 to 40 characters." },
+      { status: 400 }
+    );
+  }
+
+  const response = NextResponse.json({ classroomPath: `/classroom/${roomId}` });
+  response.cookies.set(
+    MEETING_GUEST_COOKIE,
+    sealMeetingGuest(createMeetingGuest(roomId, name)),
+    meetingGuestCookieOptions
+  );
+  return response;
 }

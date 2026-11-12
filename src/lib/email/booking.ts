@@ -128,6 +128,33 @@ Zeolive Support`;
   };
 }
 
+export function buildSessionStartedEmail(params: {
+  studentName: string;
+  tutorName: string;
+  title: string;
+  classroomUrl: string;
+}) {
+  const text = `Hello ${params.studentName},
+
+${params.tutorName} started "${params.title}". Join the session:
+
+${params.classroomUrl}
+
+Regards,
+Zeolive Support`;
+  const html = `
+    <p>Hello ${params.studentName},</p>
+    <p><strong>${params.tutorName}</strong> started "${params.title}".</p>
+    <p><a href="${params.classroomUrl}">Join the session</a></p>
+    <p>Regards,<br>Zeolive Support</p>
+  `.trim();
+  return {
+    subject: `Zeolive — ${params.tutorName} started the session`,
+    text,
+    html,
+  };
+}
+
 export async function sendBookingNotificationEmails(params: {
   student: { email: string; name: string };
   tutor: { email: string; name: string };

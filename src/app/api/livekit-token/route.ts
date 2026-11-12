@@ -1,17 +1,13 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
-import { auth } from "@/auth";
-import {
-  markSessionActive,
-  participantDisplayName,
-  verifyClassroomAccess,
-} from "@/lib/classroom-access";
+import { markSessionActive } from "@/lib/classroom-access";
+import { notifyBookedStudentsSessionStarted } from "@/lib/session-started";
+import { resolveClassroomActor } from "@/lib/classroom-connection";
 import {
   createLiveKitToken,
   getLiveKitServerUrl,
   isLiveKitConfigured,
 } from "@/lib/livekit";
-import { prisma } from "@/lib/prisma";
 
 const schema = z.object({
   room: z.string().min(1),
@@ -20,11 +16,6 @@ const schema = z.object({
 });
 
 export async function POST(request: Request) {
-  const session = await auth();
-  if (!session?.user?.id) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-  }
-
   if (!isLiveKitConfigured()) {
     return NextResponse.json(
       { error: "LiveKit is not configured on the server" },
@@ -34,49 +25,35 @@ export async function POST(request: Request) {
 
   try {
     const body = await request.json();
-    const { room, identity, role } = schema.parse(body);
+    const { room, role } = schema.parse(body);
 
-    if (identity && identity !== session.user.id) {
-      return NextResponse.json({ error: "Identity mismatch" }, { status: 403 });
+    const resolved = await resolveClassroomActor(room, request);
+    if ("error" in resolved) {
+      return NextResponse.json({ error: resolved.error }, { status: resolved.status });
     }
 
-    const access = await verifyClassroomAccess(
-      room,
-      session.user.id,
-      session.user.role
-    );
-
-    if (!access.allowed || !access.session || !access.participantRole) {
-      return NextResponse.json(
-        { error: access.error ?? "Access denied" },
-        { status: access.status }
-      );
-    }
-
-    if (access.participantRole !== role) {
+    if (resolved.actor.role !== role) {
       return NextResponse.json(
         { error: "Role does not match your session assignment" },
         { status: 403 }
       );
     }
 
-    const user = await prisma.user.findUnique({
-      where: { id: session.user.id },
-      select: { id: true, name: true, firstName: true, lastName: true, email: true },
-    });
-
-    if (!user) {
-      return NextResponse.json({ error: "User not found" }, { status: 404 });
-    }
-
     const token = await createLiveKitToken(
       room,
-      session.user.id,
-      participantDisplayName(user),
+      resolved.actor.identity,
+      resolved.actor.name,
       role
     );
 
-    await markSessionActive(room);
+    if (resolved.actor.role === "tutor") {
+      const started = await markSessionActive(room);
+      if (started) {
+        await notifyBookedStudentsSessionStarted(room).catch((error) => {
+          console.error("Session start notification failed:", error);
+        });
+      }
+    }
 
     return NextResponse.json({
       token,

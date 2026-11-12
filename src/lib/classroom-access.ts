@@ -147,12 +147,12 @@ export async function verifyClassroomAccess(
     return { allowed: false, status: 403, error: "Session is not available to join" };
   }
 
-  const invitedByTutor = session.participants.some(
-    (participant) => participant.studentId === userId
-  );
+  const openMeetingInvite =
+    session.shareable &&
+    session.participants.some((participant) => participant.studentId === userId);
   const platform = await getPlatformSettings();
   const window =
-    participantRole === "student" && invitedByTutor
+    participantRole === "student" && openMeetingInvite
       ? { allowed: true as const }
       : checkJoinWindow(
           session,
@@ -178,10 +178,11 @@ export async function verifyClassroomAccess(
 }
 
 export async function markSessionActive(roomId: string) {
-  await prisma.tutoringSession.updateMany({
+  const updated = await prisma.tutoringSession.updateMany({
     where: { roomId, status: "SCHEDULED" },
     data: { status: "ACTIVE", startedAt: new Date() },
   });
+  return updated.count > 0;
 }
 
 export async function markSessionCompleted(roomId: string) {

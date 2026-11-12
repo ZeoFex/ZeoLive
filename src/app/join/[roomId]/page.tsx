@@ -4,6 +4,7 @@ import Link from "next/link";
 import { redirect } from "next/navigation";
 import { auth } from "@/auth";
 import { Logo } from "@/components/brand/logo";
+import { MeetingLobby } from "@/components/meetings/meeting-lobby";
 import { Button } from "@/components/ui/button";
 import { prisma } from "@/lib/prisma";
 
@@ -39,73 +40,16 @@ export default async function JoinMeetingPage({
   }
 
   const session = await auth();
-  const callback = `/join/${roomId}`;
-  const callbackQuery = `callbackUrl=${encodeURIComponent(callback)}`;
-
-  if (!session?.user?.id || !session.user.role) {
-    return (
-      <JoinNotice
-        title="Join this meeting"
-        meetingTitle={tutoring.title?.trim() || undefined}
-        body="Create a student account if you are new. After that you go straight into the meeting. If you already have an account, sign in and join."
-      >
-        <div className="flex flex-col gap-3">
-          <Button
-            asChild
-            className="h-11 w-full rounded-xl bg-[#0066CC] text-white hover:bg-[#0054a6]"
-          >
-            <Link href={`/signup/student?${callbackQuery}`}>Create account</Link>
-          </Button>
-          <Button
-            asChild
-            variant="outline"
-            className="h-11 w-full rounded-xl border-slate-200 bg-white text-slate-800 hover:bg-slate-50"
-          >
-            <Link href={`/login?${callbackQuery}`}>Sign in</Link>
-          </Button>
-        </div>
-      </JoinNotice>
-    );
+  const isHost =
+    !!session?.user?.id &&
+    (session.user.id === tutoring.tutorId || session.user.role === "ADMIN");
+  if (isHost) {
+    redirect(`/classroom/${roomId}`);
   }
 
-  const isHost = session.user.id === tutoring.tutorId || session.user.role === "ADMIN";
-  if (!isHost) {
-    if (session.user.role !== "STUDENT") {
-      return (
-        <JoinNotice
-          title="Use a student account"
-          body="Sign out, then create a student account or sign in as a student to join this meeting."
-        >
-          <Button variant="outline" asChild>
-            <Link href={`/login?${callbackQuery}`}>Sign in</Link>
-          </Button>
-        </JoinNotice>
-      );
-    }
-
-    await prisma.sessionParticipant.upsert({
-      where: {
-        tutoringSessionId_studentId: {
-          tutoringSessionId: tutoring.id,
-          studentId: session.user.id,
-        },
-      },
-      create: {
-        tutoringSessionId: tutoring.id,
-        studentId: session.user.id,
-      },
-      update: {},
-    });
-
-    if (tutoring.studentId === tutoring.tutorId) {
-      await prisma.tutoringSession.update({
-        where: { id: tutoring.id },
-        data: { studentId: session.user.id },
-      });
-    }
-  }
-
-  redirect(`/classroom/${roomId}`);
+  return (
+    <MeetingLobby roomId={roomId} meetingTitle={tutoring.title?.trim() || undefined} />
+  );
 }
 
 function JoinNotice({

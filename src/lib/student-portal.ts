@@ -92,13 +92,16 @@ export async function getStudentNotifications(
   for (const session of sessions.filter(
     (s) => s.status === "SCHEDULED" || s.status === "ACTIVE"
   )) {
+    const live = session.status === "ACTIVE";
     items.push({
       id: `session-${session.id}`,
-      type: "session_reminder",
-      title: "Upcoming session",
-      message: `${session.title ?? session.subject ?? "Session"} with ${session.tutor.name} · ${new Date(session.scheduledAt).toLocaleString()}`,
+      type: live ? "session_started" : "session_reminder",
+      title: live ? "Your tutor started the session" : "Upcoming session",
+      message: live
+        ? `${session.title ?? session.subject ?? "Session"} with ${session.tutor.name} is open. Join now.`
+        : `${session.title ?? session.subject ?? "Session"} with ${session.tutor.name} · ${new Date(session.scheduledAt).toLocaleString()}`,
       href: `/classroom/${session.roomId}`,
-      createdAt: session.scheduledAt,
+      createdAt: live ? (session.startedAt ?? session.scheduledAt) : session.scheduledAt,
     });
   }
 

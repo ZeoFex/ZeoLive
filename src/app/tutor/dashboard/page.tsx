@@ -8,6 +8,7 @@ import { TutorPageHeader } from "@/components/layout/tutor-page-header";
 import { TutorStatCard } from "@/components/shared/tutor-stat-card";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
+import { MeetingCamera } from "@/components/meetings/meeting-camera";
 import { isOpenMeeting, sessionHeadline, sessionTopic, type PortalSession } from "@/lib/session-card";
 import { routes } from "@/lib/routes";
 import { formatDate } from "@/lib/utils";
@@ -96,6 +97,9 @@ export default function TutorDashboardPage() {
                 className="flex flex-col gap-4 rounded-2xl border border-slate-100 bg-white p-4 shadow-sm sm:flex-row sm:items-center"
               >
                 <div className="flex min-w-0 flex-1 items-center gap-3">
+                  {s.shareable ? (
+                    <MeetingCamera />
+                  ) : (
                   <Avatar className="h-12 w-12 shrink-0">
                     {!isOpenMeeting(s) && s.student.image ? (
                       <AvatarImage src={s.student.image} alt={s.student.name} />
@@ -104,6 +108,7 @@ export default function TutorDashboardPage() {
                       {sessionHeadline(s)[0]}
                     </AvatarFallback>
                   </Avatar>
+                  )}
                   <div className="min-w-0">
                     <p className="text-base font-semibold leading-snug text-slate-900">
                       {sessionHeadline(s)}

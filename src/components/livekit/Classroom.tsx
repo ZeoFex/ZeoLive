@@ -5,6 +5,7 @@ import {
   RoomAudioRenderer,
 } from "@livekit/components-react";
 import { DisconnectReason } from "livekit-client";
+import { Mic, MicOff, UserMinus } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
@@ -24,7 +25,7 @@ import { useSessionPresence } from "@/hooks/useSessionPresence";
 import type { ClassroomRole } from "@/lib/livekit";
 import { SCREEN_SHARE_PUBLISH } from "@/lib/livekit-screen-share";
 import { parseParticipantRole } from "@/lib/classroom-participant";
-import { dashboardForRole } from "@/lib/routes";
+import { dashboardForRole, routes } from "@/lib/routes";
 import { cn } from "@/lib/utils";
 import { useParticipants } from "@livekit/components-react";
 
@@ -34,29 +35,70 @@ export interface ClassroomSessionInfo {
   subject?: string | null;
   status: string;
   participantRole: ClassroomRole;
+  guest?: boolean;
 }
 
 interface ClassroomProps {
   token: string;
   serverUrl: string;
   session: ClassroomSessionInfo;
+  audio?: boolean;
+  video?: boolean;
 }
 
-function ParticipantsSidebar({ open }: { open: boolean }) {
+function ParticipantsSidebar({
+  open,
+  roomId,
+  isHost,
+}: {
+  open: boolean;
+  roomId: string;
+  isHost: boolean;
+}) {
   const participants = useParticipants();
+  const [pending, setPending] = useState<string | null>(null);
+  const [confirmRemove, setConfirmRemove] = useState<string | null>(null);
 
   if (!open) return null;
+
+  async function moderate(identity: string, action: "mute" | "unmute" | "remove") {
+    setPending(identity + action);
+    try {
+      const res = await fetch(`/api/classroom/${roomId}/participants`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        credentials: "same-origin",
+        body: JSON.stringify({ identity, action }),
+      });
+      const json = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        throw new Error(typeof json.error === "string" ? json.error : "Could not update that person");
+      }
+      if (action === "remove") {
+        toast.success("Removed from the meeting");
+        setConfirmRemove(null);
+      } else {
+        toast.success(action === "mute" ? "Microphone muted" : "Microphone allowed again");
+      }
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Could not update that person");
+    } finally {
+      setPending(null);
+    }
+  }
 
   return (
     <div className="border-b border-border p-4 md:border-b-0 md:border-l">
       <h3 className="mb-3 text-sm font-semibold text-foreground">
         Participants ({participants.length})
       </h3>
-      <ul className="space-y-2">
+      <ul className="space-y-3">
         {participants.map((p) => {
           const role = parseParticipantRole(p.metadata);
+          const micOn = p.isMicrophoneEnabled;
+          const canModerate = isHost && !p.isLocal && role !== "tutor";
           return (
-            <li key={p.sid} className="flex items-center gap-2">
+            <li key={p.sid} className="flex items-start gap-2">
               <Avatar className="h-8 w-8">
                 <AvatarFallback>
                   {(p.name ?? p.identity).charAt(0).toUpperCase()}
@@ -64,11 +106,55 @@ function ParticipantsSidebar({ open }: { open: boolean }) {
               </Avatar>
               <div className="min-w-0 flex-1">
                 <p className="truncate text-sm font-medium">{p.name ?? p.identity}</p>
-                {role && (
-                  <Badge variant="outline" className="mt-0.5 text-[10px] capitalize">
-                    {role}
-                  </Badge>
-                )}
+                <div className="mt-0.5 flex items-center gap-1">
+                  {role && (
+                    <Badge variant="outline" className="text-[10px] capitalize">
+                      {p.identity.startsWith("guest:") ? "Guest" : role}
+                    </Badge>
+                  )}
+                  {micOn ? (
+                    <Mic className="h-3.5 w-3.5 text-muted-foreground" aria-label="Microphone on" />
+                  ) : (
+                    <MicOff className="h-3.5 w-3.5 text-muted-foreground" aria-label="Microphone off" />
+                  )}
+                </div>
+                {canModerate ? (
+                  <div className="mt-2 flex flex-wrap gap-1.5">
+                    <Button
+                      type="button"
+                      size="sm"
+                      variant="outline"
+                      className="h-7 rounded-full px-2 text-xs"
+                      disabled={pending !== null}
+                      onClick={() => void moderate(p.identity, micOn ? "mute" : "unmute")}
+                    >
+                      {micOn ? "Mute" : "Unmute"}
+                    </Button>
+                    {confirmRemove === p.identity ? (
+                      <Button
+                        type="button"
+                        size="sm"
+                        variant="destructive"
+                        className="h-7 rounded-full px-2 text-xs"
+                        disabled={pending !== null}
+                        onClick={() => void moderate(p.identity, "remove")}
+                      >
+                        Confirm remove
+                      </Button>
+                    ) : (
+                      <Button
+                        type="button"
+                        size="sm"
+                        variant="ghost"
+                        className="h-7 rounded-full px-2 text-xs"
+                        onClick={() => setConfirmRemove(p.identity)}
+                      >
+                        <UserMinus className="mr-1 h-3.5 w-3.5" />
+                        Remove
+                      </Button>
+                    )}
+                  </div>
+                ) : null}
               </div>
             </li>
           );
@@ -99,7 +185,7 @@ function ClassroomRoomInner({
     saveWhiteboardRef.current = save;
   }, []);
 
-  const { showWaitingRoom, isReconnecting, isConnected } = useSessionPresence(
+  const { showWaitingRoom, isReconnecting, isConnected, studentPresent } = useSessionPresence(
     session.participantRole
   );
   const recorder = useClassroomRecorder({
@@ -113,6 +199,12 @@ function ClassroomRoomInner({
       setShowChat(false);
     }
   }, []);
+
+  useEffect(() => {
+    if (session.participantRole === "tutor" && studentPresent) {
+      setShowParticipants(true);
+    }
+  }, [session.participantRole, studentPresent]);
 
   useEffect(() => {
     if (!isScreenSharing || mobilePanelsCollapsed.current) return;
@@ -136,12 +228,17 @@ function ClassroomRoomInner({
     } catch (e) {
       toast.error(e instanceof Error ? e.message : "Could not save the recording");
     }
-    const path =
-      session.participantRole === "tutor"
+    const path = session.guest
+      ? "/"
+      : session.participantRole === "tutor"
         ? dashboardForRole("TUTOR")
         : dashboardForRole("STUDENT");
     router.push(path);
-  }, [recorder, router, session.participantRole]);
+  }, [recorder, router, session.guest, session.participantRole]);
+
+  const openEndedMeetings = useCallback(() => {
+    router.push(routes.tutor.sessions);
+  }, [router]);
 
   const endSession = useCallback(async () => {
     try {
@@ -163,11 +260,11 @@ function ClassroomRoomInner({
       setEnded(true);
       onSessionEnded();
       toast.success("Session ended for all participants");
-      leaveRoom();
+      openEndedMeetings();
     } catch (e) {
       toast.error(e instanceof Error ? e.message : "Could not end session");
     }
-  }, [session.roomId, leaveRoom, onSessionEnded, recorder]);
+  }, [session.roomId, openEndedMeetings, onSessionEnded, recorder]);
 
   if (ended) {
     return (
@@ -238,7 +335,13 @@ function ClassroomRoomInner({
                 : "max-md:max-h-[42dvh] md:w-80 md:max-w-[min(100%,22rem)] lg:w-96 md:max-h-none"
             )}
           >
-            {showParticipants && <ParticipantsSidebar open={showParticipants} />}
+            {showParticipants && (
+              <ParticipantsSidebar
+                open={showParticipants}
+                roomId={session.roomId}
+                isHost={session.participantRole === "tutor"}
+              />
+            )}
             {showChat && (
               <ChatPanel
                 roomId={session.roomId}
@@ -288,8 +391,29 @@ function ClassroomRoom({
   );
 }
 
-export function Classroom({ token, serverUrl, session }: ClassroomProps) {
+export function Classroom({
+  token,
+  serverUrl,
+  session,
+  audio = true,
+  video = true,
+}: ClassroomProps) {
   const [sessionEnded, setSessionEnded] = useState(false);
+  const [removed, setRemoved] = useState(false);
+
+  if (removed) {
+    return (
+      <div className="flex h-[100dvh] flex-col items-center justify-center gap-4 bg-background p-8 text-center text-foreground">
+        <h1 className="text-lg font-semibold">You were removed from the meeting</h1>
+        <p className="max-w-md text-sm text-muted-foreground">
+          The host removed you from this meeting.
+        </p>
+        <Button asChild>
+          <a href="/">Back home</a>
+        </Button>
+      </div>
+    );
+  }
 
   return (
     <LiveKitRoom
@@ -297,8 +421,8 @@ export function Classroom({ token, serverUrl, session }: ClassroomProps) {
       token={token}
       serverUrl={serverUrl}
       connect
-      audio
-      video
+      audio={audio}
+      video={video}
       className="flex h-[100dvh] flex-col bg-background text-foreground"
       options={{
         adaptiveStream: true,
@@ -309,7 +433,11 @@ export function Classroom({ token, serverUrl, session }: ClassroomProps) {
         autoSubscribe: true,
       }}
       onDisconnected={(reason) => {
-        if (reason === DisconnectReason.PARTICIPANT_REMOVED || sessionEnded) {
+        if (reason === DisconnectReason.PARTICIPANT_REMOVED) {
+          setRemoved(true);
+          return;
+        }
+        if (sessionEnded) {
           return;
         }
         if (reason === DisconnectReason.ROOM_DELETED) {
