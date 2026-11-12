@@ -1,9 +1,11 @@
 "use client";
 
 import { Loader2, Plus, Save, Trash2 } from "lucide-react";
+import { useSearchParams } from "next/navigation";
 import { useCallback, useEffect, useState } from "react";
 import { toast } from "sonner";
 import { AdminPageHeader } from "@/components/layout/admin-page-header";
+import { ScheduleCard } from "@/components/landing/schedule-card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -19,6 +21,8 @@ import type {
 } from "@/lib/cms-types";
 
 export default function AdminCmsPage() {
+  const searchParams = useSearchParams();
+  const initialTab = searchParams.get("tab") === "schedule" ? "schedule" : "hero";
   const [cms, setCms] = useState<LandingCms>(defaultLandingCms());
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -216,7 +220,7 @@ export default function AdminCmsPage() {
         }
       />
 
-      <Tabs defaultValue="hero" className="w-full">
+      <Tabs defaultValue={initialTab} className="w-full">
         <TabsList className="admin-tabs-list">
           <TabsTrigger value="hero" className="admin-tabs-trigger">
             Hero banner
@@ -385,12 +389,13 @@ export default function AdminCmsPage() {
         </TabsContent>
 
         <TabsContent value="schedule" className="admin-tabs-content">
+          <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_280px]">
           <div className="admin-card space-y-4 p-6">
             <div className="flex items-start justify-between gap-3">
               <div>
-                <h3 className="text-base font-bold text-slate-900">Hero schedule cards</h3>
+                <h3 className="text-base font-bold text-slate-900">Homepage week card</h3>
                 <p className="mt-1 text-xs text-slate-500">
-                  Floating sample sessions on the banner (e.g. Calculus II, Python basics).
+                  This is the “Your week” card on the homepage banner. Publish to update what visitors see.
                 </p>
               </div>
               <Button
@@ -462,6 +467,13 @@ export default function AdminCmsPage() {
                 onChange={(e) => patchHero({ cardFootnote: e.target.value })}
               />
             </div>
+          </div>
+          <ScheduleCard
+            title={cms.hero.cardTitle || "Your week"}
+            items={cms.hero.cardItems}
+            footnote={cms.hero.cardFootnote}
+            className="h-fit"
+          />
           </div>
         </TabsContent>
 

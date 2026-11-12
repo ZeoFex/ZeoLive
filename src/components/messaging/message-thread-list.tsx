@@ -6,6 +6,31 @@ import { Button } from "@/components/ui/button";
 import type { StoredMessageDto } from "@/lib/messaging";
 import { cn } from "@/lib/utils";
 
+function MessageText({ body, isOwn }: { body: string; isOwn: boolean }) {
+  const parts = body.split(/(https?:\/\/[^\s]+)/g);
+  return (
+    <p className="whitespace-pre-wrap text-sm leading-relaxed">
+      {parts.map((part, index) => {
+        if (!/^https?:\/\//.test(part)) return <span key={index}>{part}</span>;
+        const isJoin = part.includes("/join/");
+        return (
+          <a
+            key={index}
+            href={part}
+            className={
+              isOwn
+                ? "font-semibold underline"
+                : "font-semibold text-primary underline"
+            }
+          >
+            {isJoin ? "Join meeting" : part}
+          </a>
+        );
+      })}
+    </p>
+  );
+}
+
 type MessageBubbleProps = {
   msg: StoredMessageDto;
   isOwn: boolean;
@@ -33,7 +58,7 @@ const MessageBubble = memo(function MessageBubble({
             {msg.channel === "CLASSROOM" && " · classroom"}
           </p>
         )}
-        <p className="whitespace-pre-wrap text-sm leading-relaxed">{msg.body}</p>
+        <MessageText body={msg.body} isOwn={isOwn} />
       </div>
       {isOwn && (
         <Button

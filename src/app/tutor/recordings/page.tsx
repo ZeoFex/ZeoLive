@@ -8,7 +8,7 @@ export default function TutorRecordingsPage() {
     <>
       <TutorPageHeader
         title="Recordings"
-        description="Watch all lesson recordings in ZTL, upload your completed sessions, and request admin-approved downloads."
+        description="Lesson recordings from your live sessions appear here. You can also upload a finished class and request an admin-approved download."
       />
       <RecordingsLibrary mode="tutor" allowUpload />
     </>

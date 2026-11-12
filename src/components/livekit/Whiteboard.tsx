@@ -38,7 +38,10 @@ export function Whiteboard({
 }) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const scrollerRef = useRef<HTMLDivElement>(null);
-  const { pages, activePage, selectPage, commit, authorId } = useWhiteboard(roomId);
+  const canDraw = role === "tutor";
+  const { pages, activePage, selectPage, commit, authorId } = useWhiteboard(roomId, {
+    writable: canDraw,
+  });
   const participants = useParticipants();
   const [tool, setTool] = useState<"pen" | "eraser">("pen");
   const [color, setColor] = useState<string>(WHITEBOARD_COLORS[0]);
@@ -137,7 +140,7 @@ export function Whiteboard({
   };
 
   const onPointerDown = (event: React.PointerEvent<HTMLCanvasElement>) => {
-    if (event.button !== 0) return;
+    if (!canDraw || event.button !== 0) return;
     if (!large) {
       setLarge(true);
       return;
@@ -219,73 +222,79 @@ export function Whiteboard({
           Whiteboard
         </div>
 
-        <Button
-          type="button"
-          size="icon"
-          variant={tool === "pen" ? "default" : "outline"}
-          className="h-8 w-8"
-          onClick={() => setTool("pen")}
-          aria-label="Pen"
-          aria-pressed={tool === "pen"}
-        >
-          <PenLine className="h-4 w-4" />
-        </Button>
-        <Button
-          type="button"
-          size="icon"
-          variant={tool === "eraser" ? "default" : "outline"}
-          className="h-8 w-8"
-          onClick={() => setTool("eraser")}
-          aria-label="Eraser"
-          aria-pressed={tool === "eraser"}
-        >
-          <Eraser className="h-4 w-4" />
-        </Button>
+        {canDraw ? (
+          <>
+            <Button
+              type="button"
+              size="icon"
+              variant={tool === "pen" ? "default" : "outline"}
+              className="h-8 w-8"
+              onClick={() => setTool("pen")}
+              aria-label="Pen"
+              aria-pressed={tool === "pen"}
+            >
+              <PenLine className="h-4 w-4" />
+            </Button>
+            <Button
+              type="button"
+              size="icon"
+              variant={tool === "eraser" ? "default" : "outline"}
+              className="h-8 w-8"
+              onClick={() => setTool("eraser")}
+              aria-label="Eraser"
+              aria-pressed={tool === "eraser"}
+            >
+              <Eraser className="h-4 w-4" />
+            </Button>
 
-        <div className="mx-1 hidden h-6 w-px bg-stone-200 sm:block" />
+            <div className="mx-1 hidden h-6 w-px bg-stone-200 sm:block" />
 
-        {WHITEBOARD_COLORS.map((swatch) => (
-          <button
-            key={swatch}
-            type="button"
-            className={cn(
-              "h-6 w-6 rounded-full border border-black/10",
-              color === swatch && tool === "pen" && "ring-2 ring-primary ring-offset-2"
-            )}
-            style={{ backgroundColor: swatch }}
-            onClick={() => {
-              setColor(swatch);
-              setTool("pen");
-            }}
-            aria-label={`Ink color ${swatch}`}
-          />
-        ))}
+            {WHITEBOARD_COLORS.map((swatch) => (
+              <button
+                key={swatch}
+                type="button"
+                className={cn(
+                  "h-6 w-6 rounded-full border border-black/10",
+                  color === swatch && tool === "pen" && "ring-2 ring-primary ring-offset-2"
+                )}
+                style={{ backgroundColor: swatch }}
+                onClick={() => {
+                  setColor(swatch);
+                  setTool("pen");
+                }}
+                aria-label={`Ink color ${swatch}`}
+              />
+            ))}
 
-        <div className="mx-1 hidden h-6 w-px bg-stone-200 sm:block" />
+            <div className="mx-1 hidden h-6 w-px bg-stone-200 sm:block" />
 
-        {WIDTHS.map((option) => (
-          <button
-            key={option.id}
-            type="button"
-            className={cn(
-              "flex h-8 w-8 items-center justify-center rounded-md border border-stone-200 bg-white",
-              width === option.value && tool === "pen" && "border-primary"
-            )}
-            onClick={() => {
-              setWidth(option.value);
-              setTool("pen");
-            }}
-            aria-label={`${option.label} stroke`}
-          >
-            <span
-              className="rounded-full bg-stone-800"
-              style={{
-                width: option.id === "thin" ? 4 : option.id === "medium" ? 8 : 12,
-                height: option.id === "thin" ? 4 : option.id === "medium" ? 8 : 12,
-              }}
-            />
-          </button>
-        ))}
+            {WIDTHS.map((option) => (
+              <button
+                key={option.id}
+                type="button"
+                className={cn(
+                  "flex h-8 w-8 items-center justify-center rounded-md border border-stone-200 bg-white",
+                  width === option.value && tool === "pen" && "border-primary"
+                )}
+                onClick={() => {
+                  setWidth(option.value);
+                  setTool("pen");
+                }}
+                aria-label={`${option.label} stroke`}
+              >
+                <span
+                  className="rounded-full bg-stone-800"
+                  style={{
+                    width: option.id === "thin" ? 4 : option.id === "medium" ? 8 : 12,
+                    height: option.id === "thin" ? 4 : option.id === "medium" ? 8 : 12,
+                  }}
+                />
+              </button>
+            ))}
+          </>
+        ) : (
+          <p className="text-xs text-stone-500">View only — your tutor is writing</p>
+        )}
 
         <div className="ml-auto flex items-center gap-1">
           <Button
@@ -298,12 +307,16 @@ export function Whiteboard({
           >
             {large ? <Minimize2 className="h-4 w-4" /> : <Maximize2 className="h-4 w-4" />}
           </Button>
-          <Button type="button" size="icon" variant="outline" className="h-8 w-8" onClick={undo} aria-label="Undo my last stroke">
-            <Undo2 className="h-4 w-4" />
-          </Button>
-          <Button type="button" size="icon" variant="outline" className="h-8 w-8" onClick={clear} aria-label="Clear this page">
-            <Trash2 className="h-4 w-4" />
-          </Button>
+          {canDraw && (
+            <>
+              <Button type="button" size="icon" variant="outline" className="h-8 w-8" onClick={undo} aria-label="Undo my last stroke">
+                <Undo2 className="h-4 w-4" />
+              </Button>
+              <Button type="button" size="icon" variant="outline" className="h-8 w-8" onClick={clear} aria-label="Clear this page">
+                <Trash2 className="h-4 w-4" />
+              </Button>
+            </>
+          )}
         </div>
       </div>
 
@@ -324,17 +337,19 @@ export function Whiteboard({
             Page {index + 1}
           </button>
         ))}
-        <Button
-          type="button"
-          size="sm"
-          variant="outline"
-          className="h-7 shrink-0 rounded-full px-2"
-          onClick={addPage}
-          disabled={pages.length >= MAX_WHITEBOARD_PAGES}
-        >
-          <Plus className="mr-1 h-3.5 w-3.5" />
-          Page
-        </Button>
+        {canDraw && (
+          <Button
+            type="button"
+            size="sm"
+            variant="outline"
+            className="h-7 shrink-0 rounded-full px-2"
+            onClick={addPage}
+            disabled={pages.length >= MAX_WHITEBOARD_PAGES}
+          >
+            <Plus className="mr-1 h-3.5 w-3.5" />
+            Page
+          </Button>
+        )}
       </div>
 
       <div ref={scrollerRef} className="relative min-h-0 flex-1 overflow-y-auto bg-stone-100">
@@ -342,9 +357,11 @@ export function Whiteboard({
           ref={canvasRef}
           style={{ height: pageHeight }}
           className={cn(
-            "block w-full touch-none bg-white",
-            !large && "cursor-zoom-in",
-            large && (tool === "eraser" ? "cursor-cell" : "cursor-crosshair")
+            "block w-full bg-white",
+            canDraw && "touch-none",
+            canDraw && !large && "cursor-zoom-in",
+            canDraw && large && (tool === "eraser" ? "cursor-cell" : "cursor-crosshair"),
+            !canDraw && "cursor-default"
           )}
           onPointerDown={onPointerDown}
           onPointerMove={onPointerMove}
@@ -377,9 +394,11 @@ export function Whiteboard({
         </Dialog>
         {strokes.length === 0 && !live && (
           <p className="pointer-events-none absolute inset-x-0 top-6 px-4 text-center text-sm text-stone-400">
-            {large
-              ? "Scroll for more room on this page. Add a page when you want a fresh board, and switch back anytime."
-              : "Tap the whiteboard to enlarge it for teaching. Scroll for more writing room."}
+            {canDraw
+              ? large
+                ? "Scroll for more room on this page. Add a page when you want a fresh board, and switch back anytime."
+                : "Tap the whiteboard to enlarge it for teaching. Scroll for more writing room."
+              : "Follow along here. Only your tutor can write on the board."}
           </p>
         )}
       </div>

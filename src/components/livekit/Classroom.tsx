@@ -19,6 +19,7 @@ import { WaitingRoom } from "@/components/livekit/WaitingRoom";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { useClassroomRecorder } from "@/hooks/useClassroomRecorder";
 import { useSessionPresence } from "@/hooks/useSessionPresence";
 import type { ClassroomRole } from "@/lib/livekit";
 import { SCREEN_SHARE_PUBLISH } from "@/lib/livekit-screen-share";
@@ -101,6 +102,11 @@ function ClassroomRoomInner({
   const { showWaitingRoom, isReconnecting, isConnected } = useSessionPresence(
     session.participantRole
   );
+  const recorder = useClassroomRecorder({
+    roomId: session.roomId,
+    rootRef: containerRef,
+    enabled: session.participantRole === "tutor",
+  });
 
   useEffect(() => {
     if (window.matchMedia("(max-width: 767px)").matches) {
@@ -124,15 +130,25 @@ function ClassroomRoomInner({
     }
   }, [screenExpanded]);
 
-  const leaveRoom = useCallback(() => {
+  const leaveRoom = useCallback(async () => {
+    try {
+      await recorder.stopAndSave();
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Could not save the recording");
+    }
     const path =
       session.participantRole === "tutor"
         ? dashboardForRole("TUTOR")
         : dashboardForRole("STUDENT");
     router.push(path);
-  }, [router, session.participantRole]);
+  }, [recorder, router, session.participantRole]);
 
   const endSession = useCallback(async () => {
+    try {
+      await recorder.stopAndSave();
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Could not save the recording");
+    }
     try {
       await saveWhiteboardRef.current?.();
       const res = await fetch(`/api/classroom/${session.roomId}`, {
@@ -151,7 +167,7 @@ function ClassroomRoomInner({
     } catch (e) {
       toast.error(e instanceof Error ? e.message : "Could not end session");
     }
-  }, [session.roomId, leaveRoom, onSessionEnded]);
+  }, [session.roomId, leaveRoom, onSessionEnded, recorder]);
 
   if (ended) {
     return (
@@ -184,6 +200,7 @@ function ClassroomRoomInner({
         subject={session.subject}
         isConnected={isConnected}
         isReconnecting={isReconnecting}
+        recording={recorder.recording}
       />
 
       <div
@@ -247,6 +264,11 @@ function ClassroomRoomInner({
         showWhiteboard={!showWaitingRoom && whiteboardVisible}
         onToggleWhiteboard={showWaitingRoom ? undefined : toggleWhiteboard}
         containerRef={containerRef}
+        canRecord={session.participantRole === "tutor"}
+        recording={recorder.recording}
+        recordingBusy={recorder.busy}
+        recordingElapsed={recorder.elapsedSeconds}
+        onToggleRecording={() => void recorder.toggle()}
       />
     </div>
   );

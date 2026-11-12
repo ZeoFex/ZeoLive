@@ -156,7 +156,8 @@ export function validateRecordingFile(file: File, maxMb = 200): string | null {
   if (file.size > maxBytes) {
     return `Recording must be ${maxMb}MB or smaller`;
   }
-  if (file.type && !RECORDING_TYPES.has(file.type)) {
+  const baseType = file.type.split(";")[0]?.trim() ?? "";
+  if (baseType && !RECORDING_TYPES.has(baseType)) {
     return "Upload an MP4, WebM, or MOV video";
   }
   if (!file.type && file.name) {

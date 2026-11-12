@@ -11,6 +11,7 @@ interface SessionHeaderProps {
   elapsedSeconds?: number;
   isReconnecting?: boolean;
   isConnected?: boolean;
+  recording?: boolean;
   className?: string;
 }
 
@@ -20,6 +21,7 @@ export function SessionHeader({
   elapsedSeconds = 0,
   isReconnecting,
   isConnected,
+  recording,
   className,
 }: SessionHeaderProps) {
   const [elapsed, setElapsed] = useState(elapsedSeconds);
@@ -52,6 +54,12 @@ export function SessionHeader({
       </div>
 
       <div className="flex flex-wrap items-center gap-2">
+        {recording ? (
+          <Badge variant="secondary" className="gap-1 bg-red-500/15 text-red-700 dark:text-red-300">
+            <span className="h-2 w-2 rounded-full bg-red-500" />
+            Recording
+          </Badge>
+        ) : null}
         {isReconnecting ? (
           <Badge variant="secondary" className="gap-1 bg-amber-500/15 text-amber-700 dark:text-amber-300">
             <WifiOff className="h-3 w-3" />

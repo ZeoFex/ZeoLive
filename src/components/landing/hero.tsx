@@ -5,6 +5,7 @@ import { ChevronLeft, ChevronRight } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
 import { useCallback, useEffect, useState } from "react";
+import { ScheduleCard } from "@/components/landing/schedule-card";
 import { Button } from "@/components/ui/button";
 import type { CmsHero } from "@/lib/cms-types";
 import { cn } from "@/lib/utils";
@@ -176,27 +177,12 @@ export function Hero({ content }: { content: CmsHero }) {
             ) : null}
           </div>
 
-          {content.cardItems.length > 0 ? (
-            <aside className="w-full max-w-sm justify-self-start rounded-2xl border border-white/25 bg-white/95 p-5 text-slate-900 shadow-[0_20px_50px_-24px_rgba(0,54,120,0.55)] backdrop-blur-md lg:justify-self-end">
-              <p className="text-sm font-semibold text-slate-900">{content.cardTitle}</p>
-              <ul className="mt-3 space-y-3">
-                {content.cardItems.map((session) => (
-                  <li
-                    key={`${session.subject}-${session.time}`}
-                    className="border-b border-slate-100 pb-3 last:border-0 last:pb-0"
-                  >
-                    <p className="text-sm font-medium text-[#0066CC]">{session.subject}</p>
-                    <p className="mt-0.5 text-sm text-slate-500">
-                      {session.time} · {session.tutor}
-                    </p>
-                  </li>
-                ))}
-              </ul>
-              {content.cardFootnote ? (
-                <p className="mt-3 text-xs text-slate-500">{content.cardFootnote}</p>
-              ) : null}
-            </aside>
-          ) : null}
+          <ScheduleCard
+            title={content.cardTitle}
+            items={content.cardItems}
+            footnote={content.cardFootnote}
+            className="justify-self-start border-white/25 bg-white/95 shadow-[0_20px_50px_-24px_rgba(0,54,120,0.55)] backdrop-blur-md lg:justify-self-end"
+          />
         </div>
       </div>
     </section>

@@ -8,7 +8,7 @@ export default function StudentRecordingsPage() {
     <>
       <StudentPageHeader
         title="Recordings"
-        description="Watch your lesson recordings later inside ZTL. Downloading to your device needs admin approval."
+        description="Recordings from your live lessons appear here. Downloading a video to your device needs admin approval."
       />
       <RecordingsLibrary mode="student" />
     </>

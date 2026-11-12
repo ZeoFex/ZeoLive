@@ -52,10 +52,13 @@ export async function pairHasTutoringRelationship(
   studentId: string,
   tutorId: string
 ) {
-  const count = await prisma.tutoringSession.count({
-    where: { studentId, tutorId },
-  });
-  return count > 0;
+  const [hosted, invited] = await Promise.all([
+    prisma.tutoringSession.count({ where: { studentId, tutorId } }),
+    prisma.sessionParticipant.count({
+      where: { studentId, tutoringSession: { tutorId } },
+    }),
+  ]);
+  return hosted + invited > 0;
 }
 
 export async function getOrCreateConversation(studentId: string, tutorId: string) {

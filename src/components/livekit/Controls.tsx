@@ -6,6 +6,7 @@ import {
 } from "@livekit/components-react";
 import { ConnectionState } from "livekit-client";
 import {
+  Circle,
   Loader2,
   LogOut,
   Maximize,
@@ -16,6 +17,7 @@ import {
   MonitorOff,
   PenLine,
   PhoneOff,
+  Square,
   Users,
   Video,
   VideoOff,
@@ -42,6 +44,17 @@ interface ControlsProps {
   onToggleWhiteboard?: () => void;
   containerRef?: React.RefObject<HTMLElement | null>;
   className?: string;
+  canRecord?: boolean;
+  recording?: boolean;
+  recordingBusy?: boolean;
+  recordingElapsed?: number;
+  onToggleRecording?: () => void;
+}
+
+function formatElapsed(totalSeconds: number) {
+  const minutes = Math.floor(totalSeconds / 60);
+  const seconds = totalSeconds % 60;
+  return `${minutes.toString().padStart(2, "0")}:${seconds.toString().padStart(2, "0")}`;
 }
 
 function screenShareErrorMessage(error: unknown): string {
@@ -71,6 +84,11 @@ export function Controls({
   onToggleWhiteboard,
   containerRef,
   className,
+  canRecord,
+  recording,
+  recordingBusy,
+  recordingElapsed = 0,
+  onToggleRecording,
 }: ControlsProps) {
   const room = useRoomContext();
   const {
@@ -187,6 +205,34 @@ export function Controls({
           ) : (
             <Monitor className="h-5 w-5" />
           )}
+        </Button>
+      )}
+
+      {canRecord && onToggleRecording && (
+        <Button
+          type="button"
+          variant={recording ? "destructive" : "secondary"}
+          className={cn(
+            "h-11 shrink-0 rounded-full px-3 sm:h-12",
+            recording && "animate-pulse"
+          )}
+          onClick={onToggleRecording}
+          disabled={!isConnected || recordingBusy}
+          aria-pressed={recording}
+          aria-label={recording ? "Stop recording" : "Record lesson"}
+        >
+          {recordingBusy ? (
+            <Loader2 className="h-4 w-4 animate-spin" />
+          ) : recording ? (
+            <Square className="h-4 w-4 fill-current" />
+          ) : (
+            <Circle className="h-4 w-4 fill-red-500 text-red-500" />
+          )}
+          <span className="ml-2 text-sm">
+            {recording
+              ? `Stop ${formatElapsed(recordingElapsed)}`
+              : "Record"}
+          </span>
         </Button>
       )}
 

@@ -93,6 +93,41 @@ Zeolive Support`;
   };
 }
 
+export function buildMeetingInviteEmail(params: {
+  studentName: string;
+  tutorName: string;
+  subject?: string | null;
+  scheduledAt: Date;
+  classroomUrl: string;
+  startNow: boolean;
+}) {
+  const when = params.startNow ? "Now" : formatWhen(params.scheduledAt);
+  const topic = params.subject ? ` for ${params.subject}` : "";
+  const text = `Hello ${params.studentName},
+
+${params.tutorName} scheduled a meeting${topic}.
+
+When: ${when}
+
+Open this link to join the classroom:
+${params.classroomUrl}
+
+Regards,
+Zeolive Support`;
+  const html = `
+    <p>Hello ${params.studentName},</p>
+    <p><strong>${params.tutorName}</strong> scheduled a meeting${topic}.</p>
+    <p><strong>When:</strong> ${when}</p>
+    <p><a href="${params.classroomUrl}">Join the meeting</a></p>
+    <p>Regards,<br>Zeolive Support</p>
+  `.trim();
+  return {
+    subject: `Zeolive — ${params.tutorName} invited you to a meeting`,
+    text,
+    html,
+  };
+}
+
 export async function sendBookingNotificationEmails(params: {
   student: { email: string; name: string };
   tutor: { email: string; name: string };

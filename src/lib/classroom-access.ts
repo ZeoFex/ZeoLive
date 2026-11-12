@@ -106,6 +106,7 @@ export async function verifyClassroomAccess(
       tutor: {
         select: { id: true, name: true, firstName: true, lastName: true, image: true, email: true },
       },
+      participants: { select: { studentId: true } },
     },
   });
 
@@ -128,9 +129,12 @@ export async function verifyClassroomAccess(
       return { allowed: false, status: 403, error: "Only the assigned tutor can join as host" };
     }
     participantRole = "tutor";
-  } else if (userId === session.studentId) {
+  } else if (
+    userId === session.studentId ||
+    session.participants.some((participant) => participant.studentId === userId)
+  ) {
     if (userRole !== "STUDENT" && userRole !== "ADMIN") {
-      return { allowed: false, status: 403, error: "Only the enrolled student can join this session" };
+      return { allowed: false, status: 403, error: "Only an invited student can join this session" };
     }
     participantRole = "student";
   } else if (userRole === "ADMIN") {
@@ -143,13 +147,19 @@ export async function verifyClassroomAccess(
     return { allowed: false, status: 403, error: "Session is not available to join" };
   }
 
-  const platform = await getPlatformSettings();
-  const window = checkJoinWindow(
-    session,
-    participantRole,
-    platform.sessionJoinEarlyMinutes,
-    platform.sessionJoinLateMinutes
+  const invitedByTutor = session.participants.some(
+    (participant) => participant.studentId === userId
   );
+  const platform = await getPlatformSettings();
+  const window =
+    participantRole === "student" && invitedByTutor
+      ? { allowed: true as const }
+      : checkJoinWindow(
+          session,
+          participantRole,
+          platform.sessionJoinEarlyMinutes,
+          platform.sessionJoinLateMinutes
+        );
   if (!window.allowed) {
     return {
       allowed: false,

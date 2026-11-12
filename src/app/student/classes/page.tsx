@@ -7,7 +7,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import type { PortalSession } from "@/lib/portal-data";
+import { sessionTopic, type PortalSession } from "@/lib/session-card";
 import { formatDate } from "@/lib/utils";
 
 function statusLabel(status: string) {
@@ -45,21 +45,28 @@ function SessionList({ sessions }: { sessions: PortalSession[] }) {
         return (
           <div key={session.id} className="student-card p-4 sm:p-5">
             <div className="flex flex-col gap-4 sm:flex-row sm:items-center">
-              <Avatar className="h-12 w-12 shrink-0">
-                {session.tutor.image ? (
-                  <AvatarImage src={session.tutor.image} alt={session.tutor.name} />
-                ) : null}
-                <AvatarFallback>{session.tutor.name[0]}</AvatarFallback>
-              </Avatar>
-              <div className="min-w-0 flex-1">
-                <p className="font-semibold text-slate-900">
-                  {session.title ?? session.subject ?? "Tutoring session"}
-                </p>
-                <p className="mt-1 text-sm text-slate-500">
-                  {session.tutor.name} · {formatDate(session.scheduledAt)}
-                </p>
-                <div className="mt-2">
-                  <Badge variant={variant}>{label}</Badge>
+              <div className="flex min-w-0 flex-1 items-start gap-3">
+                <Avatar className="h-12 w-12 shrink-0">
+                  {session.tutor.image ? (
+                    <AvatarImage src={session.tutor.image} alt={session.tutor.name} />
+                  ) : null}
+                  <AvatarFallback className="text-sm font-semibold">
+                    {session.tutor.name[0]}
+                  </AvatarFallback>
+                </Avatar>
+                <div className="min-w-0">
+                  <p className="text-base font-semibold leading-snug text-slate-900">
+                    {session.tutor.name}
+                  </p>
+                  <p className="mt-0.5 text-sm leading-snug text-slate-500">
+                    {sessionTopic(session)}
+                  </p>
+                  <p className="mt-1 text-xs font-medium text-slate-400">
+                    {formatDate(session.scheduledAt)}
+                  </p>
+                  <div className="mt-2">
+                    <Badge variant={variant}>{label}</Badge>
+                  </div>
                 </div>
               </div>
               {canJoin && (

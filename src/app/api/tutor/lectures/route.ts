@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { auth } from "@/auth";
 import { createLectureVideo, listTutorLectures } from "@/lib/lectures";
+import { prisma } from "@/lib/prisma";
 import { saveLectureFile } from "@/lib/upload-document";
 
 export const dynamic = "force-dynamic";
@@ -16,8 +17,17 @@ export async function GET() {
   const id = await tutorId();
   if (!id) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
-  const board = await listTutorLectures(id);
-  return NextResponse.json(board);
+  const [board, profile] = await Promise.all([
+    listTutorLectures(id),
+    prisma.tutorProfile.findUnique({
+      where: { userId: id },
+      select: { subjects: true },
+    }),
+  ]);
+  return NextResponse.json({
+    ...board,
+    profileSubjects: profile?.subjects ?? [],
+  });
 }
 
 export async function POST(request: Request) {

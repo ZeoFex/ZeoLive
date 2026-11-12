@@ -31,7 +31,6 @@ import {
   type TutorEducationLevelValue,
 } from "@/lib/constants/registration";
 import { buildRecommendationEmailPreview } from "@/lib/recommendation-preview";
-import { SignedInSignupNotice } from "@/components/auth/signed-in-signup-notice";
 import {
   clearTutorSignupDraft,
   emptyTutorSignupDraft,
@@ -91,6 +90,15 @@ export function TutorRegistrationWizard() {
   });
 
   const hydratedRef = useRef(false);
+
+  useEffect(() => {
+    if (!session?.user?.email) return;
+    const roleLabel = session.user.role?.toLowerCase();
+    toast.message(
+      `Signed in as ${session.user.email}${roleLabel ? ` (${roleLabel})` : ""}. Sign out to switch accounts.`,
+      { id: "already-signed-in" }
+    );
+  }, [session?.user?.email, session?.user?.role]);
 
   const patchRecommender = <K extends keyof RecommenderFormValues>(
     key: K,
@@ -569,20 +577,13 @@ export function TutorRegistrationWizard() {
 
   if (session?.user?.role === "TUTOR" && !restoring && step === "account") {
     return (
-      <div className="space-y-4">
-        <SignedInSignupNotice targetRole="tutor" />
-        <Button
-          className="auth-primary-btn"
-          onClick={() => router.push(routes.tutor.onboarding)}
-        >
-          Continue verification
-        </Button>
-      </div>
+      <Button
+        className="auth-primary-btn"
+        onClick={() => router.push(routes.tutor.onboarding)}
+      >
+        Continue verification
+      </Button>
     );
-  }
-
-  if (session?.user?.role === "TUTOR" && !restoring && step === "complete") {
-    return <SignedInSignupNotice targetRole="tutor" />;
   }
 
   if (restoring) {
@@ -596,10 +597,6 @@ export function TutorRegistrationWizard() {
 
   return (
     <div className="space-y-5">
-      {session?.user && session.user.role !== "TUTOR" ? (
-        <SignedInSignupNotice targetRole="tutor" />
-      ) : null}
-
       {step !== "not-qualified" && step !== "complete" && (
         <WizardStepper
           steps={progressSteps}

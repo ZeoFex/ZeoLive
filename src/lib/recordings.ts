@@ -44,9 +44,16 @@ export function canWatchRecording(args: {
   userId: string;
   studentId: string;
   tutorId: string;
+  participantIds?: string[];
 }) {
-  if (args.role === "ADMIN" || args.role === "TUTOR") return true;
-  if (args.role === "STUDENT") return args.userId === args.studentId;
+  if (args.role === "ADMIN") return true;
+  if (args.role === "TUTOR") return args.userId === args.tutorId;
+  if (args.role === "STUDENT") {
+    return (
+      args.userId === args.studentId ||
+      (args.participantIds?.includes(args.userId) ?? false)
+    );
+  }
   return false;
 }
 
@@ -64,8 +71,17 @@ export async function listRecordingsForUser(args: {
 }): Promise<RecordingListItem[]> {
   const where =
     args.role === "STUDENT"
-      ? { tutoringSession: { studentId: args.userId } }
-      : {};
+      ? {
+          tutoringSession: {
+            OR: [
+              { studentId: args.userId },
+              { participants: { some: { studentId: args.userId } } },
+            ],
+          },
+        }
+      : args.role === "TUTOR"
+        ? { tutoringSession: { tutorId: args.userId } }
+        : {};
 
   const recordings = await prisma.sessionRecording.findMany({
     where,
@@ -149,6 +165,7 @@ export async function getRecordingForUser(args: {
           title: true,
           subject: true,
           scheduledAt: true,
+          participants: { select: { studentId: true } },
         },
       },
     },
@@ -162,6 +179,7 @@ export async function getRecordingForUser(args: {
       userId: args.userId,
       studentId: recording.tutoringSession.studentId,
       tutorId: recording.tutoringSession.tutorId,
+      participantIds: recording.tutoringSession.participants.map((p) => p.studentId),
     })
   ) {
     return null;
