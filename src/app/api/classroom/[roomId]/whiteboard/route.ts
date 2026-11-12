@@ -32,12 +32,18 @@ async function authorize(roomId: string) {
 }
 
 export async function GET(
-  _request: Request,
+  request: Request,
   { params }: { params: Promise<{ roomId: string }> }
 ) {
   const { roomId } = await params;
-  const authResult = await authorize(roomId);
-  if (authResult.error) return authResult.error;
+  const { resolveClassroomActor } = await import("@/lib/classroom-connection");
+  const resolved = await resolveClassroomActor(roomId, request);
+  if ("error" in resolved) {
+    return NextResponse.json({ error: resolved.error }, { status: resolved.status });
+  }
+  if (resolved.actor.session.status === "COMPLETED" || resolved.actor.session.status === "CANCELLED") {
+    return NextResponse.json({ error: "This session is no longer active" }, { status: 409 });
+  }
 
   const board = await readBoard(roomId);
   return NextResponse.json(board, {

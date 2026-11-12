@@ -5,6 +5,7 @@ export type PortalSession = {
   roomId: string;
   title: string | null;
   subject: string | null;
+  shareable: boolean;
   status: PortalSessionStatus;
   scheduledAt: string;
   startedAt: string | null;
@@ -24,8 +25,8 @@ export function sessionHeadline(session: {
   if (session.student.id === session.tutor.id) {
     return session.title?.trim() || "Open meeting";
   }
-  if (session.participantCount > 1) {
-    return `${session.student.name} + ${session.participantCount - 1}`;
+  if (session.participantCount > 0) {
+    return `${session.student.name} + ${session.participantCount}`;
   }
   return session.student.name;
 }

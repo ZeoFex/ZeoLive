@@ -80,6 +80,7 @@ export async function POST(request: Request) {
         tutorId: session.user.id,
         title,
         subject: createdSubject.subject.name,
+        shareable: true,
         scheduledAt,
         status: "SCHEDULED",
         ...(students.length > 0
@@ -111,7 +112,7 @@ export async function POST(request: Request) {
         lastName: tutor.lastName ?? "",
       }) ??
       "Your tutor";
-    const message = `${tutorName} scheduled "${title}" for ${createdSubject.subject.name}.\nWhen: ${when}\nJoin the meeting: ${joinUrl}\nNew here? Create a student account from that link, then you go straight into the meeting.`;
+    const message = `${tutorName} scheduled "${title}" for ${createdSubject.subject.name}.\nWhen: ${when}\nJoin the meeting: ${joinUrl}\nOpen the link, enter the name you want shown, choose your microphone and camera, then join. No account is required.`;
 
     await Promise.all(
       students.map(async (student) => {

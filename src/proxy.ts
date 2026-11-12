@@ -106,8 +106,7 @@ export async function proxy(req: NextRequest) {
   const isProtected =
     pathname.startsWith(routes.student.root) ||
     pathname.startsWith(routes.tutor.root) ||
-    pathname.startsWith(routes.admin.root) ||
-    pathname.startsWith("/classroom");
+    pathname.startsWith(routes.admin.root);
 
   if (isProtected && !isLoggedIn) {
     const loginPath = loginPathForArea(pathname);

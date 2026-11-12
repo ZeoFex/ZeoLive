@@ -15,6 +15,17 @@ type PageState =
   | { status: "error"; message: string }
   | { status: "ready"; session: ClassroomSessionInfo };
 
+function readJoinDevices() {
+  try {
+    const raw = sessionStorage.getItem("ztl-join-devices");
+    if (!raw) return { audio: true, video: true };
+    const parsed = JSON.parse(raw) as { audio?: boolean; video?: boolean };
+    return { audio: parsed.audio !== false, video: parsed.video !== false };
+  } catch {
+    return { audio: true, video: true };
+  }
+}
+
 export default function ClassroomPage() {
   const params = useParams();
   const router = useRouter();
@@ -22,6 +33,7 @@ export default function ClassroomPage() {
   const roomId = typeof params.roomId === "string" ? params.roomId : "";
 
   const [pageState, setPageState] = useState<PageState>({ status: "loading" });
+  const [devices, setDevices] = useState({ audio: true, video: true });
 
   const participantRole =
     pageState.status === "ready" ? pageState.session.participantRole : null;
@@ -39,12 +51,8 @@ export default function ClassroomPage() {
 
     if (authStatus === "loading") return;
 
-    if (authStatus === "unauthenticated") {
-      router.replace(`/login?callbackUrl=${encodeURIComponent(`/classroom/${roomId}`)}`);
-      return;
-    }
-
     let cancelled = false;
+    setDevices(readJoinDevices());
 
     async function loadSession() {
       setPageState({ status: "loading" });
@@ -53,6 +61,14 @@ export default function ClassroomPage() {
           credentials: "same-origin",
         });
         const json = await res.json();
+
+        if (res.status === 401) {
+          const next = roomId.startsWith("session-")
+            ? `/join/${roomId}`
+            : `/login?callbackUrl=${encodeURIComponent(`/classroom/${roomId}`)}`;
+          router.replace(next);
+          return;
+        }
 
         if (!res.ok) {
           throw new Error(
@@ -69,6 +85,7 @@ export default function ClassroomPage() {
               subject: json.subject,
               status: json.status,
               participantRole: json.participantRole,
+              guest: json.guest === true,
             },
           });
         }
@@ -169,6 +186,8 @@ export default function ClassroomPage() {
       token={tokenState.token}
       serverUrl={tokenState.serverUrl}
       session={pageState.session}
+      audio={devices.audio}
+      video={devices.video}
     />
   );
 }

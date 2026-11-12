@@ -1,8 +1,9 @@
 "use client";
 
-import { Check, Copy, Link2, Loader2, Search } from "lucide-react";
+import { Check, Copy, Loader2, Search, Video } from "lucide-react";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
+import { MeetingCamera } from "@/components/meetings/meeting-camera";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import {
@@ -178,20 +179,23 @@ export function ScheduleMeetingDialog({
     >
       <DialogTrigger asChild>
         <Button className="tutor-gradient-btn rounded-xl">
-          <Link2 className="mr-2 h-4 w-4" />
+          <Video className="mr-2 h-4 w-4" />
           Schedule meeting
         </Button>
       </DialogTrigger>
       <DialogContent className="max-h-[90dvh] overflow-y-auto sm:max-w-lg">
         <DialogHeader>
-          <DialogTitle>Schedule a meeting</DialogTitle>
+          <div className="flex items-center gap-3">
+            <MeetingCamera className="h-10 w-10 rounded-xl" />
+            <DialogTitle>Schedule a meeting</DialogTitle>
+          </div>
         </DialogHeader>
 
         {joinUrl ? (
           <div className="space-y-3">
             <p className="text-sm text-slate-600">
-              Share this link. People with an account sign in and join. People without one
-              create a student account first, then enter the meeting.
+              Share this link. People enter the name they want shown, choose microphone and
+              camera, then join. No account is required.
             </p>
             <div className="rounded-xl border border-slate-200 bg-slate-50 p-3 text-sm break-all text-slate-800">
               {joinUrl}

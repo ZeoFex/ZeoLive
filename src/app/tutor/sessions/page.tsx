@@ -5,6 +5,8 @@ import Link from "next/link";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
 import { TutorPageHeader } from "@/components/layout/tutor-page-header";
+import { MeetingCamera } from "@/components/meetings/meeting-camera";
+import { EndedMeetingActions } from "@/components/tutor/ended-meeting-actions";
 import { ScheduleMeetingDialog } from "@/components/tutor/schedule-meeting-dialog";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
@@ -68,6 +70,9 @@ export default function TutorSessionsPage() {
                 <div key={session.id} className="tutor-card p-4 sm:p-5">
                   <div className="flex flex-col gap-4 sm:flex-row sm:items-center">
                     <div className="flex min-w-0 flex-1 items-center gap-3">
+                      {session.shareable ? (
+                        <MeetingCamera />
+                      ) : (
                       <Avatar className="h-12 w-12 shrink-0">
                         {!isOpenMeeting(session) && session.student.image ? (
                           <AvatarImage
@@ -79,6 +84,7 @@ export default function TutorSessionsPage() {
                           {sessionHeadline(session)[0]}
                         </AvatarFallback>
                       </Avatar>
+                      )}
                       <div className="min-w-0">
                         <p className="text-base font-semibold leading-snug text-slate-900">
                           {sessionHeadline(session)}
@@ -124,30 +130,41 @@ export default function TutorSessionsPage() {
                 Past
               </h3>
               {past.map((session) => (
-                <div key={session.id} className="tutor-card p-4 sm:p-5 opacity-90">
-                  <div className="flex items-center gap-3">
-                    <Avatar className="h-12 w-12 shrink-0">
-                      {!isOpenMeeting(session) && session.student.image ? (
-                        <AvatarImage src={session.student.image} alt={session.student.name} />
-                      ) : null}
-                      <AvatarFallback className="text-sm font-semibold">
-                        {sessionHeadline(session)[0]}
-                      </AvatarFallback>
-                    </Avatar>
-                    <div className="min-w-0 flex-1">
-                      <p className="text-base font-semibold leading-snug text-slate-900">
-                        {sessionHeadline(session)}
-                      </p>
-                      <p className="mt-0.5 text-sm leading-snug text-slate-500">
-                        {sessionTopic(session)}
-                      </p>
-                      <p className="mt-1 text-xs font-medium text-slate-400">
-                        {formatDate(session.scheduledAt)}
-                      </p>
+                <div key={session.id} className="tutor-card p-4 sm:p-5">
+                  <div className="flex flex-col gap-4 sm:flex-row sm:items-center">
+                    <div className="flex min-w-0 flex-1 items-center gap-3">
+                      {session.shareable ? (
+                        <MeetingCamera />
+                      ) : (
+                        <Avatar className="h-12 w-12 shrink-0">
+                          {!isOpenMeeting(session) && session.student.image ? (
+                            <AvatarImage src={session.student.image} alt={session.student.name} />
+                          ) : null}
+                          <AvatarFallback className="text-sm font-semibold">
+                            {sessionHeadline(session)[0]}
+                          </AvatarFallback>
+                        </Avatar>
+                      )}
+                      <div className="min-w-0 flex-1">
+                        <p className="text-base font-semibold leading-snug text-slate-900">
+                          {sessionHeadline(session)}
+                        </p>
+                        <p className="mt-0.5 text-sm leading-snug text-slate-500">
+                          {sessionTopic(session)}
+                        </p>
+                        <p className="mt-1 text-xs font-medium text-slate-400">
+                          {formatDate(session.scheduledAt)}
+                        </p>
+                      </div>
                     </div>
-                    <span className={cn(statusTag(session.status), "shrink-0")}>
-                      {session.status.toLowerCase()}
-                    </span>
+                    <div className="flex flex-wrap items-center justify-end gap-2">
+                      <span className={cn(statusTag(session.status), "shrink-0")}>
+                        {session.status.toLowerCase()}
+                      </span>
+                      {session.shareable ? (
+                        <EndedMeetingActions session={session} onChanged={load} />
+                      ) : null}
+                    </div>
                   </div>
                 </div>
               ))}

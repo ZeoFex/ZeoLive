@@ -22,7 +22,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { BOOKING_TIME_SLOTS } from "@/lib/constants/time-slots";
-import { resolveBookingScheduledAt } from "@/lib/booking-schedule";
+import { parseLocalScheduledAt } from "@/lib/booking-schedule";
 import { useBookingStore } from "@/store/booking-store";
 import type { Tutor } from "@/types";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -91,12 +91,9 @@ function BookSessionContent() {
       if (ampm === "AM" && hour === 12) hour = 0;
     }
 
-    const scheduledAt = resolveBookingScheduledAt(
-      selectedDate,
-      hour,
-      minute,
-      startNow
-    );
+    const scheduledAt = startNow
+      ? new Date()
+      : parseLocalScheduledAt(selectedDate, hour, minute);
 
     try {
       const res = await fetch("/api/tutoring-sessions", {
@@ -114,7 +111,13 @@ function BookSessionContent() {
       if (!res.ok) {
         throw new Error(json.error ?? "Could not book session");
       }
-      toast.success("Session booked! Payment step skipped for now.");
+      toast.success(
+        json.alreadyBooked
+          ? "You are already booked for this time."
+          : json.grouped
+            ? "You are in the same session as the other students booked for this time."
+            : "Session booked."
+      );
       setModalOpen(false);
       reset();
       if (json.classroomUrl) {
