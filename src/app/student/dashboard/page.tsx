@@ -9,7 +9,7 @@ import { StudentStatCard } from "@/components/shared/student-stat-card";
 import { TutorCard } from "@/components/shared/tutor-card";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
-import type { PortalSession } from "@/lib/portal-data";
+import { sessionTopic, type PortalSession } from "@/lib/session-card";
 import { routes } from "@/lib/routes";
 import type { Tutor } from "@/types";
 import { formatDate } from "@/lib/utils";
@@ -125,11 +125,14 @@ export default function StudentDashboardPage() {
                       <AvatarFallback>{s.tutor.name[0]}</AvatarFallback>
                     </Avatar>
                     <div className="min-w-0">
-                      <p className="truncate font-semibold text-slate-900">
-                        {s.title ?? s.subject ?? "Session"}
+                      <p className="text-base font-semibold leading-snug text-slate-900">
+                        {s.tutor.name}
                       </p>
-                      <p className="truncate text-xs text-slate-500 sm:text-sm">
-                        {s.tutor.name} · {formatDate(s.scheduledAt)}
+                      <p className="mt-0.5 text-sm leading-snug text-slate-500">
+                        {sessionTopic(s)}
+                      </p>
+                      <p className="mt-1 text-xs font-medium text-slate-400">
+                        {formatDate(s.scheduledAt)}
                       </p>
                     </div>
                   </div>

@@ -4,10 +4,9 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { signIn, useSession } from "next-auth/react";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useForm } from "react-hook-form";
 import { toast } from "sonner";
-import { SignedInSignupNotice } from "@/components/auth/signed-in-signup-notice";
 import { AuthLayout } from "@/components/auth/auth-layout";
 import {
   ContactFields,
@@ -18,7 +17,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { SCHOOL_TYPES, type SchoolTypeValue } from "@/lib/constants/registration";
-import { routes } from "@/lib/routes";
+import { routes, safeCallbackForRole } from "@/lib/routes";
 import { cn } from "@/lib/utils";
 import {
   studentRegistrationSchema,
@@ -31,6 +30,13 @@ export default function StudentSignupPage() {
   const [country, setCountry] = useState("");
   const [acceptTerms, setAcceptTerms] = useState(false);
   const [schoolType, setSchoolType] = useState<SchoolTypeValue | "">("");
+  const [loginHref, setLoginHref] = useState<string>(routes.login);
+
+  useEffect(() => {
+    const callback = new URLSearchParams(window.location.search).get("callbackUrl");
+    if (!callback) return;
+    setLoginHref(`${routes.login}?callbackUrl=${encodeURIComponent(callback)}`);
+  }, []);
 
   const {
     register,
@@ -41,6 +47,15 @@ export default function StudentSignupPage() {
     resolver: zodResolver(studentRegistrationSchema),
     defaultValues: { acceptTerms: undefined },
   });
+
+  useEffect(() => {
+    if (!session?.user?.email) return;
+    const roleLabel = session.user.role?.toLowerCase();
+    toast.message(
+      `Signed in as ${session.user.email}${roleLabel ? ` (${roleLabel})` : ""}. Sign out to switch accounts.`,
+      { id: "already-signed-in" }
+    );
+  }, [session?.user?.email, session?.user?.role]);
 
   const onSubmit = async (data: StudentRegistrationInput) => {
     const res = await fetch("/api/auth/register/student", {
@@ -61,15 +76,19 @@ export default function StudentSignupPage() {
       redirect: false,
     });
 
+    const callback = new URLSearchParams(window.location.search).get("callbackUrl");
+    const dest = safeCallbackForRole(callback, "STUDENT") ?? "/student/dashboard";
+
     if (signInResult?.error) {
       toast.success("Account created. Please sign in with your email and password.");
-      router.push("/login");
+      router.push(
+        callback ? `/login?callbackUrl=${encodeURIComponent(callback)}` : "/login"
+      );
       return;
     }
 
     toast.success("Account created");
-    router.push("/student/dashboard");
-    router.refresh();
+    window.location.assign(dest);
   };
 
   return (
@@ -80,10 +99,7 @@ export default function StudentSignupPage() {
       headline="Learn Smarter With Live Sessions"
       highlightWord="Live Sessions"
     >
-      <SignedInSignupNotice targetRole="student" />
-
-      {session?.user?.role === "STUDENT" ? null : (
-        <form
+      <form
           onSubmit={handleSubmit(onSubmit)}
           className="auth-form auth-form-compact space-y-3"
         >
@@ -168,12 +184,11 @@ export default function StudentSignupPage() {
           </button>
           <p className="text-center text-xs text-slate-500">
             Already have an account?{" "}
-            <Link href={routes.login} className="auth-link">
+            <Link href={loginHref} className="auth-link">
               Log in
             </Link>
           </p>
-        </form>
-      )}
+      </form>
     </AuthLayout>
   );
 }

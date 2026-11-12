@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useState } from "react";
 import { useSearchParams } from "next/navigation";
-import { Plus, Trash2 } from "lucide-react";
+import { AlertTriangle, Loader2, Mail, Plus, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 import { AdminPageHeader } from "@/components/layout/admin-page-header";
 import { AdminPagination } from "@/components/shared/admin-pagination";
@@ -11,6 +11,7 @@ import { Button } from "@/components/ui/button";
 import {
   Dialog,
   DialogContent,
+  DialogDescription,
   DialogHeader,
   DialogTitle,
   DialogTrigger,
@@ -58,6 +59,7 @@ export default function AdminUsersPage() {
   const [createOpen, setCreateOpen] = useState(false);
   const [creating, setCreating] = useState(false);
   const [deletingId, setDeletingId] = useState<string | null>(null);
+  const [userToDelete, setUserToDelete] = useState<AdminUser | null>(null);
 
   useEffect(() => {
     const q = searchParams.get("search");
@@ -136,14 +138,17 @@ export default function AdminUsersPage() {
     }
   };
 
-  const deleteUser = async (user: AdminUser) => {
+  const requestDelete = (user: AdminUser) => {
     if (user.role === "superadmin") {
       toast.error("Super admin accounts cannot be deleted");
       return;
     }
-    if (!confirm(`Delete ${user.name} (${user.email})? This cannot be undone.`)) {
-      return;
-    }
+    setUserToDelete(user);
+  };
+
+  const confirmDelete = async () => {
+    const user = userToDelete;
+    if (!user) return;
 
     setDeletingId(user.id);
     try {
@@ -151,6 +156,7 @@ export default function AdminUsersPage() {
       const json = await res.json();
       if (!res.ok) throw new Error(json.error ?? "Could not delete");
       toast.success("User deleted");
+      setUserToDelete(null);
       await load();
     } catch (err) {
       toast.error(err instanceof Error ? err.message : "Could not delete user");
@@ -326,7 +332,7 @@ export default function AdminUsersPage() {
                         size="icon"
                         className="rounded-lg"
                         disabled={deletingId === u.id}
-                        onClick={() => deleteUser(u)}
+                        onClick={() => requestDelete(u)}
                         aria-label={`Delete ${u.name}`}
                       >
                         <Trash2 className="h-4 w-4 text-destructive" />
@@ -347,6 +353,86 @@ export default function AdminUsersPage() {
           onPageChange={setPage}
         />
       )}
+
+      <Dialog
+        open={userToDelete != null}
+        onOpenChange={(open) => {
+          if (!open && !deletingId) setUserToDelete(null);
+        }}
+      >
+        <DialogContent
+          className="max-w-md gap-0 overflow-hidden border-red-200 p-0"
+          onPointerDownOutside={(event) => {
+            if (deletingId) event.preventDefault();
+          }}
+        >
+          <div className="bg-gradient-to-b from-red-50 to-white px-6 pb-2 pt-6">
+            <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-full bg-red-100 text-red-600">
+              <Trash2 className="h-7 w-7" />
+            </div>
+            <DialogHeader className="space-y-2 text-center sm:text-center">
+              <DialogTitle className="text-xl">Delete this user?</DialogTitle>
+              <DialogDescription asChild>
+                <div className="space-y-3 text-sm text-slate-600">
+                  <p>Their account and access to ZTL will be removed.</p>
+                  {userToDelete && (
+                    <div className="rounded-xl border border-red-100 bg-white p-3 text-left">
+                      <div className="flex items-start gap-3">
+                        <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-slate-100 text-sm font-semibold text-slate-700">
+                          {userToDelete.name.charAt(0).toUpperCase()}
+                        </div>
+                        <div className="min-w-0">
+                          <p className="truncate font-semibold text-slate-900">
+                            {userToDelete.name}
+                          </p>
+                          <p className="mt-0.5 flex items-center gap-1.5 truncate text-xs text-slate-500">
+                            <Mail className="h-3.5 w-3.5 shrink-0" />
+                            {userToDelete.email}
+                          </p>
+                          <p className="mt-2">
+                            <span className="admin-tag admin-tag-violet">
+                              {roleBadge(userToDelete.role)}
+                            </span>
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+                  <p className="flex items-center justify-center gap-1.5 text-xs font-medium text-red-600">
+                    <AlertTriangle className="h-3.5 w-3.5" />
+                    This cannot be undone
+                  </p>
+                </div>
+              </DialogDescription>
+            </DialogHeader>
+          </div>
+          <div className="flex flex-col-reverse gap-2 border-t bg-slate-50/80 px-6 py-4 sm:flex-row sm:justify-end">
+            <Button
+              type="button"
+              variant="outline"
+              className="rounded-xl"
+              disabled={deletingId != null}
+              onClick={() => setUserToDelete(null)}
+            >
+              Cancel
+            </Button>
+            <Button
+              type="button"
+              variant="destructive"
+              className="rounded-xl"
+              disabled={deletingId != null}
+              onClick={() => void confirmDelete()}
+            >
+              {deletingId ? (
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+              ) : (
+                <Trash2 className="mr-2 h-4 w-4" />
+              )}
+              Delete user
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
     </>
   );
 }

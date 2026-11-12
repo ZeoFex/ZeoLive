@@ -28,7 +28,7 @@ async function authorize(roomId: string) {
     };
   }
 
-  return { session };
+  return { access };
 }
 
 export async function GET(
@@ -52,6 +52,12 @@ export async function POST(
   const { roomId } = await params;
   const authResult = await authorize(roomId);
   if (authResult.error) return authResult.error;
+  if (authResult.access.participantRole !== "tutor") {
+    return NextResponse.json(
+      { error: "Only the tutor can write on the whiteboard" },
+      { status: 403 }
+    );
+  }
 
   const body = await request.json().catch(() => null);
   const op = parseBoardOp(body);

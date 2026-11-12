@@ -4,7 +4,6 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { signIn, signOut, useSession } from "next-auth/react";
-import { signOutToAppPath } from "@/lib/auth-client";
 import { useEffect, useState } from "react";
 import { useForm } from "react-hook-form";
 import { toast } from "sonner";
@@ -12,7 +11,6 @@ import { z } from "zod";
 import { AuthLayout } from "@/components/auth/auth-layout";
 import { AuthRoleSelector, type AuthRole } from "@/components/auth/auth-role-selector";
 import { PasswordInput } from "@/components/shared/password-input";
-import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { adminDashboardPath } from "@/lib/admin-permissions";
@@ -50,6 +48,15 @@ export function LoginForm({ portal = "default" }: { portal?: LoginPortal }) {
       toast.success("Password updated. Sign in with your new password.");
     }
   }, [reset]);
+
+  useEffect(() => {
+    if (!session?.user?.email) return;
+    const roleLabel = session.user.role?.toLowerCase();
+    toast.message(
+      `Signed in as ${session.user.email}${roleLabel ? ` (${roleLabel})` : ""}. Sign out to switch accounts.`,
+      { id: "already-signed-in" }
+    );
+  }, [session?.user?.email, session?.user?.role]);
 
   // If an admin session already exists on the admin login page, leave immediately.
   useEffect(() => {
@@ -133,11 +140,7 @@ export function LoginForm({ portal = "default" }: { portal?: LoginPortal }) {
   return (
     <AuthLayout
       title={isAdminPortal ? "Admin sign in" : "Welcome back"}
-      subtitle={
-        isAdminPortal
-          ? "Super admins manage the platform. Sub-admins sign in here for tutor review only."
-          : ""
-      }
+      subtitle=""
       headline="Connect With Expert Tutors Anytime"
       highlightWord="Expert Tutors"
       footer={
@@ -148,31 +151,6 @@ export function LoginForm({ portal = "default" }: { portal?: LoginPortal }) {
         ) : undefined
       }
     >
-      {session?.user && (
-        <div className="auth-card mb-6 text-sm">
-          <p className="font-medium text-slate-800">
-            Signed in as {session.user.email}
-            {session.user.role ? ` (${session.user.role.toLowerCase()})` : ""}
-          </p>
-          <p className="mt-1 text-slate-500">
-            Sign out to switch accounts (e.g. student → admin).
-          </p>
-          <Button
-            type="button"
-            variant="outline"
-            size="sm"
-            className="mt-3"
-            onClick={() =>
-              void signOutToAppPath(
-                isAdminPortal ? routes.adminLogin : routes.login
-              )
-            }
-          >
-            Sign out
-          </Button>
-        </div>
-      )}
-
       {!isAdminPortal && (
         <div className="mb-6">
           <AuthRoleSelector value={role} onChange={setRole} />
@@ -229,7 +207,13 @@ export function LoginForm({ portal = "default" }: { portal?: LoginPortal }) {
             <p>
               Don&apos;t have an account?{" "}
               <Link
-                href={role === "student" ? routes.signupStudent : routes.signupTutor}
+                href={
+                  role === "student"
+                    ? callbackUrl
+                      ? `${routes.signupStudent}?callbackUrl=${encodeURIComponent(callbackUrl)}`
+                      : routes.signupStudent
+                    : routes.signupTutor
+                }
                 className="auth-link"
               >
                 Create account

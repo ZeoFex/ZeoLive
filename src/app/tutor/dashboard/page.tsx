@@ -8,7 +8,7 @@ import { TutorPageHeader } from "@/components/layout/tutor-page-header";
 import { TutorStatCard } from "@/components/shared/tutor-stat-card";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
-import type { PortalSession } from "@/lib/portal-data";
+import { isOpenMeeting, sessionHeadline, sessionTopic, type PortalSession } from "@/lib/session-card";
 import { routes } from "@/lib/routes";
 import { formatDate } from "@/lib/utils";
 
@@ -93,23 +93,30 @@ export default function TutorDashboardPage() {
             {upcoming.slice(0, 5).map((s) => (
               <div
                 key={s.id}
-                className="flex flex-wrap items-center gap-4 rounded-xl border border-slate-100 bg-slate-50/50 p-4"
+                className="flex flex-col gap-4 rounded-2xl border border-slate-100 bg-white p-4 shadow-sm sm:flex-row sm:items-center"
               >
-                <Avatar>
-                  {s.student.image ? (
-                    <AvatarImage src={s.student.image} alt={s.student.name} />
-                  ) : null}
-                  <AvatarFallback>{s.student.name[0]}</AvatarFallback>
-                </Avatar>
-                <div className="min-w-0 flex-1">
-                  <p className="font-semibold text-slate-900">
-                    {s.title ?? s.subject ?? "Session"}
-                  </p>
-                  <p className="text-sm text-slate-500">
-                    {s.student.name} · {formatDate(s.scheduledAt)}
-                  </p>
+                <div className="flex min-w-0 flex-1 items-center gap-3">
+                  <Avatar className="h-12 w-12 shrink-0">
+                    {!isOpenMeeting(s) && s.student.image ? (
+                      <AvatarImage src={s.student.image} alt={s.student.name} />
+                    ) : null}
+                    <AvatarFallback className="text-sm font-semibold">
+                      {sessionHeadline(s)[0]}
+                    </AvatarFallback>
+                  </Avatar>
+                  <div className="min-w-0">
+                    <p className="text-base font-semibold leading-snug text-slate-900">
+                      {sessionHeadline(s)}
+                    </p>
+                    <p className="mt-0.5 text-sm leading-snug text-slate-500">
+                      {sessionTopic(s)}
+                    </p>
+                    <p className="mt-1 text-xs font-medium text-slate-400">
+                      {formatDate(s.scheduledAt)}
+                    </p>
+                  </div>
                 </div>
-                <Button className="tutor-gradient-btn rounded-xl" asChild>
+                <Button className="tutor-gradient-btn w-full shrink-0 rounded-xl sm:w-auto" asChild>
                   <Link href={`/classroom/${s.roomId}`}>Start session</Link>
                 </Button>
               </div>
@@ -131,10 +138,12 @@ export default function TutorDashboardPage() {
             {students.slice(0, 5).map((s) => (
               <div
                 key={s.id}
-                className="flex flex-wrap justify-between gap-2 rounded-xl bg-slate-50 px-4 py-3 text-sm"
+                className="flex items-center justify-between gap-3 rounded-xl bg-slate-50 px-4 py-3 text-sm"
               >
-                <span className="font-medium text-slate-900">{s.name}</span>
-                <span className="text-slate-500">{s.sessionCount} session(s)</span>
+                <span className="min-w-0 font-medium leading-snug text-slate-900">{s.name}</span>
+                <span className="shrink-0 text-slate-500">
+                  {s.sessionCount} {s.sessionCount === 1 ? "session" : "sessions"}
+                </span>
               </div>
             ))}
           </div>

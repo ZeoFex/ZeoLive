@@ -31,7 +31,7 @@ export default function TutorAvailabilityPage() {
     <>
       <TutorPageHeader
         title="Availability"
-        description="Manage your weekly schedule so students can book sessions."
+        description="Set open hours from 12:00 AM through 11:00 PM so students can book any time you teach."
         actions={
           <Button
             className="tutor-gradient-btn rounded-xl"

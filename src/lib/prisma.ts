@@ -27,7 +27,8 @@ function getPrismaClient(): PrismaClient {
     cached?.cmsEntry &&
     cached?.studyMaterial &&
     cached?.lectureSubject &&
-    cached?.lectureVideo
+    cached?.lectureVideo &&
+    cached?.sessionParticipant
   ) {
     return cached;
   }

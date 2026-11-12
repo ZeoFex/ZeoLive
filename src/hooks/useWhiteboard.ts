@@ -1,8 +1,9 @@
 "use client";
 
 import { useRoomContext } from "@livekit/components-react";
-import { RoomEvent } from "livekit-client";
+import { RoomEvent, type RemoteParticipant } from "livekit-client";
 import { useCallback, useEffect, useRef, useState } from "react";
+import { parseParticipantRole } from "@/lib/classroom-participant";
 import {
   applyBoardOp,
   pagesFromSnapshot,
@@ -28,7 +29,8 @@ type ExtraStroke = {
 
 const EXTRA_TTL_MS = 8000;
 
-export function useWhiteboard(roomId: string) {
+export function useWhiteboard(roomId: string, options?: { writable?: boolean }) {
+  const writable = options?.writable ?? true;
   const room = useRoomContext();
   const [pages, setPages] = useState<WhiteboardStroke[][]>([[]]);
   const [activePage, setActivePage] = useState(0);
@@ -155,7 +157,7 @@ export function useWhiteboard(roomId: string) {
 
     const onData = (
       payload: Uint8Array,
-      participant?: { identity?: string },
+      participant?: RemoteParticipant,
       _kind?: unknown,
       topic?: string
     ) => {
@@ -180,6 +182,7 @@ export function useWhiteboard(roomId: string) {
 
       const parsed = parseBoardOp(message);
       if (!parsed) return;
+      if (parseParticipantRole(participant?.metadata) !== "tutor") return;
 
       if (parsed.type === "stroke") {
         if (tombstonesRef.current.has(parsed.stroke.id)) return;
@@ -219,6 +222,7 @@ export function useWhiteboard(roomId: string) {
 
   const commit = useCallback(
     async (op: BoardOp) => {
+      if (!writable) return;
       if (op.type === "undo") tombstonesRef.current.add(op.id);
       if (op.type === "clear") {
         for (const stroke of pagesRef.current[op.page] ?? []) tombstonesRef.current.add(stroke.id);
@@ -259,7 +263,7 @@ export function useWhiteboard(roomId: string) {
         console.warn("Whiteboard sync failed", error);
       }
     },
-    [adoptSnapshot, documentFrom, room, roomId]
+    [adoptSnapshot, documentFrom, room, roomId, writable]
   );
 
   const selectPage = useCallback((page: number) => {

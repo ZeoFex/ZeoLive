@@ -73,6 +73,7 @@ model User {
 
   tutoringSessionsAsStudent TutoringSession[] @relation("StudentTutoringSessions")
   tutoringSessionsAsTutor   TutoringSession[] @relation("TutorTutoringSessions")
+  sessionParticipations     SessionParticipant[] @relation("SessionParticipants")
 
   conversationsAsStudent TutorStudentConversation[] @relation("ConversationStudent")
   conversationsAsTutor   TutorStudentConversation[] @relation("ConversationTutor")
@@ -114,10 +115,23 @@ model TutoringSession {
 
   storedMessages StoredMessage[]
   recordings     SessionRecording[]
+  participants   SessionParticipant[]
 
   @@index([studentId])
   @@index([tutorId])
   @@index([status])
+}
+
+model SessionParticipant {
+  id                String          @id @default(cuid())
+  tutoringSessionId String
+  studentId         String
+  tutoringSession   TutoringSession @relation(fields: [tutoringSessionId], references: [id], onDelete: Cascade)
+  student           User            @relation("SessionParticipants", fields: [studentId], references: [id], onDelete: Cascade)
+  createdAt         DateTime        @default(now())
+
+  @@unique([tutoringSessionId, studentId])
+  @@index([studentId])
 }
 
 enum RecordingSource {

@@ -94,7 +94,7 @@ export default function AdminRecordingsPage() {
     <div className="space-y-8">
       <AdminPageHeader
         title="Recordings"
-        description="Watch all lesson recordings, upload if needed, and approve local download requests tied to a user’s email."
+        description="Every live lesson recording from tutors and students is listed here. You can also upload a video and approve download requests."
       />
 
       <section className="space-y-4">

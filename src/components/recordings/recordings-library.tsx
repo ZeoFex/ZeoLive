@@ -268,8 +268,10 @@ export function RecordingsLibrary({
           <p>No recordings yet.</p>
           <p className="mt-1 text-xs">
             {mode === "student"
-              ? "When your tutors upload lesson recordings, they will appear here for watch later."
-              : "Upload completed lesson videos so students and tutors can watch later in ZTL."}
+              ? "When your tutor records a live lesson, it will show up here to watch later."
+              : mode === "admin"
+                ? "Live lesson recordings from every tutor and student will show up here."
+                : "Press Record during a live lesson. When you stop, the video is saved here for you and your student."}
           </p>
         </div>
       ) : (

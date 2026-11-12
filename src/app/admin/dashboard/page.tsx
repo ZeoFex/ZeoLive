@@ -4,6 +4,8 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { Plus, Shield, UserCheck, Users } from "lucide-react";
 import { AdminPageHeader } from "@/components/layout/admin-page-header";
+import { ScheduleCard } from "@/components/landing/schedule-card";
+import type { LandingCms } from "@/lib/cms-types";
 import { AdminStatCard } from "@/components/shared/admin-stat-card";
 import { Button } from "@/components/ui/button";
 import { checklistLabel } from "@/lib/constants/tutor-verification-checklist";
@@ -33,6 +35,7 @@ interface AwaitingFinalItem {
 export default function AdminDashboardPage() {
   const [stats, setStats] = useState<AdminStats | null>(null);
   const [awaitingFinal, setAwaitingFinal] = useState<AwaitingFinalItem[]>([]);
+  const [weekCard, setWeekCard] = useState<LandingCms["hero"] | null>(null);
 
   useEffect(() => {
     fetch("/api/admin/stats")
@@ -43,6 +46,13 @@ export default function AdminDashboardPage() {
     fetch("/api/admin/verification?status=awaiting_final")
       .then((r) => r.json())
       .then((data) => setAwaitingFinal(data.items ?? []))
+      .catch(() => {});
+
+    fetch("/api/admin/cms", { credentials: "same-origin" })
+      .then((r) => r.json())
+      .then((data: { cms?: LandingCms }) => {
+        if (data.cms?.hero) setWeekCard(data.cms.hero);
+      })
       .catch(() => {});
   }, []);
 
@@ -148,6 +158,30 @@ export default function AdminDashboardPage() {
                 </div>
               ))}
             </div>
+          )}
+        </div>
+
+        <div className="admin-card p-6">
+          <div className="mb-4 flex items-start justify-between gap-3">
+            <div>
+              <h3 className="text-base font-bold text-slate-900">Homepage week card</h3>
+              <p className="mt-1 text-sm text-slate-500">
+                Visitors see this on the homepage. Edit the subjects, times, and tutor names here.
+              </p>
+            </div>
+            <Button variant="outline" size="sm" className="admin-outline-btn shrink-0 rounded-xl" asChild>
+              <Link href="/admin/cms?tab=schedule">Edit</Link>
+            </Button>
+          </div>
+          {weekCard ? (
+            <ScheduleCard
+              title={weekCard.cardTitle}
+              items={weekCard.cardItems}
+              footnote={weekCard.cardFootnote}
+              className="max-w-none shadow-none"
+            />
+          ) : (
+            <p className="text-sm text-slate-500">Loading the homepage card…</p>
           )}
         </div>
 

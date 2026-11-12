@@ -1,6 +1,9 @@
-import type { TutoringSessionStatus } from "@/generated/prisma";
 import { prisma } from "@/lib/prisma";
+import type { PortalSession } from "@/lib/session-card";
 import type { Tutor } from "@/types";
+
+export type { PortalSession } from "@/lib/session-card";
+export { sessionTopic } from "@/lib/session-card";
 
 export function displayUserName(user: {
   name: string | null;
@@ -76,19 +79,6 @@ const sessionInclude = {
   },
 } as const;
 
-export type PortalSession = {
-  id: string;
-  roomId: string;
-  title: string | null;
-  subject: string | null;
-  status: TutoringSessionStatus;
-  scheduledAt: string;
-  startedAt: string | null;
-  endedAt: string | null;
-  student: { id: string; name: string; image: string | null };
-  tutor: { id: string; name: string; image: string | null };
-};
-
 export async function listPortalSessionsForUser(
   userId: string,
   role: "STUDENT" | "TUTOR" | "ADMIN"
@@ -97,12 +87,20 @@ export async function listPortalSessionsForUser(
     role === "TUTOR"
       ? { tutorId: userId }
       : role === "STUDENT"
-        ? { studentId: userId }
+        ? {
+            OR: [
+              { studentId: userId },
+              { participants: { some: { studentId: userId } } },
+            ],
+          }
         : {};
 
   const rows = await prisma.tutoringSession.findMany({
     where,
-    include: sessionInclude,
+    include: {
+      ...sessionInclude,
+      _count: { select: { participants: true } },
+    },
     orderBy: { scheduledAt: "desc" },
     take: 50,
   });
@@ -126,6 +124,7 @@ export async function listPortalSessionsForUser(
       name: displayUserName(row.tutor),
       image: row.tutor.image,
     },
+    participantCount: row._count.participants,
   }));
 }
 
@@ -136,6 +135,7 @@ export async function listTutorStudents(tutorUserId: string) {
       student: {
         select: {
           id: true,
+          role: true,
           name: true,
           firstName: true,
           lastName: true,
@@ -159,6 +159,7 @@ export async function listTutorStudents(tutorUserId: string) {
   >();
 
   for (const s of sessions) {
+    if (s.student.role !== "STUDENT") continue;
     const existing = byStudent.get(s.studentId);
     const subject = s.subject ?? s.title ?? "Session";
     if (existing) {
@@ -206,7 +207,9 @@ export async function getTutorDashboardSummary(tutorId: string) {
     (s) => s.status === "SCHEDULED" || s.status === "ACTIVE"
   );
   const completed = sessions.filter((s) => s.status === "COMPLETED");
-  const studentIds = new Set(sessions.map((s) => s.student.id));
+  const studentIds = new Set(
+    sessions.filter((s) => s.student.id !== s.tutor.id).map((s) => s.student.id)
+  );
 
   return {
     upcoming,
