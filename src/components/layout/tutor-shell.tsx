@@ -8,7 +8,8 @@ import { tutorNav } from "@/lib/navigation";
 const PAGE_TITLES: Record<string, string> = {
   "/tutor/dashboard": "Dashboard",
   "/tutor/students": "Students",
-  "/tutor/sessions": "Sessions",
+  "/tutor/scheduling": "Scheduling sessions",
+  "/tutor/sessions": "Booking sessions",
   "/tutor/earnings": "Earnings",
   "/tutor/availability": "Availability",
   "/tutor/materials": "Materials",

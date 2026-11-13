@@ -11,6 +11,8 @@ const PAGE_TITLES: Record<string, string> = {
   "/admin/verification": "Tutor Verification",
   "/admin/programmes": "Programmes & Subjects",
   "/admin/payments": "Payments",
+  "/admin/class-size": "Class size",
+  "/admin/class-reports": "Class reports",
   "/admin/reports": "Analytics & Reports",
   "/admin/cms": "CMS",
   "/admin/settings": "Platform settings",

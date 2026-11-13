@@ -112,7 +112,7 @@ export function Whiteboard({
         const json = await res.json().catch(() => ({}));
         throw new Error(typeof json.error === "string" ? json.error : "Could not save the whiteboard");
       }
-      toast.success("Whiteboard saved to the student's materials");
+      toast.success("Whiteboard saved to this class");
     } catch (error) {
       toast.error(
         error instanceof Error

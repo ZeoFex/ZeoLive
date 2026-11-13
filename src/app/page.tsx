@@ -10,16 +10,18 @@ import { Footer } from "@/components/layout/footer";
 import { Navbar } from "@/components/layout/navbar";
 import { getLandingCms, getPublicPlatformStats } from "@/lib/cms";
 import { ensureTutorRatingsSeeded, listFeaturedTutorsForHomepage } from "@/lib/featured-tutors";
+import { listHomepageReviews } from "@/lib/homepage-reviews";
 
 export const dynamic = "force-dynamic";
 
 export default async function HomePage() {
   await ensureTutorRatingsSeeded();
 
-  const [cms, liveStats, tutors] = await Promise.all([
+  const [cms, liveStats, tutors, reviews] = await Promise.all([
     getLandingCms(),
     getPublicPlatformStats(),
     listFeaturedTutorsForHomepage(8),
+    listHomepageReviews(),
   ]);
 
   const stats = { ...cms.stats, ...liveStats };
@@ -34,7 +36,7 @@ export default async function HomePage() {
         <Features content={cms.features} />
         <HowItWorks content={cms.howItWorks} />
         <FeaturedTutors heading={cms.featuredTutors} tutors={tutors} />
-        <Testimonials content={cms.testimonials} />
+        <Testimonials reviews={reviews} />
         <FAQ content={cms.faq} />
       </main>
       <Footer />

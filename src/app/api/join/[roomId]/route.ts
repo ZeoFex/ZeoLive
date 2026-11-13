@@ -3,10 +3,12 @@ import { auth } from "@/auth";
 import {
   cleanDisplayName,
   createMeetingGuest,
+  readMeetingGuest,
   MEETING_GUEST_COOKIE,
   meetingGuestCookieOptions,
   sealMeetingGuest,
 } from "@/lib/meeting-guest";
+import { meetingIsFull } from "@/lib/participant-limit";
 import { prisma } from "@/lib/prisma";
 
 export async function POST(
@@ -16,7 +18,7 @@ export async function POST(
   const { roomId } = await params;
   const tutoring = await prisma.tutoringSession.findUnique({
     where: { roomId },
-    select: { id: true, tutorId: true, status: true },
+    select: { id: true, tutorId: true, status: true, shareable: true, seatLimit: true },
   });
 
   if (!tutoring) {
@@ -32,6 +34,18 @@ export async function POST(
     (session.user.id === tutoring.tutorId || session.user.role === "ADMIN");
   if (isHost) {
     return NextResponse.json({ classroomPath: `/classroom/${roomId}` });
+  }
+
+  const returningGuest = readMeetingGuest(request);
+  if (tutoring.shareable && returningGuest?.roomId !== roomId) {
+    const full = await meetingIsFull({
+      sessionId: tutoring.id,
+      tutorId: tutoring.tutorId,
+      seatLimit: tutoring.seatLimit,
+    });
+    if (full) {
+      return NextResponse.json({ error: "This meeting is full" }, { status: 409 });
+    }
   }
 
   const body = await request.json().catch(() => null);

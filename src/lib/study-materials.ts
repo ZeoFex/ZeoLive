@@ -157,7 +157,11 @@ export async function saveSessionWhiteboard(input: {
 
   const fileName = `whiteboard-${input.roomId}.jpg`;
   const description = "Whiteboard from your live lesson. It updates while the tutor teaches.";
-  const ids = [...studentIds];
+  const ids = [...studentIds].filter((id) => id !== input.tutorId);
+  const lesson = await prisma.tutoringSession.findUnique({
+    where: { roomId: input.roomId },
+    select: { id: true },
+  });
   const existing = await prisma.studyMaterial.findFirst({
     where: { tutorId: input.tutorId, fileName },
     select: { id: true },
@@ -167,13 +171,14 @@ export async function saveSessionWhiteboard(input: {
     const material = await prisma.studyMaterial.create({
       data: {
         tutorId: input.tutorId,
+        tutoringSessionId: lesson?.id,
         title: input.title,
         description,
         fileUrl: input.fileUrl,
         fileName,
         mimeType: input.mimeType,
         fileSizeBytes: input.fileSizeBytes,
-        shares: { create: ids.map((studentId) => ({ studentId })) },
+        shares: ids.length > 0 ? { create: ids.map((studentId) => ({ studentId })) } : undefined,
       },
     });
     return material.id;
@@ -182,6 +187,7 @@ export async function saveSessionWhiteboard(input: {
   await prisma.studyMaterial.update({
     where: { id: existing.id },
     data: {
+      tutoringSessionId: lesson?.id,
       title: input.title,
       description,
       fileUrl: input.fileUrl,
@@ -189,14 +195,16 @@ export async function saveSessionWhiteboard(input: {
       fileSizeBytes: input.fileSizeBytes,
     },
   });
-  await prisma.materialShare.createMany({
-    data: ids.map((studentId) => ({ materialId: existing.id, studentId })),
-    skipDuplicates: true,
-  });
-  await prisma.materialShare.updateMany({
-    where: { materialId: existing.id, studentId: { in: ids } },
-    data: { sharedAt: new Date() },
-  });
+  if (ids.length > 0) {
+    await prisma.materialShare.createMany({
+      data: ids.map((studentId) => ({ materialId: existing.id, studentId })),
+      skipDuplicates: true,
+    });
+    await prisma.materialShare.updateMany({
+      where: { materialId: existing.id, studentId: { in: ids } },
+      data: { sharedAt: new Date() },
+    });
+  }
   return existing.id;
 }
 
@@ -277,6 +285,67 @@ export async function listStudentMaterials(studentId: string): Promise<StudentMa
       image: s.material.tutor.image,
     },
   }));
+}
+
+export async function listSessionMaterials(session: {
+  id: string;
+  tutorId: string;
+  roomId: string;
+}) {
+  const rows = await prisma.studyMaterial.findMany({
+    where: {
+      tutorId: session.tutorId,
+      OR: [
+        { tutoringSessionId: session.id },
+        { fileName: `whiteboard-${session.roomId}.jpg` },
+      ],
+    },
+    orderBy: { createdAt: "asc" },
+    select: {
+      id: true,
+      title: true,
+      fileUrl: true,
+      fileName: true,
+      mimeType: true,
+      createdAt: true,
+    },
+  });
+  return rows.map((row) => ({
+    id: row.id,
+    title: row.title,
+    fileUrl: row.fileUrl,
+    fileName: row.fileName,
+    mimeType: row.mimeType,
+    createdAt: row.createdAt.toISOString(),
+    whiteboard: row.fileName.startsWith("whiteboard-"),
+  }));
+}
+
+export async function addSessionMaterial(input: {
+  sessionId: string;
+  tutorId: string;
+  studentIds: string[];
+  title: string;
+  fileUrl: string;
+  fileName: string;
+  mimeType: string | null;
+  fileSizeBytes: number;
+}) {
+  const studentIds = [...new Set(input.studentIds.filter((id) => id && id !== input.tutorId))];
+  const material = await prisma.studyMaterial.create({
+    data: {
+      tutorId: input.tutorId,
+      tutoringSessionId: input.sessionId,
+      title: input.title,
+      description: "Shared from this class.",
+      fileUrl: input.fileUrl,
+      fileName: input.fileName,
+      mimeType: input.mimeType,
+      fileSizeBytes: input.fileSizeBytes,
+      shares: studentIds.length > 0 ? { create: studentIds.map((studentId) => ({ studentId })) } : undefined,
+    },
+  });
+  return material.id;
 }
 
 export async function markMaterialViewed(shareId: string, studentId: string) {

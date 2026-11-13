@@ -8,7 +8,8 @@ import { studentNav } from "@/lib/navigation";
 
 const PAGE_TITLES: Record<string, string> = {
   "/student/dashboard": "Dashboard",
-  "/student/classes": "My Classes",
+  "/student/scheduling": "Scheduling sessions",
+  "/student/classes": "Booking sessions",
   "/student/book": "Book Session",
   "/student/tutors": "Tutors",
   "/student/payments": "Payments",

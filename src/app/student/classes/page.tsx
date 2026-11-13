@@ -1,7 +1,8 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
+import { toast } from "sonner";
 import { StudentPageHeader } from "@/components/layout/student-page-header";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
@@ -23,11 +24,17 @@ function statusLabel(status: string) {
   }
 }
 
-function SessionList({ sessions }: { sessions: PortalSession[] }) {
+function SessionList({
+  sessions,
+  onChanged,
+}: {
+  sessions: PortalSession[];
+  onChanged: () => void;
+}) {
   if (sessions.length === 0) {
     return (
       <div className="student-empty py-10 text-center text-sm text-slate-500">
-        No sessions found.{" "}
+        No booking sessions yet.{" "}
         <Link href="/student/book" className="font-medium text-blue-600 hover:underline">
           Book a tutor
         </Link>
@@ -69,14 +76,43 @@ function SessionList({ sessions }: { sessions: PortalSession[] }) {
                   </div>
                 </div>
               </div>
-              {canJoin && (
-                <Button
-                  className="student-gradient-btn w-full shrink-0 rounded-xl sm:w-auto"
-                  asChild
-                >
-                  <Link href={`/classroom/${session.roomId}`}>Join session</Link>
-                </Button>
-              )}
+              <div className="flex w-full flex-col gap-2 sm:w-auto">
+                {canJoin ? (
+                  <Button className="student-gradient-btn w-full shrink-0 rounded-xl sm:w-auto" asChild>
+                    <Link href={`/classroom/${session.roomId}`}>Join session</Link>
+                  </Button>
+                ) : null}
+                {session.status === "SCHEDULED" ? (
+                  <Button
+                    type="button"
+                    variant="outline"
+                    className="w-full rounded-xl sm:w-auto"
+                    onClick={async () => {
+                      if (!window.confirm("Leave this booking? The hour stays open for the other students.")) return;
+                      const response = await fetch(`/api/tutoring-sessions/${session.id}`, {
+                        method: "PATCH",
+                        headers: { "Content-Type": "application/json" },
+                        credentials: "same-origin",
+                        body: JSON.stringify({ action: "cancel" }),
+                      });
+                      const json = await response.json();
+                      if (!response.ok) {
+                        toast.error(json.error ?? "Could not cancel the booking");
+                        return;
+                      }
+                      toast.success("Booking cancelled");
+                      onChanged();
+                    }}
+                  >
+                    Cancel booking
+                  </Button>
+                ) : null}
+                {session.status === "COMPLETED" || session.status === "ACTIVE" ? (
+                  <Button variant="outline" className="w-full rounded-xl sm:w-auto" asChild>
+                    <Link href={`/student/classes/${session.id}`}>Class recap</Link>
+                  </Button>
+                ) : null}
+              </div>
             </div>
           </div>
         );
@@ -89,13 +125,20 @@ export default function StudentClassesPage() {
   const [sessions, setSessions] = useState<PortalSession[]>([]);
   const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
+  const load = useCallback(() => {
+    setLoading(true);
     fetch("/api/tutoring-sessions", { credentials: "same-origin" })
       .then((r) => r.json())
-      .then((data) => setSessions(data.sessions ?? []))
+      .then((data) =>
+        setSessions(((data.sessions ?? []) as PortalSession[]).filter((session) => !session.shareable))
+      )
       .catch(() => setSessions([]))
       .finally(() => setLoading(false));
   }, []);
+
+  useEffect(() => {
+    load();
+  }, [load]);
 
   const upcoming = sessions.filter(
     (s) => s.status === "SCHEDULED" || s.status === "ACTIVE"
@@ -107,8 +150,8 @@ export default function StudentClassesPage() {
   return (
     <>
       <StudentPageHeader
-        title="Your sessions"
-        description="Manage upcoming and completed learning sessions."
+        title="Booking sessions"
+        description="Classes you booked with a tutor. The same date and time is one session."
       />
 
       {loading ? (
@@ -124,10 +167,10 @@ export default function StudentClassesPage() {
             </TabsTrigger>
           </TabsList>
           <TabsContent value="upcoming">
-            <SessionList sessions={upcoming} />
+            <SessionList sessions={upcoming} onChanged={load} />
           </TabsContent>
           <TabsContent value="completed">
-            <SessionList sessions={completed} />
+            <SessionList sessions={completed} onChanged={load} />
           </TabsContent>
         </Tabs>
       )}

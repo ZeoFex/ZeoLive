@@ -58,6 +58,7 @@ model User {
   phone           String?
   country         String?
   regionState     String?
+  timeZone        String?
   termsAcceptedAt DateTime?
   image           String?
   passwordHash    String?
@@ -85,9 +86,17 @@ model User {
   lectureSubjects LectureSubject[] @relation("TutorLectureSubjects")
   lectureVideos   LectureVideo[]   @relation("TutorLectureVideos")
 
+  availabilitySlots TutorAvailabilitySlot[]
+
   sessionRecordingsUploaded SessionRecording[]        @relation("RecordingUploader")
   recordingDownloadRequests RecordingDownloadRequest[] @relation("RecordingDownloadRequester")
   recordingDownloadsReviewed RecordingDownloadRequest[] @relation("RecordingDownloadReviewer")
+
+  reviewsWritten   SessionReview[]      @relation("ReviewAuthor")
+  reviewsReceived  SessionReview[]      @relation("ReviewTutor")
+  limitRequests    ParticipantLimitRequest[]
+  attendanceRows   SessionAttendance[]  @relation("AttendanceUser")
+  reportsFiled     SessionReport[]      @relation("ReportAuthor")
 }
 
 enum TutoringSessionStatus {
@@ -106,9 +115,12 @@ model TutoringSession {
   tutor       User                  @relation("TutorTutoringSessions", fields: [tutorId], references: [id], onDelete: Cascade)
   title       String?
   subject     String?
-  shareable   Boolean               @default(false)
-  status      TutoringSessionStatus @default(SCHEDULED)
-  scheduledAt DateTime
+  shareable      Boolean               @default(false)
+  status         TutoringSessionStatus @default(SCHEDULED)
+  seatLimit      Int                   @default(50)
+  recap          String?               @db.Text
+  reminderSentAt DateTime?
+  scheduledAt    DateTime
   startedAt   DateTime?
   endedAt     DateTime?
   createdAt   DateTime              @default(now())
@@ -117,10 +129,26 @@ model TutoringSession {
   storedMessages StoredMessage[]
   recordings     SessionRecording[]
   participants   SessionParticipant[]
+  reviews        SessionReview[]
+  attendance     SessionAttendance[]
+  reports        SessionReport[]
+  materials      StudyMaterial[]
 
   @@index([studentId])
   @@index([tutorId])
   @@index([status])
+}
+
+model TutorAvailabilitySlot {
+  id        String @id @default(cuid())
+  tutorId   String
+  tutor     User   @relation(fields: [tutorId], references: [id], onDelete: Cascade)
+  dayOfWeek Int
+  minutes   Int
+  createdAt DateTime @default(now())
+
+  @@unique([tutorId, dayOfWeek, minutes])
+  @@index([tutorId])
 }
 
 model SessionParticipant {
@@ -168,6 +196,56 @@ model SessionRecording {
 
   @@index([tutoringSessionId, createdAt])
   @@index([uploadedById])
+  @@index([createdAt])
+}
+
+model SessionReview {
+  id                String          @id @default(cuid())
+  tutoringSessionId String
+  tutoringSession   TutoringSession @relation(fields: [tutoringSessionId], references: [id], onDelete: Cascade)
+  studentId         String
+  student           User            @relation("ReviewAuthor", fields: [studentId], references: [id], onDelete: Cascade)
+  tutorId           String
+  tutor             User            @relation("ReviewTutor", fields: [tutorId], references: [id], onDelete: Cascade)
+  rating            Int
+  comment           String?         @db.Text
+  createdAt         DateTime        @default(now())
+  updatedAt         DateTime        @updatedAt
+
+  @@unique([tutoringSessionId, studentId])
+  @@index([tutorId])
+}
+
+model SessionAttendance {
+  id                String          @id @default(cuid())
+  tutoringSessionId String
+  tutoringSession   TutoringSession @relation(fields: [tutoringSessionId], references: [id], onDelete: Cascade)
+  attendanceKey     String
+  userId            String?
+  user              User?           @relation("AttendanceUser", fields: [userId], references: [id], onDelete: SetNull)
+  displayName       String
+  role              String
+  joinedAt          DateTime        @default(now())
+  lastSeenAt        DateTime        @default(now())
+
+  @@unique([tutoringSessionId, attendanceKey])
+  @@index([userId])
+}
+
+model SessionReport {
+  id                String          @id @default(cuid())
+  tutoringSessionId String
+  tutoringSession   TutoringSession @relation(fields: [tutoringSessionId], references: [id], onDelete: Cascade)
+  reporterKey       String
+  reporterUserId    String?
+  reporter          User?           @relation("ReportAuthor", fields: [reporterUserId], references: [id], onDelete: SetNull)
+  reporterName      String
+  targetName        String
+  reason            String
+  details           String?         @db.Text
+  createdAt         DateTime        @default(now())
+
+  @@unique([tutoringSessionId, reporterKey, targetName])
   @@index([createdAt])
 }
 
@@ -308,6 +386,7 @@ model TutorProfile {
   rating             Float                   @default(4.8)
   reviewCount        Int                     @default(0)
   featuredOnHomepage Boolean                 @default(false)
+  participantLimit   Int                     @default(50)
   createdAt          DateTime                @default(now())
   updatedAt          DateTime                @updatedAt
 
@@ -316,6 +395,20 @@ model TutorProfile {
   subadminReviews TutorSubadminReview[]
 
   @@index([programmeId])
+}
+
+model ParticipantLimitRequest {
+  id             String       @id @default(cuid())
+  tutorId        String
+  tutor          User         @relation(fields: [tutorId], references: [id], onDelete: Cascade)
+  requestedLimit Int
+  note           String?      @db.Text
+  status         String       @default("PENDING")
+  createdAt      DateTime     @default(now())
+  reviewedAt     DateTime?
+
+  @@index([tutorId, status])
+  @@index([status, createdAt])
 }
 
 model TutorSubadminReview {
@@ -438,11 +531,14 @@ model StudyMaterial {
   fileName      String
   mimeType      String?
   fileSizeBytes Int
+  tutoringSessionId String?
+  tutoringSession   TutoringSession? @relation(fields: [tutoringSessionId], references: [id], onDelete: SetNull)
   createdAt     DateTime        @default(now())
   updatedAt     DateTime        @updatedAt
   shares        MaterialShare[]
 
   @@index([tutorId, createdAt])
+  @@index([tutoringSessionId])
 }
 
 model MaterialShare {

@@ -10,6 +10,7 @@ export type NavIconName =
   | "file-text"
   | "shield"
   | "bar-chart"
+  | "flag"
   | "clipboard-list"
   | "video";
 
@@ -21,7 +22,8 @@ export interface NavItemConfig {
 
 export const studentNav: NavItemConfig[] = [
   { href: "/student/dashboard", label: "Dashboard", icon: "layout-dashboard" },
-  { href: "/student/classes", label: "My Classes", icon: "book-open" },
+  { href: "/student/scheduling", label: "Scheduling sessions", icon: "video" },
+  { href: "/student/classes", label: "Booking sessions", icon: "book-open" },
   { href: "/student/book", label: "Book Session", icon: "calendar" },
   { href: "/student/tutors", label: "Tutors", icon: "users" },
   { href: "/student/payments", label: "Payments", icon: "credit-card" },
@@ -36,7 +38,8 @@ export const tutorNav: NavItemConfig[] = [
   { href: "/tutor/dashboard", label: "Dashboard", icon: "layout-dashboard" },
   { href: "/tutor/students", label: "Students", icon: "users" },
   { href: "/tutor/messages", label: "Messages", icon: "message-square" },
-  { href: "/tutor/sessions", label: "Sessions", icon: "book-open" },
+  { href: "/tutor/scheduling", label: "Scheduling sessions", icon: "video" },
+  { href: "/tutor/sessions", label: "Booking sessions", icon: "book-open" },
   { href: "/tutor/earnings", label: "Earnings", icon: "wallet" },
   { href: "/tutor/availability", label: "Availability", icon: "calendar" },
   { href: "/tutor/materials", label: "Materials", icon: "file-text" },
@@ -53,6 +56,8 @@ export const adminNav: NavItemConfig[] = [
   { href: "/admin/recordings", label: "Recordings", icon: "video" },
   { href: "/admin/programmes", label: "Programmes", icon: "book-open" },
   { href: "/admin/payments", label: "Payments", icon: "credit-card" },
+  { href: "/admin/class-size", label: "Class size", icon: "users" },
+  { href: "/admin/class-reports", label: "Class reports", icon: "flag" },
   { href: "/admin/reports", label: "Analytics", icon: "bar-chart" },
   { href: "/admin/cms", label: "CMS", icon: "clipboard-list" },
   { href: "/admin/settings", label: "Settings", icon: "settings" },

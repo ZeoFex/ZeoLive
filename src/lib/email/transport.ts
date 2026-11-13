@@ -3,7 +3,7 @@ import type SMTPTransport from "nodemailer/lib/smtp-transport";
 
 export type EmailChannel = "welcome" | "support";
 
-const DEFAULT_FROM = "Zeohost <support@zeohost.store>";
+const DEFAULT_FROM = "ZTL Support <support@zeohost.store>";
 
 type ChannelConfig = {
   user: string;
@@ -29,7 +29,7 @@ function channelConfig(channel: EmailChannel): ChannelConfig {
       from: (
         process.env.SMTP_FROM_WELCOME ??
         process.env.SMTP_FROM ??
-        "Zeohost <welcome@zeohost.store>"
+        "ZTL <welcome@zeohost.store>"
       ).trim(),
     };
   }
@@ -113,16 +113,14 @@ function createTransport(channel: EmailChannel) {
   return nodemailer.createTransport(options);
 }
 
-/** Prefer the configured From header; fall back to mailbox user. */
+/** Inbox name is always ZTL. The address still comes from SMTP settings. */
 export function getEmailFrom(channel: EmailChannel = "support") {
   const config = channelConfig(channel);
-  if (config.from.includes("<") && config.from.includes(">")) {
-    return config.from;
-  }
-  if (config.from.includes("@")) {
-    return `Zeohost <${config.from}>`;
-  }
-  return `Zeohost <${config.user}>`;
+  const match = config.from.match(/<([^>]+)>/);
+  const address =
+    match?.[1]?.trim() || (config.from.includes("@") ? config.from.trim() : config.user);
+  const label = channel === "support" ? "ZTL Support" : "ZTL";
+  return `${label} <${address}>`;
 }
 
 export async function sendEmail(params: {
@@ -132,6 +130,7 @@ export async function sendEmail(params: {
   html?: string;
   /** welcome = account/login; support = bookings, recovery, ops */
   channel?: EmailChannel;
+  attachments?: { filename: string; content: string; contentType: string }[];
 }) {
   const channel = params.channel ?? "support";
   const transport = createTransport(channel);
@@ -152,6 +151,11 @@ export async function sendEmail(params: {
     subject: params.subject,
     text: params.text,
     html: params.html ?? params.text.replace(/\n/g, "<br>"),
+    attachments: params.attachments?.map((file) => ({
+      filename: file.filename,
+      content: file.content,
+      contentType: file.contentType,
+    })),
   });
 
   return { ok: true, devMode: false, channel };

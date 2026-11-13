@@ -2,11 +2,17 @@ import { NextResponse } from "next/server";
 import { z } from "zod";
 import { auth } from "@/auth";
 import { getAppBaseUrl } from "@/lib/app-url";
+import { isKnownTimeZone, isSeatFull } from "@/lib/availability";
+import { tutorParticipantLimit } from "@/lib/participant-limit";
+import { assertHourIsOpen } from "@/lib/booking-hours";
+import { buildSessionIcs } from "@/lib/calendar-ics";
 import { sendBookingNotificationEmails } from "@/lib/email/booking";
 import { getOrCreateConversation } from "@/lib/messaging";
 import { tutorTeachesSubject } from "@/lib/lectures";
 import { listPortalSessionsForUser } from "@/lib/portal-data";
 import { prisma } from "@/lib/prisma";
+import { reportError } from "@/lib/report-error";
+import { sendDueSessionReminders } from "@/lib/session-reminders";
 import { buildDisplayName } from "@/lib/user-name";
 import { randomBytes } from "crypto";
 
@@ -15,6 +21,7 @@ const createSchema = z.object({
   title: z.string().min(1).optional(),
   subject: z.string().min(1).optional(),
   scheduledAt: z.string().datetime(),
+  timeZone: z.string().min(1).optional(),
   /** When true, session is bookable for the classroom immediately. */
   startNow: z.boolean().optional(),
 });
@@ -74,6 +81,22 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: "Choose a valid time" }, { status: 400 });
     }
 
+    const studentTimeZone =
+      data.timeZone && isKnownTimeZone(data.timeZone) ? data.timeZone : "UTC";
+    await prisma.user.update({
+      where: { id: session.user.id },
+      data: { timeZone: studentTimeZone },
+    });
+
+    const openHour = await assertHourIsOpen({
+      tutorId: tutor.id,
+      scheduledAt,
+      startNow: data.startNow,
+    });
+    if ("error" in openHour) {
+      return NextResponse.json({ error: openHour.error }, { status: openHour.status });
+    }
+
     const subject = data.subject?.trim();
     if (!subject) {
       return NextResponse.json({ error: "Choose a subject for this session" }, { status: 400 });
@@ -120,6 +143,9 @@ export async function POST(request: Request) {
       const alreadyIn =
         sharedBooking.studentId === session.user.id ||
         sharedBooking.participants.some((participant) => participant.studentId === session.user.id);
+      if (!alreadyIn && isSeatFull(sharedBooking.participants.length, sharedBooking.seatLimit)) {
+        return NextResponse.json({ error: "This time is full" }, { status: 409 });
+      }
       if (!alreadyIn) {
         await prisma.sessionParticipant.create({
           data: {
@@ -141,9 +167,17 @@ export async function POST(request: Request) {
             subject,
             scheduledAt: sharedBooking.scheduledAt,
             classroomUrl,
+            timeZone: openHour.hours.timeZone,
+            ics: buildSessionIcs({
+              uid: sharedBooking.id,
+              title: sharedBooking.title ?? title,
+              start: sharedBooking.scheduledAt,
+              url: classroomUrl,
+              description: `${subject} with ${tutorName}`,
+            }),
           });
         } catch (emailError) {
-          console.error("Booking notification email failed:", emailError);
+          reportError("booking-email", emailError);
         }
       }
 
@@ -168,6 +202,7 @@ export async function POST(request: Request) {
         scheduledAt,
         status: "SCHEDULED",
         shareable: false,
+        seatLimit: await tutorParticipantLimit(tutor.id),
       },
     });
 
@@ -182,6 +217,14 @@ export async function POST(request: Request) {
       },
     });
     if (earlier) {
+      const occupied = await prisma.tutoringSession.findUnique({
+        where: { id: earlier.id },
+        select: { seatLimit: true, _count: { select: { participants: true } } },
+      });
+      if (occupied && isSeatFull(occupied._count.participants, occupied.seatLimit)) {
+        await prisma.tutoringSession.delete({ where: { id: tutoringSession.id } });
+        return NextResponse.json({ error: "This time is full" }, { status: 409 });
+      }
       await prisma.sessionParticipant.upsert({
         where: {
           tutoringSessionId_studentId: {
@@ -210,11 +253,19 @@ export async function POST(request: Request) {
         tutor: { email: tutor.email, name: tutorName },
         title,
         subject,
-        scheduledAt,
+        scheduledAt: tutoringSession.scheduledAt,
         classroomUrl,
+        timeZone: openHour.hours.timeZone,
+        ics: buildSessionIcs({
+          uid: tutoringSession.id,
+          title,
+          start: tutoringSession.scheduledAt,
+          url: classroomUrl,
+          description: `${subject} with ${tutorName}`,
+        }),
       });
     } catch (emailError) {
-      console.error("Booking notification email failed:", emailError);
+      reportError("booking-email", emailError);
     }
 
     return NextResponse.json({
@@ -227,7 +278,7 @@ export async function POST(request: Request) {
     if (error instanceof z.ZodError) {
       return NextResponse.json({ error: "Invalid request" }, { status: 400 });
     }
-    console.error("Create tutoring session error:", error);
+    reportError("create-session", error);
     return NextResponse.json({ error: "Could not create session" }, { status: 500 });
   }
 }
@@ -242,6 +293,8 @@ export async function GET() {
   if (role !== "STUDENT" && role !== "TUTOR" && role !== "ADMIN") {
     return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   }
+
+  void sendDueSessionReminders().catch((error) => reportError("session-reminders", error));
 
   const sessions = await listPortalSessionsForUser(
     session.user.id,

@@ -11,6 +11,7 @@ export interface Tutor {
   reviewCount: number;
   hourlyRate: number;
   available: boolean;
+  nextOpenHour?: string;
   bio: string;
   experience: number;
   verified: boolean;

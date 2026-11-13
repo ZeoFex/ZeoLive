@@ -7,6 +7,7 @@ import {
   ClipboardList,
   CreditCard,
   FileText,
+  Flag,
   LayoutDashboard,
   Menu,
   MessageSquare,
@@ -42,6 +43,7 @@ const navIcons: Record<NavIconName, LucideIcon> = {
   "bar-chart": BarChart3,
   "clipboard-list": ClipboardList,
   video: Video,
+  flag: Flag,
 };
 
 interface DashboardSidebarProps {

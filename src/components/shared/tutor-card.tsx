@@ -60,8 +60,8 @@ export function TutorCard({
               {formatCurrency(tutor.hourlyRate)}
               <span className="font-normal text-muted-foreground"> / hr</span>
             </span>
-            <span className="text-muted-foreground">
-              {tutor.available ? "Open slots" : "Fully booked"}
+            <span className="text-right text-muted-foreground">
+              {tutor.nextOpenHour ?? (tutor.available ? "Open slots" : "No open hours")}
             </span>
           </div>
         </CardContent>
@@ -108,8 +108,8 @@ export function TutorCard({
             {formatCurrency(tutor.hourlyRate)}
             <span className="font-normal text-muted-foreground"> / hr</span>
           </span>
-          <span className="text-muted-foreground">
-            {tutor.available ? "Open slots" : "Fully booked"}
+          <span className="text-right text-muted-foreground">
+            {tutor.nextOpenHour ?? (tutor.available ? "Open slots" : "No open hours")}
           </span>
         </div>
       </CardContent>

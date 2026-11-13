@@ -11,7 +11,10 @@ export async function GET(
   const { roomId } = await params;
   const resolved = await resolveClassroomActor(roomId, request);
   if ("error" in resolved) {
-    return NextResponse.json({ error: resolved.error }, { status: resolved.status });
+    return NextResponse.json(
+      { error: resolved.error, code: resolved.code },
+      { status: resolved.status }
+    );
   }
 
   const { actor } = resolved;
@@ -26,6 +29,7 @@ export async function GET(
     participantRole: actor.role,
     participantName: actor.name,
     guest: actor.guest,
+    shareable: tutoringSession.shareable,
     student: {
       id: tutoringSession.student.id,
       name: participantDisplayName(tutoringSession.student),

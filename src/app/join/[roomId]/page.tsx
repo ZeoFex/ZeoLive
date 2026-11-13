@@ -33,8 +33,8 @@ export default async function JoinMeetingPage({
   if (tutoring.status === "CANCELLED" || tutoring.status === "COMPLETED") {
     return (
       <JoinNotice
-        title="This meeting has ended"
-        body={tutoring.title ? `"${tutoring.title}" is no longer open.` : "This meeting is no longer open."}
+        title="The tutor ended this meeting"
+        body={tutoring.title ? `"${tutoring.title}" is closed.` : "This meeting is closed."}
       />
     );
   }
