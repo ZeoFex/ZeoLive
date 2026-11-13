@@ -8,6 +8,7 @@ import {
 } from "@livekit/components-react";
 import { ConnectionState, DisconnectReason, RoomEvent } from "livekit-client";
 import { Mic, MicOff, UserMinus } from "lucide-react";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
@@ -453,7 +454,7 @@ export function Classroom({
           The host removed you from this meeting.
         </p>
         <Button asChild>
-          <a href="/">Back home</a>
+          <Link href="/">Back home</Link>
         </Button>
       </div>
     );
