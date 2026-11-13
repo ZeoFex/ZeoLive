@@ -2,6 +2,7 @@
 
 import {
   BarChart3,
+  Flag,
   BookOpen,
   ClipboardList,
   CreditCard,
@@ -41,6 +42,7 @@ const navIcons: Record<NavIconName, LucideIcon> = {
   "bar-chart": BarChart3,
   "clipboard-list": ClipboardList,
   video: Video,
+  flag: Flag,
 };
 
 interface AdminSidebarProps {

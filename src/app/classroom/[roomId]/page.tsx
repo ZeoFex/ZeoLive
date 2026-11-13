@@ -62,11 +62,13 @@ export default function ClassroomPage() {
         });
         const json = await res.json();
 
+        if (res.status === 401 && json.code === "join_lobby") {
+          router.replace(`/join/${roomId}`);
+          return;
+        }
+
         if (res.status === 401) {
-          const next = roomId.startsWith("session-")
-            ? `/join/${roomId}`
-            : `/login?callbackUrl=${encodeURIComponent(`/classroom/${roomId}`)}`;
-          router.replace(next);
+          router.replace(`/login?callbackUrl=${encodeURIComponent(`/classroom/${roomId}`)}`);
           return;
         }
 
@@ -86,6 +88,7 @@ export default function ClassroomPage() {
               status: json.status,
               participantRole: json.participantRole,
               guest: json.guest === true,
+              shareable: json.shareable === true,
             },
           });
         }

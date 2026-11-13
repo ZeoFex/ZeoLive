@@ -147,12 +147,8 @@ export async function verifyClassroomAccess(
     return { allowed: false, status: 403, error: "Session is not available to join" };
   }
 
-  const openMeetingInvite =
-    session.shareable &&
-    session.participants.some((participant) => participant.studentId === userId);
   const platform = await getPlatformSettings();
-  const window =
-    participantRole === "student" && openMeetingInvite
+  const window = session.shareable
       ? { allowed: true as const }
       : checkJoinWindow(
           session,

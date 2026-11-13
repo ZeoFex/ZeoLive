@@ -7,6 +7,7 @@ export type PortalSession = {
   subject: string | null;
   shareable: boolean;
   status: PortalSessionStatus;
+  seatLimit: number;
   scheduledAt: string;
   startedAt: string | null;
   endedAt: string | null;

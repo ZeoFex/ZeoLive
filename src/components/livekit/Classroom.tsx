@@ -3,9 +3,12 @@
 import {
   LiveKitRoom,
   RoomAudioRenderer,
+  useParticipants,
+  useRoomContext,
 } from "@livekit/components-react";
-import { DisconnectReason } from "livekit-client";
+import { ConnectionState, DisconnectReason, RoomEvent } from "livekit-client";
 import { Mic, MicOff, UserMinus } from "lucide-react";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
@@ -27,7 +30,6 @@ import { SCREEN_SHARE_PUBLISH } from "@/lib/livekit-screen-share";
 import { parseParticipantRole } from "@/lib/classroom-participant";
 import { dashboardForRole, routes } from "@/lib/routes";
 import { cn } from "@/lib/utils";
-import { useParticipants } from "@livekit/components-react";
 
 export interface ClassroomSessionInfo {
   roomId: string;
@@ -36,6 +38,7 @@ export interface ClassroomSessionInfo {
   status: string;
   participantRole: ClassroomRole;
   guest?: boolean;
+  shareable?: boolean;
 }
 
 interface ClassroomProps {
@@ -166,9 +169,13 @@ function ParticipantsSidebar({
 
 function ClassroomRoomInner({
   session,
+  publishAudio,
+  publishVideo,
   onSessionEnded,
 }: {
   session: ClassroomSessionInfo;
+  publishAudio: boolean;
+  publishVideo: boolean;
   onSessionEnded: () => void;
 }) {
   const router = useRouter();
@@ -185,6 +192,7 @@ function ClassroomRoomInner({
     saveWhiteboardRef.current = save;
   }, []);
 
+  const room = useRoomContext();
   const { showWaitingRoom, isReconnecting, isConnected, studentPresent } = useSessionPresence(
     session.participantRole
   );
@@ -199,6 +207,33 @@ function ClassroomRoomInner({
       setShowChat(false);
     }
   }, []);
+
+  useEffect(() => {
+    let cancelled = false;
+    const publishChosenDevices = async () => {
+      if (room.state !== ConnectionState.Connected || cancelled) return;
+      try {
+        await room.localParticipant.setMicrophoneEnabled(publishAudio);
+      } catch (error) {
+        if (!cancelled && publishAudio) {
+          toast.error(error instanceof Error ? error.message : "Could not turn the microphone on");
+        }
+      }
+      try {
+        await room.localParticipant.setCameraEnabled(publishVideo);
+      } catch (error) {
+        if (!cancelled && publishVideo) {
+          toast.error(error instanceof Error ? error.message : "Could not turn the camera on");
+        }
+      }
+    };
+    void publishChosenDevices();
+    room.on(RoomEvent.Connected, publishChosenDevices);
+    return () => {
+      cancelled = true;
+      room.off(RoomEvent.Connected, publishChosenDevices);
+    };
+  }, [publishAudio, publishVideo, room]);
 
   useEffect(() => {
     if (session.participantRole === "tutor" && studentPresent) {
@@ -229,7 +264,7 @@ function ClassroomRoomInner({
       toast.error(e instanceof Error ? e.message : "Could not save the recording");
     }
     const path = session.guest
-      ? "/"
+      ? `/join/${session.roomId}`
       : session.participantRole === "tutor"
         ? dashboardForRole("TUTOR")
         : dashboardForRole("STUDENT");
@@ -237,8 +272,8 @@ function ClassroomRoomInner({
   }, [recorder, router, session.guest, session.participantRole]);
 
   const openEndedMeetings = useCallback(() => {
-    router.push(routes.tutor.sessions);
-  }, [router]);
+    router.push(session.shareable ? routes.tutor.scheduling : routes.tutor.sessions);
+  }, [router, session.shareable]);
 
   const endSession = useCallback(async () => {
     try {
@@ -357,6 +392,7 @@ function ClassroomRoomInner({
 
       <RoomAudioRenderer />
       <Controls
+        roomId={session.roomId}
         role={session.participantRole}
         onLeave={leaveRoom}
         onEndSession={session.participantRole === "tutor" ? endSession : undefined}
@@ -379,14 +415,23 @@ function ClassroomRoomInner({
 
 function ClassroomRoom({
   session,
+  publishAudio,
+  publishVideo,
   onSessionEnded,
 }: {
   session: ClassroomSessionInfo;
+  publishAudio: boolean;
+  publishVideo: boolean;
   onSessionEnded: () => void;
 }) {
   return (
     <ClassroomLayoutProvider>
-      <ClassroomRoomInner session={session} onSessionEnded={onSessionEnded} />
+      <ClassroomRoomInner
+        session={session}
+        publishAudio={publishAudio}
+        publishVideo={publishVideo}
+        onSessionEnded={onSessionEnded}
+      />
     </ClassroomLayoutProvider>
   );
 }
@@ -409,7 +454,7 @@ export function Classroom({
           The host removed you from this meeting.
         </p>
         <Button asChild>
-          <a href="/">Back home</a>
+          <Link href="/">Back home</Link>
         </Button>
       </div>
     );
@@ -440,9 +485,13 @@ export function Classroom({
         if (sessionEnded) {
           return;
         }
+        if (session.guest) {
+          window.location.assign(`/join/${session.roomId}`);
+          return;
+        }
         if (reason === DisconnectReason.ROOM_DELETED) {
           setSessionEnded(true);
-          toast.message("The session has ended");
+          toast.message("The tutor ended the meeting");
         }
       }}
       onError={(error) => {
@@ -455,6 +504,8 @@ export function Classroom({
     >
       <ClassroomRoom
         session={session}
+        publishAudio={audio}
+        publishVideo={video}
         onSessionEnded={() => setSessionEnded(true)}
       />
     </LiveKitRoom>

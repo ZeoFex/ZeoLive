@@ -78,28 +78,64 @@ export default function TutorDashboardPage() {
 
       <div className="tutor-card mt-6 p-5 sm:p-6">
         <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
-          <h3 className="text-base font-bold text-slate-900">Upcoming classes</h3>
+          <h3 className="text-base font-bold text-slate-900">Scheduling sessions</h3>
+          <Button variant="ghost" size="sm" className="text-blue-600" asChild>
+            <Link href={routes.tutor.scheduling}>View all</Link>
+          </Button>
+        </div>
+        {loading ? (
+          <p className="text-sm text-slate-500">Loading…</p>
+        ) : upcoming.filter((s) => s.shareable).length === 0 ? (
+          <div className="rounded-xl border border-dashed border-slate-200 bg-slate-50/80 px-4 py-8 text-center text-sm text-slate-500">
+            No scheduling sessions yet. Create one from Scheduling sessions and share the join link.
+          </div>
+        ) : (
+          <div className="space-y-3">
+            {upcoming.filter((s) => s.shareable).slice(0, 3).map((s) => (
+              <div
+                key={s.id}
+                className="flex flex-col gap-4 rounded-2xl border border-slate-100 bg-white p-4 shadow-sm sm:flex-row sm:items-center"
+              >
+                <div className="flex min-w-0 flex-1 items-center gap-3">
+                  <MeetingCamera />
+                  <div className="min-w-0">
+                    <p className="text-base font-semibold leading-snug text-slate-900">
+                      {sessionHeadline(s)}
+                    </p>
+                    <p className="mt-0.5 text-sm leading-snug text-slate-500">{sessionTopic(s)}</p>
+                    <p className="mt-1 text-xs font-medium text-slate-400">{formatDate(s.scheduledAt)}</p>
+                  </div>
+                </div>
+                <Button className="tutor-gradient-btn w-full shrink-0 rounded-xl sm:w-auto" asChild>
+                  <Link href={`/classroom/${s.roomId}`}>Start meeting</Link>
+                </Button>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+
+      <div className="tutor-card mt-6 p-5 sm:p-6">
+        <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
+          <h3 className="text-base font-bold text-slate-900">Booking sessions</h3>
           <Button variant="ghost" size="sm" className="text-blue-600" asChild>
             <Link href={routes.tutor.sessions}>View all</Link>
           </Button>
         </div>
         {loading ? (
           <p className="text-sm text-slate-500">Loading…</p>
-        ) : upcoming.length === 0 ? (
+        ) : upcoming.filter((s) => !s.shareable).length === 0 ? (
           <div className="rounded-xl border border-dashed border-slate-200 bg-slate-50/80 px-4 py-8 text-center text-sm text-slate-500">
-            No sessions scheduled yet. Students will see you here after they book.
+            No booking sessions yet. Students appear here after they book you.
           </div>
         ) : (
           <div className="space-y-3">
-            {upcoming.slice(0, 5).map((s) => (
+            {upcoming.filter((s) => !s.shareable).slice(0, 5).map((s) => (
               <div
                 key={s.id}
                 className="flex flex-col gap-4 rounded-2xl border border-slate-100 bg-white p-4 shadow-sm sm:flex-row sm:items-center"
               >
                 <div className="flex min-w-0 flex-1 items-center gap-3">
-                  {s.shareable ? (
-                    <MeetingCamera />
-                  ) : (
                   <Avatar className="h-12 w-12 shrink-0">
                     {!isOpenMeeting(s) && s.student.image ? (
                       <AvatarImage src={s.student.image} alt={s.student.name} />
@@ -108,7 +144,6 @@ export default function TutorDashboardPage() {
                       {sessionHeadline(s)[0]}
                     </AvatarFallback>
                   </Avatar>
-                  )}
                   <div className="min-w-0">
                     <p className="text-base font-semibold leading-snug text-slate-900">
                       {sessionHeadline(s)}

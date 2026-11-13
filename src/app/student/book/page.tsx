@@ -21,8 +21,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { BOOKING_TIME_SLOTS } from "@/lib/constants/time-slots";
-import { parseLocalScheduledAt } from "@/lib/booking-schedule";
+import { browserTimeZone } from "@/lib/availability";
 import { useBookingStore } from "@/store/booking-store";
 import type { Tutor } from "@/types";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -34,13 +33,21 @@ function BookSessionContent() {
   const [modalOpen, setModalOpen] = useState(false);
   const [tutors, setTutors] = useState<Tutor[]>([]);
   const [loadingTutors, setLoadingTutors] = useState(true);
-  const [startNow, setStartNow] = useState(true);
+  const [startNow, setStartNow] = useState(false);
   const [bookingSubject, setBookingSubject] = useState("");
-  const { selectedTutorId, selectedDate, selectedTime, setTutor, setDate, setTime, reset } =
-    useBookingStore();
+  const [openSlots, setOpenSlots] = useState<
+    { label: string; scheduledAt: string; full: boolean; seatsTaken: number; seatLimit: number }[]
+  >([]);
+  const [slotsLoading, setSlotsLoading] = useState(false);
+  const [hoursPublished, setHoursPublished] = useState(true);
+  const [startNowOpen, setStartNowOpen] = useState(false);
+  const [chosenSlot, setChosenSlot] = useState("");
+  const timeZone = browserTimeZone();
+  const { selectedTutorId, selectedDate, setTutor, setDate, setTime, reset } = useBookingStore();
 
   useEffect(() => {
-    fetch("/api/tutors", { credentials: "same-origin" })
+    const tutorsQuery = new URLSearchParams({ timeZone: browserTimeZone() });
+    fetch(`/api/tutors?${tutorsQuery}`, { credentials: "same-origin" })
       .then((r) => r.json())
       .then((data) => setTutors(data.tutors ?? []))
       .catch(() => setTutors([]))
@@ -77,23 +84,30 @@ function BookSessionContent() {
     setBookingSubject(preferred);
   }, [selectedTutor, subjectFilter]);
 
+  useEffect(() => {
+    if (!modalOpen || !selectedTutorId || !selectedDate) return;
+    setSlotsLoading(true);
+    const query = new URLSearchParams({ date: selectedDate, timeZone });
+    fetch(`/api/tutors/${selectedTutorId}/open-slots?${query}`, { credentials: "same-origin" })
+      .then((response) => response.json())
+      .then((data) => {
+        setOpenSlots(data.slots ?? []);
+        setHoursPublished(data.published !== false);
+        setStartNowOpen(data.startNowOpen === true);
+        setChosenSlot("");
+      })
+      .catch(() => {
+        setOpenSlots([]);
+        setHoursPublished(false);
+      })
+      .finally(() => setSlotsLoading(false));
+  }, [modalOpen, selectedTutorId, selectedDate, timeZone]);
+
   const handleBook = async () => {
-    if (!selectedTutorId || !selectedDate || !selectedTime || !bookingSubject) return;
+    const slot = openSlots.find((item) => item.scheduledAt === chosenSlot);
+    if (!selectedTutorId || !bookingSubject || (!startNow && !slot)) return;
 
-    const timeMatch = selectedTime.match(/(\d+):(\d+)\s*(AM|PM)/i);
-    let hour = 12;
-    let minute = 0;
-    if (timeMatch) {
-      hour = parseInt(timeMatch[1]!, 10);
-      minute = parseInt(timeMatch[2]!, 10);
-      const ampm = timeMatch[3]!.toUpperCase();
-      if (ampm === "PM" && hour < 12) hour += 12;
-      if (ampm === "AM" && hour === 12) hour = 0;
-    }
-
-    const scheduledAt = startNow
-      ? new Date()
-      : parseLocalScheduledAt(selectedDate, hour, minute);
+    const scheduledAt = startNow ? new Date() : new Date(slot!.scheduledAt);
 
     try {
       const res = await fetch("/api/tutoring-sessions", {
@@ -105,6 +119,7 @@ function BookSessionContent() {
           subject: bookingSubject,
           scheduledAt: scheduledAt.toISOString(),
           startNow,
+          timeZone,
         }),
       });
       const json = await res.json();
@@ -176,6 +191,10 @@ function BookSessionContent() {
               className="text-left"
               onClick={() => {
                 setTutor(tutor.id);
+                setDate(new Date().toLocaleDateString("en-CA"));
+                setTime("");
+                setChosenSlot("");
+                setStartNow(false);
                 setModalOpen(true);
               }}
             >
@@ -214,6 +233,7 @@ function BookSessionContent() {
               <Checkbox
                 id="startNow"
                 checked={startNow}
+                disabled={!startNowOpen}
                 onCheckedChange={(v) => setStartNow(v === true)}
               />
               <div>
@@ -221,7 +241,9 @@ function BookSessionContent() {
                   Start session now
                 </Label>
                 <p className="mt-0.5 text-xs text-slate-500">
-                  Recommended if you want to join the classroom right after booking.
+                  {startNowOpen
+                    ? "This tutor is open during the current hour."
+                    : "This tutor is not open during the current hour."}
                 </p>
               </div>
             </div>
@@ -230,34 +252,46 @@ function BookSessionContent() {
               <Input
                 type="date"
                 className="student-input"
+                value={selectedDate ?? ""}
                 disabled={startNow}
                 onChange={(e) => setDate(e.target.value)}
               />
             </div>
             <div className={startNow ? "pointer-events-none opacity-50" : undefined}>
-              <label className="text-sm font-medium text-slate-700">Time slot</label>
-              <div className="mt-2 grid grid-cols-2 gap-2">
-                {BOOKING_TIME_SLOTS.map((slot) => (
-                  <Button
-                    key={slot}
-                    type="button"
-                    variant={selectedTime === slot ? "default" : "outline"}
-                    className={
-                      selectedTime === slot
-                        ? "student-gradient-btn rounded-xl border-0"
-                        : "student-outline-btn rounded-xl"
-                    }
-                    size="sm"
-                    onClick={() => setTime(slot)}
-                  >
-                    {slot}
-                  </Button>
-                ))}
-              </div>
+              <label className="text-sm font-medium text-slate-700">Open hours · {timeZone}</label>
+              {slotsLoading ? (
+                <p className="mt-2 text-sm text-slate-500">Loading open hours…</p>
+              ) : !hoursPublished ? (
+                <p className="mt-2 text-sm text-slate-500">
+                  This tutor has not published open hours yet.
+                </p>
+              ) : openSlots.length === 0 ? (
+                <p className="mt-2 text-sm text-slate-500">No open hours on this date.</p>
+              ) : (
+                <div className="mt-2 grid grid-cols-2 gap-2">
+                  {openSlots.map((slot) => (
+                    <Button
+                      key={slot.scheduledAt}
+                      type="button"
+                      variant={chosenSlot === slot.scheduledAt ? "default" : "outline"}
+                      disabled={slot.full}
+                      className={
+                        chosenSlot === slot.scheduledAt
+                          ? "student-gradient-btn rounded-xl border-0"
+                          : "student-outline-btn rounded-xl"
+                      }
+                      size="sm"
+                      onClick={() => setChosenSlot(slot.scheduledAt)}
+                    >
+                      {slot.full ? `${slot.label} · Full` : slot.label}
+                    </Button>
+                  ))}
+                </div>
+              )}
             </div>
             <Button
               className="student-gradient-btn w-full rounded-xl"
-              disabled={!selectedDate || !selectedTime || !bookingSubject}
+              disabled={!bookingSubject || (startNow ? !startNowOpen : !chosenSlot)}
               onClick={handleBook}
             >
               Confirm booking

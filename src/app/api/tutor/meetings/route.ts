@@ -8,6 +8,7 @@ import { sendEmail } from "@/lib/email/transport";
 import { createLectureSubject } from "@/lib/lectures";
 import { storeMessage } from "@/lib/messaging";
 import { prisma } from "@/lib/prisma";
+import { tutorParticipantLimit } from "@/lib/participant-limit";
 import { displayUserName } from "@/lib/portal-data";
 import { buildDisplayName } from "@/lib/user-name";
 
@@ -71,6 +72,14 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: "Choose a valid time" }, { status: 400 });
     }
 
+    const seatLimit = await tutorParticipantLimit(session.user.id);
+    if (students.length > seatLimit) {
+      return NextResponse.json(
+        { error: `This meeting can include up to ${seatLimit} participants` },
+        { status: 400 }
+      );
+    }
+
     const roomId = `session-${randomBytes(12).toString("hex")}`;
 
     const tutoringSession = await prisma.tutoringSession.create({
@@ -81,6 +90,7 @@ export async function POST(request: Request) {
         title,
         subject: createdSubject.subject.name,
         shareable: true,
+        seatLimit,
         scheduledAt,
         status: "SCHEDULED",
         ...(students.length > 0

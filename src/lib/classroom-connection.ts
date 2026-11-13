@@ -26,14 +26,14 @@ export interface ClassroomActor {
   session: NonNullable<ClassroomAccessResult["session"]>;
 }
 
-export function isShareableMeeting(roomId: string) {
-  return roomId.startsWith("session-");
+export function isShareableMeeting(session: { shareable?: boolean }) {
+  return session.shareable === true;
 }
 
 export async function resolveClassroomActor(
   roomId: string,
   request: Request
-): Promise<{ actor: ClassroomActor } | { error: string; status: number }> {
+): Promise<{ actor: ClassroomActor } | { error: string; status: number; code?: string }> {
   const authSession = await auth();
   const tutoring = await prisma.tutoringSession.findUnique({
     where: { roomId },
@@ -47,7 +47,11 @@ export async function resolveClassroomActor(
     return { error: "This session was cancelled", status: 403 };
   }
   if (tutoring.status === "COMPLETED") {
-    return { error: "This session has ended", status: 403 };
+    return {
+      error: "The tutor has ended this meeting",
+      status: 403,
+      code: "ended",
+    };
   }
 
   const isHost =
@@ -72,10 +76,14 @@ export async function resolveClassroomActor(
     };
   }
 
-  if (isShareableMeeting(roomId)) {
+  if (isShareableMeeting(tutoring)) {
     const guest = readMeetingGuest(request);
     if (!guest || guest.roomId !== roomId) {
-      return { error: "Enter your name to join this meeting", status: 401 };
+      return {
+        error: "Enter your name to join this meeting",
+        status: 401,
+        code: "join_lobby",
+      };
     }
     if (tutoring.status !== "SCHEDULED" && tutoring.status !== "ACTIVE") {
       return { error: "Session is not available to join", status: 403 };
@@ -83,7 +91,7 @@ export async function resolveClassroomActor(
     return {
       actor: {
         role: "student",
-        identity: `guest:${guest.guestId}`,
+        identity: `guest:${guest.guestId}:${Date.now().toString(36)}`,
         name: guest.name,
         guest: true,
         session: tutoring,

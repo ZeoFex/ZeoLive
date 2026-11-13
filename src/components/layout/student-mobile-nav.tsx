@@ -1,6 +1,6 @@
 "use client";
 
-import { BookOpen, Calendar, LayoutDashboard, MessageSquare } from "lucide-react";
+import { BookOpen, Calendar, LayoutDashboard, MessageSquare, Video } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { routes } from "@/lib/routes";
@@ -13,8 +13,9 @@ const MOBILE_NAV: {
   accent?: boolean;
 }[] = [
   { href: routes.student.dashboard, label: "Home", icon: LayoutDashboard },
-  { href: routes.student.classes, label: "Classes", icon: BookOpen },
+  { href: routes.student.scheduling, label: "Schedule", icon: Video },
   { href: routes.student.book, label: "Book", icon: Calendar, accent: true },
+  { href: routes.student.classes, label: "Booking", icon: BookOpen },
   { href: routes.student.messages, label: "Messages", icon: MessageSquare },
 ];
 

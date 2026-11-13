@@ -1,3 +1,4 @@
+import { isKnownTimeZone, nextOpenHourLabel } from "@/lib/availability";
 import { prisma } from "@/lib/prisma";
 import type { PortalSession } from "@/lib/session-card";
 import type { Tutor } from "@/types";
@@ -17,7 +18,8 @@ export function displayUserName(user: {
   return user.email.split("@")[0] ?? "User";
 }
 
-export async function listApprovedTutors(): Promise<Tutor[]> {
+export async function listApprovedTutors(viewerTimeZone = "UTC"): Promise<Tutor[]> {
+  const zone = isKnownTimeZone(viewerTimeZone) ? viewerTimeZone : "UTC";
   const tutors = await prisma.user.findMany({
     where: {
       role: "TUTOR",
@@ -26,6 +28,17 @@ export async function listApprovedTutors(): Promise<Tutor[]> {
     include: { tutorProfile: true, lectureSubjects: { select: { name: true } } },
     orderBy: { createdAt: "desc" },
   });
+
+  const hours = await prisma.tutorAvailabilitySlot.findMany({
+    where: { tutorId: { in: tutors.map((tutor) => tutor.id) } },
+    select: { tutorId: true, dayOfWeek: true, minutes: true },
+  });
+  const hoursByTutor = new Map<string, { dayOfWeek: number; minutes: number }[]>();
+  for (const row of hours) {
+    const list = hoursByTutor.get(row.tutorId) ?? [];
+    list.push({ dayOfWeek: row.dayOfWeek, minutes: row.minutes });
+    hoursByTutor.set(row.tutorId, list);
+  }
 
   return tutors.map((user) => {
     const profile = user.tutorProfile!;
@@ -46,7 +59,12 @@ export async function listApprovedTutors(): Promise<Tutor[]> {
       rating: profile.rating ?? 5,
       reviewCount: profile.reviewCount ?? 0,
       hourlyRate: profile.hourlyRate ?? 0,
-      available: true,
+      available: (hoursByTutor.get(user.id) ?? []).length > 0,
+      nextOpenHour: nextOpenHourLabel({
+        open: hoursByTutor.get(user.id) ?? [],
+        tutorTimeZone: user.timeZone && isKnownTimeZone(user.timeZone) ? user.timeZone : "UTC",
+        viewerTimeZone: zone,
+      }),
       bio: profile.bio ?? "Verified Zeolive tutor.",
       experience: profile.experience
         ? parseInt(profile.experience, 10) || 0
@@ -112,6 +130,7 @@ export async function listPortalSessionsForUser(
     subject: row.subject,
     shareable: row.shareable,
     status: row.status,
+    seatLimit: row.seatLimit,
     scheduledAt: row.scheduledAt.toISOString(),
     startedAt: row.startedAt?.toISOString() ?? null,
     endedAt: row.endedAt?.toISOString() ?? null,

@@ -57,7 +57,19 @@ export async function moderateParticipant(
   }
 
   const allowMic = action === "unmute";
+  let metadata = person.metadata;
+  try {
+    const current = JSON.parse(person.metadata || "{}") as { role?: string };
+    metadata = JSON.stringify({
+      ...current,
+      role: current.role ?? "student",
+      micLocked: !allowMic,
+    });
+  } catch {
+    metadata = JSON.stringify({ role: "student", micLocked: !allowMic });
+  }
   await client.updateParticipant(room, identity, {
+    metadata,
     permission: {
       canSubscribe: true,
       canPublish: true,

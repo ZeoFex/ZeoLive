@@ -4,6 +4,7 @@ import { Suspense, useEffect, useMemo, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import { StudentPageHeader } from "@/components/layout/student-page-header";
 import { TutorCard } from "@/components/shared/tutor-card";
+import { browserTimeZone } from "@/lib/availability";
 import type { Tutor } from "@/types";
 
 function StudentTutorsContent() {
@@ -13,7 +14,8 @@ function StudentTutorsContent() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    fetch("/api/tutors", { credentials: "same-origin" })
+    const tutorsQuery = new URLSearchParams({ timeZone: browserTimeZone() });
+    fetch(`/api/tutors?${tutorsQuery}`, { credentials: "same-origin" })
       .then((r) => r.json())
       .then((data) => setTutors(data.tutors ?? []))
       .catch(() => setTutors([]))

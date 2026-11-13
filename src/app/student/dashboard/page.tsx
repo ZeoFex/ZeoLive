@@ -9,6 +9,7 @@ import { StudentStatCard } from "@/components/shared/student-stat-card";
 import { TutorCard } from "@/components/shared/tutor-card";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
+import { browserTimeZone } from "@/lib/availability";
 import { sessionTopic, type PortalSession } from "@/lib/session-card";
 import { routes } from "@/lib/routes";
 import type { Tutor } from "@/types";
@@ -40,7 +41,9 @@ export default function StudentDashboardPage() {
       fetch("/api/tutoring-sessions", { credentials: "same-origin" }).then((r) =>
         r.json()
       ),
-      fetch("/api/tutors", { credentials: "same-origin" }).then((r) => r.json()),
+      fetch(`/api/tutors?${new URLSearchParams({ timeZone: browserTimeZone() })}`, {
+        credentials: "same-origin",
+      }).then((r) => r.json()),
       fetch("/api/student/notifications", { credentials: "same-origin" }).then((r) =>
         r.json()
       ),
@@ -93,17 +96,55 @@ export default function StudentDashboardPage() {
         />
       </div>
 
+      <div className="student-card mt-6 p-4 sm:p-6">
+        <div className="mb-4 flex items-center justify-between gap-2">
+          <h3 className="font-bold text-slate-900">Scheduling sessions</h3>
+          <Button variant="ghost" size="sm" className="text-blue-600" asChild>
+            <Link href={routes.student.scheduling}>View all</Link>
+          </Button>
+        </div>
+        {loading ? (
+          <p className="text-sm text-slate-500">Loading…</p>
+        ) : upcoming.filter((s) => s.shareable).length === 0 ? (
+          <div className="rounded-xl border border-dashed border-slate-200 bg-slate-50/80 px-4 py-8 text-center text-sm text-slate-500">
+            No scheduling sessions yet. Meetings a tutor shares with you will show up here.
+          </div>
+        ) : (
+          <div className="space-y-3">
+            {upcoming.filter((s) => s.shareable).slice(0, 3).map((s) => (
+              <div
+                key={s.id}
+                className="student-session-card flex flex-col gap-3 sm:flex-row sm:items-center"
+              >
+                <div className="min-w-0 flex-1">
+                  <p className="text-base font-semibold leading-snug text-slate-900">
+                    {s.title?.trim() || "Scheduling session"}
+                  </p>
+                  <p className="mt-0.5 text-sm leading-snug text-slate-500">
+                    {s.tutor.name} · {sessionTopic(s)}
+                  </p>
+                  <p className="mt-1 text-xs font-medium text-slate-400">{formatDate(s.scheduledAt)}</p>
+                </div>
+                <Button className="student-gradient-btn w-full shrink-0 rounded-xl sm:w-auto" size="sm" asChild>
+                  <Link href={`/join/${s.roomId}`}>Join</Link>
+                </Button>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+
       <div className="mt-6 grid gap-4 lg:grid-cols-2 lg:gap-6">
         <div className="student-card p-4 sm:p-6">
           <div className="mb-4 flex items-center justify-between gap-2">
-            <h3 className="font-bold text-slate-900">Upcoming sessions</h3>
+            <h3 className="font-bold text-slate-900">Booking sessions</h3>
             <Button variant="ghost" size="sm" className="text-blue-600" asChild>
               <Link href={routes.student.classes}>View all</Link>
             </Button>
           </div>
           {loading ? (
             <p className="text-sm text-slate-500">Loading…</p>
-          ) : upcoming.length === 0 ? (
+          ) : upcoming.filter((s) => !s.shareable).length === 0 ? (
             <div className="rounded-xl border border-dashed border-slate-200 bg-slate-50/80 px-4 py-8 text-center text-sm text-slate-500">
               No sessions booked yet.{" "}
               <Link href={routes.student.book} className="font-medium text-blue-600">
@@ -112,7 +153,7 @@ export default function StudentDashboardPage() {
             </div>
           ) : (
             <div className="space-y-3">
-              {upcoming.slice(0, 4).map((s) => (
+              {upcoming.filter((s) => !s.shareable).slice(0, 4).map((s) => (
                 <div
                   key={s.id}
                   className="student-session-card flex flex-col gap-3 sm:flex-row sm:items-center"

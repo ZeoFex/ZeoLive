@@ -24,6 +24,7 @@ import {
 } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
+import { ReportDialog } from "@/components/livekit/ReportDialog";
 import { Button } from "@/components/ui/button";
 import type { ClassroomRole } from "@/lib/livekit";
 import {
@@ -44,6 +45,7 @@ interface ControlsProps {
   onToggleWhiteboard?: () => void;
   containerRef?: React.RefObject<HTMLElement | null>;
   className?: string;
+  roomId: string;
   canRecord?: boolean;
   recording?: boolean;
   recordingBusy?: boolean;
@@ -84,6 +86,7 @@ export function Controls({
   onToggleWhiteboard,
   containerRef,
   className,
+  roomId,
   canRecord,
   recording,
   recordingBusy,
@@ -105,15 +108,13 @@ export function Controls({
 
   useEffect(() => {
     const sync = () => {
-      const sources = localParticipant.permissions?.canPublishSources;
-      const allowsMic =
-        !Array.isArray(sources) ||
-        sources.length === 0 ||
-        sources.some((source) => {
-          const value = String(source).toLowerCase();
-          return value === "microphone" || value === "2";
-        });
-      const locked = !allowsMic;
+      let locked = false;
+      try {
+        const data = JSON.parse(localParticipant.metadata || "{}") as { micLocked?: boolean };
+        locked = data.micLocked === true;
+      } catch {
+        locked = false;
+      }
       setMicLocked(locked);
       if (locked) {
         if (localParticipant.isMicrophoneEnabled) {
@@ -130,8 +131,10 @@ export function Controls({
     };
 
     sync();
+    localParticipant.on(ParticipantEvent.ParticipantMetadataChanged, sync);
     localParticipant.on(ParticipantEvent.ParticipantPermissionsChanged, sync);
     return () => {
+      localParticipant.off(ParticipantEvent.ParticipantMetadataChanged, sync);
       localParticipant.off(ParticipantEvent.ParticipantPermissionsChanged, sync);
     };
   }, [localParticipant]);
@@ -301,6 +304,8 @@ export function Controls({
       >
         <MessageSquare className="h-5 w-5" />
       </Button>
+
+      <ReportDialog roomId={roomId} />
 
       <Button
         type="button"

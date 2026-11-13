@@ -81,6 +81,7 @@ export function useClassroomRecorder(options: {
   const [elapsedSeconds, setElapsedSeconds] = useState(0);
 
   const recordingRef = useRef(false);
+  const serverEgressRef = useRef<string | null>(null);
   const startedAtRef = useRef(0);
   const recorderRef = useRef<MediaRecorder | null>(null);
   const chunksRef = useRef<Blob[]>([]);
@@ -131,7 +132,33 @@ export function useClassroomRecorder(options: {
     [options.roomId]
   );
 
+  const stopServerRecording = useCallback(async () => {
+    const egressId = serverEgressRef.current;
+    if (!egressId) return false;
+    serverEgressRef.current = null;
+    recordingRef.current = false;
+    setRecording(false);
+    setElapsedSeconds(0);
+    const res = await fetch(`/api/classroom/${options.roomId}/recording/server`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      credentials: "same-origin",
+      body: JSON.stringify({ action: "stop", egressId }),
+    });
+    const json = await res.json().catch(() => ({}));
+    if (!res.ok) {
+      throw new Error(typeof json.error === "string" ? json.error : "Could not stop the recording");
+    }
+    toast.success(
+      json.saved
+        ? "Recording saved. It is in Recordings for you, your students, and admins."
+        : "Recording stopped. The file will appear in Recordings when the server finishes saving it."
+    );
+    return true;
+  }, [options.roomId]);
+
   const stopAndSave = useCallback(async () => {
+    if (await stopServerRecording()) return;
     if (stopPromiseRef.current) return stopPromiseRef.current;
     const recorder = recorderRef.current;
     if (!recorder || recorder.state === "inactive") return;
@@ -173,7 +200,7 @@ export function useClassroomRecorder(options: {
     });
 
     return stopPromiseRef.current;
-  }, [uploadRecording]);
+  }, [stopServerRecording, uploadRecording]);
 
   const start = useCallback(async () => {
     if (!options.enabled || recordingRef.current) return;
@@ -286,6 +313,29 @@ export function useClassroomRecorder(options: {
     toast.success("Recording started. Stop it to save this lesson.");
   }, [options.enabled, options.rootRef, room]);
 
+  const startServerOrBrowser = useCallback(async () => {
+    const res = await fetch(`/api/classroom/${options.roomId}/recording/server`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      credentials: "same-origin",
+      body: JSON.stringify({ action: "start" }),
+    });
+    const json = await res.json().catch(() => ({}));
+    if (res.status === 403) {
+      throw new Error(typeof json.error === "string" ? json.error : "Only the tutor can record");
+    }
+    if (json.mode === "server" && typeof json.egressId === "string") {
+      serverEgressRef.current = json.egressId;
+      recordingRef.current = true;
+      startedAtRef.current = Date.now();
+      setElapsedSeconds(0);
+      setRecording(true);
+      toast.success("Recording on the server. Closing this tab will still keep the file.");
+      return;
+    }
+    await start();
+  }, [options.roomId, start]);
+
   const toggle = useCallback(async () => {
     if (busy) return;
     setBusy(true);
@@ -293,17 +343,28 @@ export function useClassroomRecorder(options: {
       if (recordingRef.current) {
         await stopAndSave();
       } else {
-        await start();
+        await startServerOrBrowser();
       }
     } catch (error) {
       toast.error(error instanceof Error ? error.message : "Could not save the recording");
     } finally {
       setBusy(false);
     }
-  }, [busy, start, stopAndSave]);
+  }, [busy, startServerOrBrowser, stopAndSave]);
 
   useEffect(() => {
     return () => {
+      const egressId = serverEgressRef.current;
+      if (egressId) {
+        serverEgressRef.current = null;
+        void fetch(`/api/classroom/${options.roomId}/recording/server`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          credentials: "same-origin",
+          keepalive: true,
+          body: JSON.stringify({ action: "stop", egressId }),
+        });
+      }
       const recorder = recorderRef.current;
       if (recorder && recorder.state === "recording") {
         try {
@@ -314,7 +375,7 @@ export function useClassroomRecorder(options: {
       }
       cleanupRef.current?.();
     };
-  }, []);
+  }, [options.roomId]);
 
   return { recording, busy, elapsedSeconds, toggle, stopAndSave };
 }

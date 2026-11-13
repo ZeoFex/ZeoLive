@@ -23,7 +23,7 @@ export function buildWelcomeEmail(params: {
 
   const text = `Hello ${params.name},
 
-Welcome to Zeolive! Your ${roleLabel} account has been created successfully.
+Welcome to ZTL! Your ${roleLabel} account has been created successfully.
 
 ${nextStep}
 
@@ -33,19 +33,19 @@ ${loginPage}
 If you did not create this account, you can ignore this email.
 
 Regards,
-Zeolive`;
+ZTL`;
 
   const html = `
     <p>Hello ${params.name},</p>
-    <p>Welcome to Zeolive! Your <strong>${roleLabel}</strong> account has been created successfully.</p>
+    <p>Welcome to ZTL! Your <strong>${roleLabel}</strong> account has been created successfully.</p>
     <p>${nextStep}</p>
-    <p><a href="${loginPage}">Sign in to Zeolive</a></p>
+    <p><a href="${loginPage}">Sign in to ZTL</a></p>
     <p>If you did not create this account, you can ignore this email.</p>
-    <p>Regards,<br>Zeolive</p>
+    <p>Regards,<br>ZTL</p>
   `.trim();
 
   return {
-    subject: "Welcome to Zeolive — your account is ready",
+    subject: "Welcome to ZTL — your account is ready",
     text,
     html,
   };
@@ -80,25 +80,25 @@ export function buildLoginNoticeEmail(params: {
 
   const text = `Hello ${params.name},
 
-You just signed in to your Zeolive account.
+You just signed in to your ZTL account.
 
 Time: ${when}
 
 If this was you, no action is needed. If you did not sign in, reset your password immediately and contact support.
 
 Regards,
-Zeolive`;
+ZTL`;
 
   const html = `
     <p>Hello ${params.name},</p>
-    <p>You just signed in to your Zeolive account.</p>
+    <p>You just signed in to your ZTL account.</p>
     <p><strong>Time:</strong> ${when}</p>
     <p>If this was you, no action is needed. If you did not sign in, reset your password immediately and contact support.</p>
-    <p>Regards,<br>Zeolive</p>
+    <p>Regards,<br>ZTL</p>
   `.trim();
 
   return {
-    subject: "Zeolive — new sign-in to your account",
+    subject: "ZTL — new sign-in to your account",
     text,
     html,
   };

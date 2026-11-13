@@ -1,10 +1,12 @@
 import { sendEmail } from "@/lib/email/transport";
 
-function formatWhen(date: Date) {
-  return date.toLocaleString("en-GB", {
+function formatWhen(date: Date, timeZone?: string | null) {
+  const when = date.toLocaleString("en-GB", {
     dateStyle: "full",
     timeStyle: "short",
+    timeZone: timeZone || "UTC",
   });
+  return timeZone ? `${when} (${timeZone})` : when;
 }
 
 export function buildStudentBookingEmail(params: {
@@ -14,8 +16,9 @@ export function buildStudentBookingEmail(params: {
   title: string;
   scheduledAt: Date;
   classroomUrl: string;
+  timeZone?: string | null;
 }) {
-  const when = formatWhen(params.scheduledAt);
+  const when = formatWhen(params.scheduledAt, params.timeZone);
   const subjectLine = params.subject ? ` (${params.subject})` : "";
 
   const text = `Hello ${params.studentName},
@@ -31,7 +34,7 @@ ${params.classroomUrl}
 We will also notify your tutor. If you need help, reply to this support email.
 
 Regards,
-Zeolive Support`;
+ZTL Support`;
 
   const html = `
     <p>Hello ${params.studentName},</p>
@@ -40,11 +43,11 @@ Zeolive Support`;
     <strong>When:</strong> ${when}</p>
     <p><a href="${params.classroomUrl}">Open classroom</a></p>
     <p>We will also notify your tutor. If you need help, reply to this support email.</p>
-    <p>Regards,<br>Zeolive Support</p>
+    <p>Regards,<br>ZTL Support</p>
   `.trim();
 
   return {
-    subject: `Zeolive — booking confirmed with ${params.tutorName}`,
+    subject: `ZTL — booking confirmed with ${params.tutorName}`,
     text,
     html,
   };
@@ -57,8 +60,9 @@ export function buildTutorBookingEmail(params: {
   title: string;
   scheduledAt: Date;
   classroomUrl: string;
+  timeZone?: string | null;
 }) {
-  const when = formatWhen(params.scheduledAt);
+  const when = formatWhen(params.scheduledAt, params.timeZone);
   const subjectLine = params.subject ? ` (${params.subject})` : "";
 
   const text = `Hello ${params.tutorName},
@@ -74,7 +78,7 @@ ${params.classroomUrl}
 Please be ready at the scheduled time. Reply to this support email if you need help.
 
 Regards,
-Zeolive Support`;
+ZTL Support`;
 
   const html = `
     <p>Hello ${params.tutorName},</p>
@@ -83,11 +87,11 @@ Zeolive Support`;
     <strong>When:</strong> ${when}</p>
     <p><a href="${params.classroomUrl}">Open classroom</a></p>
     <p>Please be ready at the scheduled time. Reply to this support email if you need help.</p>
-    <p>Regards,<br>Zeolive Support</p>
+    <p>Regards,<br>ZTL Support</p>
   `.trim();
 
   return {
-    subject: `Zeolive — new booking from ${params.studentName}`,
+    subject: `ZTL — new booking from ${params.studentName}`,
     text,
     html,
   };
@@ -113,16 +117,16 @@ Open this link to join the classroom:
 ${params.classroomUrl}
 
 Regards,
-Zeolive Support`;
+ZTL Support`;
   const html = `
     <p>Hello ${params.studentName},</p>
     <p><strong>${params.tutorName}</strong> scheduled a meeting${topic}.</p>
     <p><strong>When:</strong> ${when}</p>
     <p><a href="${params.classroomUrl}">Join the meeting</a></p>
-    <p>Regards,<br>Zeolive Support</p>
+    <p>Regards,<br>ZTL Support</p>
   `.trim();
   return {
-    subject: `Zeolive — ${params.tutorName} invited you to a meeting`,
+    subject: `ZTL — ${params.tutorName} invited you to a meeting`,
     text,
     html,
   };
@@ -141,15 +145,96 @@ ${params.tutorName} started "${params.title}". Join the session:
 ${params.classroomUrl}
 
 Regards,
-Zeolive Support`;
+ZTL Support`;
   const html = `
     <p>Hello ${params.studentName},</p>
     <p><strong>${params.tutorName}</strong> started "${params.title}".</p>
     <p><a href="${params.classroomUrl}">Join the session</a></p>
-    <p>Regards,<br>Zeolive Support</p>
+    <p>Regards,<br>ZTL Support</p>
   `.trim();
   return {
-    subject: `Zeolive — ${params.tutorName} started the session`,
+    subject: `ZTL — ${params.tutorName} started the session`,
+    text,
+    html,
+  };
+}
+
+export function buildSessionReminderEmail(params: {
+  name: string;
+  title: string;
+  scheduledAt: Date;
+  classroomUrl: string;
+  timeZone?: string | null;
+}) {
+  const when = formatWhen(params.scheduledAt, params.timeZone);
+  const text = `Hello ${params.name},
+
+"${params.title}" starts soon.
+
+When: ${when}
+
+Classroom link:
+${params.classroomUrl}
+
+A calendar file is attached.
+
+Regards,
+ZTL Support`;
+  const html = `
+    <p>Hello ${params.name},</p>
+    <p><strong>${params.title}</strong> starts soon.</p>
+    <p><strong>When:</strong> ${when}</p>
+    <p><a href="${params.classroomUrl}">Open classroom</a></p>
+    <p>A calendar file is attached.</p>
+    <p>Regards,<br>ZTL Support</p>
+  `.trim();
+  return {
+    subject: `ZTL — ${params.title} starts soon`,
+    text,
+    html,
+  };
+}
+
+export function buildBookingChangedEmail(params: {
+  name: string;
+  title: string;
+  scheduledAt: Date;
+  classroomUrl: string;
+  timeZone?: string | null;
+  change: "cancelled" | "rescheduled" | "left";
+}) {
+  const when = formatWhen(params.scheduledAt, params.timeZone);
+  const lead =
+    params.change === "cancelled"
+      ? `"${params.title}" has been cancelled.`
+      : params.change === "left"
+        ? `A student left "${params.title}". The class still stands for everyone who remains.`
+        : `"${params.title}" has a new time.`;
+  const text = `Hello ${params.name},
+
+${lead}
+
+When: ${when}
+
+Classroom link:
+${params.classroomUrl}
+
+Regards,
+ZTL Support`;
+  const html = `
+    <p>Hello ${params.name},</p>
+    <p>${lead}</p>
+    <p><strong>When:</strong> ${when}</p>
+    <p><a href="${params.classroomUrl}">Open classroom</a></p>
+    <p>Regards,<br>ZTL Support</p>
+  `.trim();
+  return {
+    subject:
+      params.change === "cancelled"
+        ? `ZTL — ${params.title} was cancelled`
+        : params.change === "left"
+          ? `ZTL — a student left ${params.title}`
+          : `ZTL — ${params.title} was rescheduled`,
     text,
     html,
   };
@@ -162,6 +247,8 @@ export async function sendBookingNotificationEmails(params: {
   subject?: string | null;
   scheduledAt: Date;
   classroomUrl: string;
+  timeZone?: string | null;
+  ics?: string;
 }) {
   const studentEmail = buildStudentBookingEmail({
     studentName: params.student.name,
@@ -170,6 +257,7 @@ export async function sendBookingNotificationEmails(params: {
     title: params.title,
     scheduledAt: params.scheduledAt,
     classroomUrl: params.classroomUrl,
+    timeZone: params.timeZone,
   });
 
   const tutorEmail = buildTutorBookingEmail({
@@ -179,7 +267,12 @@ export async function sendBookingNotificationEmails(params: {
     title: params.title,
     scheduledAt: params.scheduledAt,
     classroomUrl: params.classroomUrl,
+    timeZone: params.timeZone,
   });
+
+  const attachments = params.ics
+    ? [{ filename: "ztl-session.ics", content: params.ics, contentType: "text/calendar" }]
+    : undefined;
 
   const [studentResult, tutorResult] = await Promise.all([
     sendEmail({
@@ -188,6 +281,7 @@ export async function sendBookingNotificationEmails(params: {
       subject: studentEmail.subject,
       text: studentEmail.text,
       html: studentEmail.html,
+      attachments,
     }),
     sendEmail({
       channel: "support",
@@ -195,6 +289,7 @@ export async function sendBookingNotificationEmails(params: {
       subject: tutorEmail.subject,
       text: tutorEmail.text,
       html: tutorEmail.html,
+      attachments,
     }),
   ]);
 

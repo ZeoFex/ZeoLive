@@ -13,6 +13,7 @@ export const routes = {
   student: {
     dashboard: "/student/dashboard",
     classes: "/student/classes",
+    scheduling: "/student/scheduling",
     book: "/student/book",
     tutors: "/student/tutors",
     payments: "/student/payments",
@@ -27,6 +28,7 @@ export const routes = {
     dashboard: "/tutor/dashboard",
     students: "/tutor/students",
     sessions: "/tutor/sessions",
+    scheduling: "/tutor/scheduling",
     earnings: "/tutor/earnings",
     availability: "/tutor/availability",
     materials: "/tutor/materials",

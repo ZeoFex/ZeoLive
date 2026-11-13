@@ -2,6 +2,7 @@
 
 import {
   BookOpen,
+  Flag,
   Calendar,
   CreditCard,
   LayoutDashboard,
@@ -39,6 +40,7 @@ const navIcons: Record<NavIconName, LucideIcon> = {
   "bar-chart": BookOpen,
   "clipboard-list": BookOpen,
   video: Video,
+  flag: Flag,
 };
 
 interface StudentSidebarProps {
