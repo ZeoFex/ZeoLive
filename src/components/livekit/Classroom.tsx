@@ -482,11 +482,7 @@ export function Classroom({
           setRemoved(true);
           return;
         }
-        if (sessionEnded) {
-          return;
-        }
-        if (session.guest) {
-          window.location.assign(`/join/${session.roomId}`);
+        if (reason === DisconnectReason.CLIENT_INITIATED || sessionEnded) {
           return;
         }
         if (reason === DisconnectReason.ROOM_DELETED) {
@@ -499,7 +495,12 @@ export function Classroom({
           return;
         }
         console.error("LiveKit room error:", error);
-        toast.error(error.message || "Connection error");
+        const invalidAddress = error.message?.includes("Invalid URL");
+        toast.error(
+          invalidAddress
+            ? "The class video server address is not valid, so you cannot see the tutor."
+            : error.message || "Connection error"
+        );
       }}
     >
       <ClassroomRoom

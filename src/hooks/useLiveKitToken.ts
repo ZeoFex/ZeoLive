@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useState } from "react";
 import type { ClassroomRole } from "@/lib/livekit";
+import { liveKitWebsocketUrl } from "@/lib/livekit-url";
 
 export type LiveKitTokenState =
   | { status: "idle" }
@@ -25,14 +26,18 @@ async function requestLiveKitToken(roomId: string, role: ClassroomRole) {
     );
   }
 
-  if (!json.token || !json.serverUrl) {
-    throw new Error("Invalid token response from server");
+  const token = typeof json.token === "string" ? json.token : "";
+  const serverUrl =
+    liveKitWebsocketUrl(typeof json.serverUrl === "string" ? json.serverUrl : "") ||
+    liveKitWebsocketUrl(process.env.NEXT_PUBLIC_LIVEKIT_URL);
+
+  if (!token || !serverUrl) {
+    throw new Error(
+      "This class cannot open the video room, so you cannot see the tutor. The video server address is missing or not a valid link."
+    );
   }
 
-  return {
-    token: json.token as string,
-    serverUrl: json.serverUrl as string,
-  };
+  return { token, serverUrl };
 }
 
 export function useLiveKitToken(roomId: string | null, role: ClassroomRole | null) {

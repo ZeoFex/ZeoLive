@@ -54,26 +54,34 @@ export async function resolveClassroomActor(
     };
   }
 
-  const isHost =
-    !!authSession?.user?.id &&
-    (authSession.user.id === tutoring.tutorId || authSession.user.role === "ADMIN");
-
-  if (isHost && authSession?.user?.id && authSession.user.role) {
-    const access = await verifyClassroomAccess(roomId, authSession.user.id, authSession.user.role);
-    if (!access.allowed || !access.session || !access.participantRole) {
+  if (authSession?.user?.id && authSession.user.role) {
+    const access = await verifyClassroomAccess(
+      roomId,
+      authSession.user.id,
+      authSession.user.role
+    );
+    if (access.allowed && access.session && access.participantRole) {
+      const namedUser =
+        access.participantRole === "tutor"
+          ? access.session.tutor
+          : authSession.user.id === access.session.student.id
+            ? access.session.student
+            : null;
+      return {
+        actor: {
+          role: access.participantRole,
+          identity: authSession.user.id,
+          name: namedUser
+            ? participantDisplayName(namedUser)
+            : authSession.user.name?.trim() || authSession.user.email || "Student",
+          guest: false,
+          session: access.session,
+        },
+      };
+    }
+    if (!isShareableMeeting(tutoring)) {
       return { error: access.error ?? "Access denied", status: access.status };
     }
-    return {
-      actor: {
-        role: access.participantRole,
-        identity: authSession.user.id,
-        name: participantDisplayName(
-          access.participantRole === "tutor" ? access.session.tutor : access.session.student
-        ),
-        guest: false,
-        session: access.session,
-      },
-    };
   }
 
   if (isShareableMeeting(tutoring)) {
@@ -91,7 +99,7 @@ export async function resolveClassroomActor(
     return {
       actor: {
         role: "student",
-        identity: `guest:${guest.guestId}:${Date.now().toString(36)}`,
+        identity: `guest:${guest.guestId}`,
         name: guest.name,
         guest: true,
         session: tutoring,
@@ -99,24 +107,5 @@ export async function resolveClassroomActor(
     };
   }
 
-  if (!authSession?.user?.id || !authSession.user.role) {
-    return { error: "Unauthorized", status: 401 };
-  }
-
-  const access = await verifyClassroomAccess(roomId, authSession.user.id, authSession.user.role);
-  if (!access.allowed || !access.session || !access.participantRole) {
-    return { error: access.error ?? "Access denied", status: access.status };
-  }
-
-  return {
-    actor: {
-      role: access.participantRole,
-      identity: authSession.user.id,
-      name: participantDisplayName(
-        access.participantRole === "tutor" ? access.session.tutor : access.session.student
-      ),
-      guest: false,
-      session: access.session,
-    },
-  };
+  return { error: "Unauthorized", status: 401 };
 }

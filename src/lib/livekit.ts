@@ -1,13 +1,14 @@
 import { AccessToken } from "livekit-server-sdk";
 import type { AccessTokenOptions, VideoGrant } from "livekit-server-sdk";
+import { liveKitWebsocketUrl } from "@/lib/livekit-url";
 
 export type ClassroomRole = "student" | "tutor";
 
 /** WebSocket URL for clients (wss://…). Accepts either env name LiveKit docs use. */
 export function getLiveKitServerUrl() {
   return (
-    process.env.NEXT_PUBLIC_LIVEKIT_URL?.trim() ||
-    process.env.LIVEKIT_URL?.trim() ||
+    liveKitWebsocketUrl(process.env.NEXT_PUBLIC_LIVEKIT_URL) ||
+    liveKitWebsocketUrl(process.env.LIVEKIT_URL) ||
     ""
   );
 }
