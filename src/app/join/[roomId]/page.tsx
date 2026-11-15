@@ -18,7 +18,14 @@ export default async function JoinMeetingPage({
   const { roomId } = await params;
   const tutoring = await prisma.tutoringSession.findUnique({
     where: { roomId },
-    select: { id: true, tutorId: true, studentId: true, status: true, title: true },
+    select: {
+      id: true,
+      tutorId: true,
+      studentId: true,
+      status: true,
+      title: true,
+      participants: { select: { studentId: true } },
+    },
   });
 
   if (!tutoring) {
@@ -40,10 +47,14 @@ export default async function JoinMeetingPage({
   }
 
   const session = await auth();
-  const isHost =
-    !!session?.user?.id &&
-    (session.user.id === tutoring.tutorId || session.user.role === "ADMIN");
-  if (isHost) {
+  const userId = session?.user?.id;
+  const isMember =
+    !!userId &&
+    (userId === tutoring.tutorId ||
+      userId === tutoring.studentId ||
+      tutoring.participants.some((participant) => participant.studentId === userId) ||
+      session?.user?.role === "ADMIN");
+  if (isMember) {
     redirect(`/classroom/${roomId}`);
   }
 

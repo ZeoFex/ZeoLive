@@ -15,8 +15,8 @@ function sortCameraTracks<T extends { participant: { metadata?: string; sid: str
   return [...tracks].sort((a, b) => {
     const roleA = parseParticipantRole(a.participant.metadata);
     const roleB = parseParticipantRole(b.participant.metadata);
-    if (roleA === "student" && roleB === "tutor") return -1;
-    if (roleA === "tutor" && roleB === "student") return 1;
+    if (roleA === "tutor" && roleB !== "tutor") return -1;
+    if (roleB === "tutor" && roleA !== "tutor") return 1;
     return a.participant.sid.localeCompare(b.participant.sid);
   });
 }
