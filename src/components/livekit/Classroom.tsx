@@ -18,6 +18,7 @@ import { ParticipantGrid } from "@/components/livekit/ParticipantGrid";
 import { ScreenShareStage } from "@/components/livekit/ScreenShareStage";
 import { Whiteboard } from "@/components/livekit/Whiteboard";
 import { ClassroomLayoutProvider, useClassroomLayout } from "@/components/livekit/classroom-layout-context";
+import { FloorProvider, FloorRequestBanner, useFloor } from "@/components/livekit/floor-control";
 import { SessionHeader } from "@/components/livekit/SessionHeader";
 import { WaitingRoom } from "@/components/livekit/WaitingRoom";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
@@ -28,6 +29,11 @@ import { useSessionPresence } from "@/hooks/useSessionPresence";
 import type { ClassroomRole } from "@/lib/livekit";
 import { SCREEN_SHARE_PUBLISH } from "@/lib/livekit-screen-share";
 import { parseParticipantRole } from "@/lib/classroom-participant";
+import {
+  isExpectedMediaIssue,
+  listedDeviceAvailable,
+  mediaDeviceMessage,
+} from "@/lib/media-device-error";
 import { dashboardForRole, routes } from "@/lib/routes";
 import { cn } from "@/lib/utils";
 
@@ -59,6 +65,7 @@ function ParticipantsSidebar({
   isHost: boolean;
 }) {
   const participants = useParticipants();
+  const floor = useFloor();
   const [pending, setPending] = useState<string | null>(null);
   const [confirmRemove, setConfirmRemove] = useState<string | null>(null);
 
@@ -120,9 +127,81 @@ function ParticipantsSidebar({
                   ) : (
                     <MicOff className="h-3.5 w-3.5 text-muted-foreground" aria-label="Microphone off" />
                   )}
+                  {floor.screen?.identity === p.identity && (
+                    <Badge variant="outline" className="text-[10px]">
+                      Screen
+                    </Badge>
+                  )}
+                  {floor.board?.identity === p.identity && (
+                    <Badge variant="outline" className="text-[10px]">
+                      Drawing
+                    </Badge>
+                  )}
                 </div>
                 {canModerate ? (
                   <div className="mt-2 flex flex-wrap gap-1.5">
+                    {floor.requests.some((request) => request.identity === p.identity && request.kind === "screen") && (
+                      <Button
+                        type="button"
+                        size="sm"
+                        className="h-7 rounded-full px-2 text-xs"
+                        disabled={floor.busy}
+                        onClick={() => {
+                          void floor.grant("screen", p.identity).catch((error: unknown) => {
+                            toast.error(error instanceof Error ? error.message : "Could not allow screen sharing");
+                          });
+                        }}
+                      >
+                        Allow screen
+                      </Button>
+                    )}
+                    {floor.screen?.identity === p.identity && (
+                      <Button
+                        type="button"
+                        size="sm"
+                        variant="outline"
+                        className="h-7 rounded-full px-2 text-xs"
+                        disabled={floor.busy}
+                        onClick={() => {
+                          void floor.revoke("screen", p.identity).catch((error: unknown) => {
+                            toast.error(error instanceof Error ? error.message : "Could not stop screen sharing");
+                          });
+                        }}
+                      >
+                        Stop screen
+                      </Button>
+                    )}
+                    {floor.requests.some((request) => request.identity === p.identity && request.kind === "board") && (
+                      <Button
+                        type="button"
+                        size="sm"
+                        className="h-7 rounded-full px-2 text-xs"
+                        disabled={floor.busy}
+                        onClick={() => {
+                          void floor.grant("board", p.identity).catch((error: unknown) => {
+                            toast.error(error instanceof Error ? error.message : "Could not allow drawing");
+                          });
+                        }}
+                      >
+                        Allow drawing
+                      </Button>
+                    )}
+                    {floor.board?.identity === p.identity && (
+                      <Button
+                        type="button"
+                        size="sm"
+                        variant="outline"
+                        className="h-7 rounded-full px-2 text-xs"
+                        disabled={floor.busy}
+                        onClick={() => {
+                          void floor.revoke("board", p.identity).catch((error: unknown) => {
+                            toast.error(error instanceof Error ? error.message : "Could not take back the pen");
+                          });
+                        }}
+                      >
+                        Stop drawing
+                      </Button>
+                    )}
                     <Button
                       type="button"
                       size="sm"
@@ -167,16 +246,67 @@ function ParticipantsSidebar({
   );
 }
 
+function MeetingPause({
+  session,
+  mode,
+  onRejoin,
+  onExit,
+}: {
+  session: ClassroomSessionInfo;
+  mode: "away" | "closed";
+  onRejoin: () => Promise<boolean>;
+  onExit: () => void;
+}) {
+  const [busy, setBusy] = useState(false);
+  const isTutor = session.participantRole === "tutor";
+  const closed = mode === "closed";
+
+  return (
+    <div className="flex h-[100dvh] flex-col items-center justify-center gap-4 bg-background p-8 text-center text-foreground">
+      <h1 className="text-xl font-semibold">
+        {closed ? "This meeting has ended" : "You left the meeting"}
+      </h1>
+      <p className="max-w-md text-sm text-muted-foreground">
+        {closed
+          ? "The tutor ended the meeting, so it is closed."
+          : isTutor
+            ? "Students can stay in the class. You can rejoin them until you end the meeting."
+            : "You can rejoin until the tutor ends the meeting."}
+      </p>
+      <div className="flex flex-wrap items-center justify-center gap-2">
+        {closed ? null : (
+          <Button
+            disabled={busy}
+            onClick={() => {
+              setBusy(true);
+              void onRejoin().finally(() => setBusy(false));
+            }}
+          >
+            {busy ? "Rejoining…" : "Rejoin"}
+          </Button>
+        )}
+        <Button variant="outline" onClick={onExit}>
+          {closed ? "Leave" : "Leave for now"}
+        </Button>
+      </div>
+    </div>
+  );
+}
+
 function ClassroomRoomInner({
   session,
   publishAudio,
   publishVideo,
   onSessionEnded,
+  onLeft,
+  onExit,
 }: {
   session: ClassroomSessionInfo;
   publishAudio: boolean;
   publishVideo: boolean;
   onSessionEnded: () => void;
+  onLeft: () => void;
+  onExit: () => void;
 }) {
   const router = useRouter();
   const containerRef = useRef<HTMLDivElement>(null);
@@ -212,20 +342,35 @@ function ClassroomRoomInner({
     let cancelled = false;
     const publishChosenDevices = async () => {
       if (room.state !== ConnectionState.Connected || cancelled) return;
-      try {
-        await room.localParticipant.setMicrophoneEnabled(publishAudio);
-      } catch (error) {
-        if (!cancelled && publishAudio) {
-          toast.error(error instanceof Error ? error.message : "Could not turn the microphone on");
+
+      const openDevice = async (
+        kind: "microphone" | "camera",
+        enabled: boolean,
+        input: "audioinput" | "videoinput"
+      ) => {
+        if (!enabled || cancelled) return;
+        const listed = await listedDeviceAvailable(input);
+        if (cancelled) return;
+        if (listed === false) {
+          toast.message(mediaDeviceMessage({ name: "NotFoundError" }, kind));
+          return;
         }
-      }
-      try {
-        await room.localParticipant.setCameraEnabled(publishVideo);
-      } catch (error) {
-        if (!cancelled && publishVideo) {
-          toast.error(error instanceof Error ? error.message : "Could not turn the camera on");
+        try {
+          if (kind === "microphone") {
+            await room.localParticipant.setMicrophoneEnabled(true);
+          } else {
+            await room.localParticipant.setCameraEnabled(true);
+          }
+        } catch (error) {
+          if (cancelled) return;
+          const message = mediaDeviceMessage(error, kind);
+          if (isExpectedMediaIssue(error)) toast.message(message);
+          else toast.error(message);
         }
-      }
+      };
+
+      await openDevice("microphone", publishAudio, "audioinput");
+      await openDevice("camera", publishVideo, "videoinput");
     };
     void publishChosenDevices();
     room.on(RoomEvent.Connected, publishChosenDevices);
@@ -258,18 +403,26 @@ function ClassroomRoomInner({
   }, [screenExpanded]);
 
   const leaveRoom = useCallback(async () => {
+    if (session.participantRole !== "tutor") {
+      void fetch(`/api/classroom/${session.roomId}/floor`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        credentials: "same-origin",
+        keepalive: true,
+        body: JSON.stringify({ action: "release" }),
+      }).catch(() => undefined);
+    }
     try {
       await recorder.stopAndSave();
     } catch (e) {
       toast.error(e instanceof Error ? e.message : "Could not save the recording");
     }
-    const path = session.guest
-      ? `/join/${session.roomId}`
-      : session.participantRole === "tutor"
-        ? dashboardForRole("TUTOR")
-        : dashboardForRole("STUDENT");
-    router.push(path);
-  }, [recorder, router, session.guest, session.participantRole]);
+    onLeft();
+  }, [onLeft, recorder, session.participantRole, session.roomId]);
+
+  const exitClass = useCallback(() => {
+    onExit();
+  }, [onExit]);
 
   const openEndedMeetings = useCallback(() => {
     router.push(session.shareable ? routes.tutor.scheduling : routes.tutor.sessions);
@@ -294,7 +447,7 @@ function ClassroomRoomInner({
       }
       setEnded(true);
       onSessionEnded();
-      toast.success("Session ended for all participants");
+      toast.success("Meeting ended for everyone");
       openEndedMeetings();
     } catch (e) {
       toast.error(e instanceof Error ? e.message : "Could not end session");
@@ -308,7 +461,7 @@ function ClassroomRoomInner({
         <p className="max-w-md text-sm text-muted-foreground">
           This tutoring session has been closed. You can return to your dashboard.
         </p>
-        <Button onClick={leaveRoom}>Back to dashboard</Button>
+        <Button onClick={exitClass}>Leave</Button>
       </div>
     );
   }
@@ -326,6 +479,7 @@ function ClassroomRoomInner({
   };
 
   return (
+    <FloorProvider roomId={session.roomId} role={session.participantRole}>
     <div ref={containerRef} className="flex h-full min-h-0 flex-1 flex-col bg-background">
       <SessionHeader
         title={session.title}
@@ -391,6 +545,7 @@ function ClassroomRoomInner({
       </div>
 
       <RoomAudioRenderer />
+      <FloorRequestBanner />
       <Controls
         roomId={session.roomId}
         role={session.participantRole}
@@ -410,6 +565,7 @@ function ClassroomRoomInner({
         onToggleRecording={() => void recorder.toggle()}
       />
     </div>
+    </FloorProvider>
   );
 }
 
@@ -418,11 +574,15 @@ function ClassroomRoom({
   publishAudio,
   publishVideo,
   onSessionEnded,
+  onLeft,
+  onExit,
 }: {
   session: ClassroomSessionInfo;
   publishAudio: boolean;
   publishVideo: boolean;
   onSessionEnded: () => void;
+  onLeft: () => void;
+  onExit: () => void;
 }) {
   return (
     <ClassroomLayoutProvider>
@@ -431,6 +591,8 @@ function ClassroomRoom({
         publishAudio={publishAudio}
         publishVideo={publishVideo}
         onSessionEnded={onSessionEnded}
+        onLeft={onLeft}
+        onExit={onExit}
       />
     </ClassroomLayoutProvider>
   );
@@ -442,9 +604,59 @@ export function Classroom({
   session,
   audio = true,
   video = true,
-}: ClassroomProps) {
+  onRefreshToken,
+}: ClassroomProps & { onRefreshToken?: () => Promise<void> }) {
+  const router = useRouter();
   const [sessionEnded, setSessionEnded] = useState(false);
   const [removed, setRemoved] = useState(false);
+  const [away, setAway] = useState(false);
+  const leavingRef = useRef(false);
+
+  const exitClass = useCallback(() => {
+    const path = session.guest
+      ? "/"
+      : session.participantRole === "tutor"
+        ? dashboardForRole("TUTOR")
+        : dashboardForRole("STUDENT");
+    router.push(path);
+  }, [router, session.guest, session.participantRole]);
+
+  const meetingIsClosed = useCallback(async () => {
+    const res = await fetch(`/api/classroom/${session.roomId}`, { credentials: "same-origin" });
+    const json = await res.json().catch(() => ({}));
+    const status = typeof json.status === "string" ? json.status : "";
+    return !res.ok || status === "COMPLETED" || status === "CANCELLED";
+  }, [session.roomId]);
+
+  const rejoin = useCallback(async () => {
+    try {
+      if (await meetingIsClosed()) {
+        setSessionEnded(true);
+        setAway(false);
+        return false;
+      }
+      await onRefreshToken?.();
+      setAway(false);
+      return true;
+    } catch {
+      toast.message("Could not rejoin yet. The meeting is still open if the tutor has not ended it.");
+      return false;
+    }
+  }, [meetingIsClosed, onRefreshToken]);
+
+  useEffect(() => {
+    if (!away) return;
+    const watch = window.setInterval(() => {
+      void meetingIsClosed()
+        .then((closed) => {
+          if (!closed) return;
+          setSessionEnded(true);
+          setAway(false);
+        })
+        .catch(() => undefined);
+    }, 8000);
+    return () => window.clearInterval(watch);
+  }, [away, meetingIsClosed]);
 
   if (removed) {
     return (
@@ -460,14 +672,22 @@ export function Classroom({
     );
   }
 
+  if (sessionEnded) {
+    return <MeetingPause session={session} mode="closed" onRejoin={rejoin} onExit={exitClass} />;
+  }
+
+  if (away) {
+    return <MeetingPause session={session} mode="away" onRejoin={rejoin} onExit={exitClass} />;
+  }
+
   return (
     <LiveKitRoom
       key={session.roomId}
       token={token}
       serverUrl={serverUrl}
       connect
-      audio={audio}
-      video={video}
+      audio={false}
+      video={false}
       className="flex h-[100dvh] flex-col bg-background text-foreground"
       options={{
         adaptiveStream: true,
@@ -482,7 +702,7 @@ export function Classroom({
           setRemoved(true);
           return;
         }
-        if (reason === DisconnectReason.CLIENT_INITIATED || sessionEnded) {
+        if (leavingRef.current || reason === DisconnectReason.CLIENT_INITIATED || sessionEnded) {
           return;
         }
         if (reason === DisconnectReason.ROOM_DELETED) {
@@ -491,7 +711,7 @@ export function Classroom({
         }
       }}
       onError={(error) => {
-        if (error.message?.includes("engine not connected")) {
+        if (error.message?.includes("engine not connected") || isExpectedMediaIssue(error)) {
           return;
         }
         console.error("LiveKit room error:", error);
@@ -508,6 +728,11 @@ export function Classroom({
         publishAudio={audio}
         publishVideo={video}
         onSessionEnded={() => setSessionEnded(true)}
+        onLeft={() => {
+          leavingRef.current = true;
+          setAway(true);
+        }}
+        onExit={exitClass}
       />
     </LiveKitRoom>
   );

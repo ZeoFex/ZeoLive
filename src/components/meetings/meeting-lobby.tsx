@@ -7,6 +7,7 @@ import { useEffect, useRef, useState } from "react";
 import { Logo } from "@/components/brand/logo";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { listedDeviceAvailable, mediaDeviceMessage } from "@/lib/media-device-error";
 import { cn } from "@/lib/utils";
 
 const DEVICE_KEY = "ztl-join-devices";
@@ -47,37 +48,49 @@ export function MeetingLobby({
       setCamNote("");
 
       if (micOn) {
-        try {
-          const audio = await navigator.mediaDevices.getUserMedia({ audio: true, video: false });
-          if (cancelled) {
-            audio.getTracks().forEach((track) => track.stop());
-            return;
-          }
-          owned.push(...audio.getTracks());
-        } catch {
-          if (!cancelled) {
-            setMicOn(false);
-            setMicNote("The browser blocked the microphone. You can still join with it off.");
+        const listed = await listedDeviceAvailable("audioinput");
+        if (!cancelled && listed === false) {
+          setMicOn(false);
+          setMicNote(mediaDeviceMessage({ name: "NotFoundError" }, "microphone"));
+        } else if (!cancelled) {
+          try {
+            const audio = await navigator.mediaDevices.getUserMedia({ audio: true, video: false });
+            if (cancelled) {
+              audio.getTracks().forEach((track) => track.stop());
+              return;
+            }
+            owned.push(...audio.getTracks());
+          } catch (error) {
+            if (!cancelled) {
+              setMicOn(false);
+              setMicNote(mediaDeviceMessage(error, "microphone"));
+            }
           }
         }
       }
 
       if (camOn) {
-        try {
-          const video = await navigator.mediaDevices.getUserMedia({ audio: false, video: true });
-          if (cancelled) {
-            video.getTracks().forEach((track) => track.stop());
-            return;
-          }
-          owned.push(...video.getTracks());
-          if (videoRef.current) {
-            videoRef.current.srcObject = new MediaStream(video.getVideoTracks());
-            await videoRef.current.play().catch(() => undefined);
-          }
-        } catch {
-          if (!cancelled) {
-            setCamOn(false);
-            setCamNote("The browser blocked the camera. You can still join with your face hidden.");
+        const listed = await listedDeviceAvailable("videoinput");
+        if (!cancelled && listed === false) {
+          setCamOn(false);
+          setCamNote(mediaDeviceMessage({ name: "NotFoundError" }, "camera"));
+        } else if (!cancelled) {
+          try {
+            const video = await navigator.mediaDevices.getUserMedia({ audio: false, video: true });
+            if (cancelled) {
+              video.getTracks().forEach((track) => track.stop());
+              return;
+            }
+            owned.push(...video.getTracks());
+            if (videoRef.current) {
+              videoRef.current.srcObject = new MediaStream(video.getVideoTracks());
+              await videoRef.current.play().catch(() => undefined);
+            }
+          } catch (error) {
+            if (!cancelled) {
+              setCamOn(false);
+              setCamNote(mediaDeviceMessage(error, "camera"));
+            }
           }
         }
       }

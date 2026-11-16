@@ -1,5 +1,6 @@
 import { AccessToken } from "livekit-server-sdk";
 import type { AccessTokenOptions, VideoGrant } from "livekit-server-sdk";
+import { studentPublishSources } from "@/lib/livekit-publish";
 import { liveKitWebsocketUrl } from "@/lib/livekit-url";
 
 export type ClassroomRole = "student" | "tutor";
@@ -25,7 +26,8 @@ export async function createLiveKitToken(
   roomName: string,
   participantIdentity: string,
   participantName: string,
-  role: ClassroomRole
+  role: ClassroomRole,
+  options?: { allowScreenShare?: boolean }
 ): Promise<string> {
   if (!isLiveKitConfigured()) {
     throw new Error(
@@ -58,6 +60,7 @@ export async function createLiveKitToken(
     grant.canPublish = true;
   } else {
     grant.canPublish = true;
+    grant.canPublishSources = studentPublishSources(true, options?.allowScreenShare === true);
   }
 
   at.addGrant(grant);

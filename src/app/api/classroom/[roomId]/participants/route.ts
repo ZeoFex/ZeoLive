@@ -2,7 +2,8 @@ import { NextResponse } from "next/server";
 import { z } from "zod";
 import { auth } from "@/auth";
 import { verifyClassroomAccess } from "@/lib/classroom-access";
-import { moderateParticipant } from "@/lib/livekit-room-admin";
+import { changeFloor } from "@/lib/classroom-floor-store";
+import { moderateParticipant, publishFloorRefresh } from "@/lib/livekit-room-admin";
 
 const schema = z.object({
   identity: z.string().min(1).max(120),
@@ -36,6 +37,10 @@ export async function POST(
 
   try {
     await moderateParticipant(roomId, parsed.data.identity, parsed.data.action);
+    if (parsed.data.action === "remove") {
+      await changeFloor(roomId, { type: "release", identity: parsed.data.identity });
+      await publishFloorRefresh(roomId);
+    }
     return NextResponse.json({ ok: true });
   } catch (error) {
     const message = error instanceof Error ? error.message : "Could not update that person";

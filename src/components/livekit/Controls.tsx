@@ -24,9 +24,11 @@ import {
 } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
+import { useFloor } from "@/components/livekit/floor-control";
 import { ReportDialog } from "@/components/livekit/ReportDialog";
 import { Button } from "@/components/ui/button";
 import type { ClassroomRole } from "@/lib/livekit";
+import { isExpectedMediaIssue, mediaDeviceMessage } from "@/lib/media-device-error";
 import {
   SCREEN_SHARE_CAPTURE,
   SCREEN_SHARE_PUBLISH,
@@ -103,8 +105,18 @@ export function Controls({
   const [screenShareBusy, setScreenShareBusy] = useState(false);
   const [micLocked, setMicLocked] = useState(false);
   const micLockNotice = useRef(false);
+  const floor = useFloor();
+  const screenAllowed =
+    role === "tutor" || floor.screen?.identity === localParticipant.identity;
+  const screenPending = role === "student" && floor.pending("screen");
 
   const isConnected = room.state === ConnectionState.Connected;
+
+  useEffect(() => {
+    if (role === "tutor" || screenAllowed) return;
+    if (!localParticipant.isScreenShareEnabled) return;
+    void localParticipant.setScreenShareEnabled(false);
+  }, [localParticipant, role, screenAllowed]);
 
   useEffect(() => {
     const sync = () => {
@@ -143,7 +155,9 @@ export function Controls({
     try {
       await localParticipant.setMicrophoneEnabled(!isMicrophoneEnabled);
     } catch (e) {
-      toast.error(e instanceof Error ? e.message : "Could not toggle microphone");
+      const message = mediaDeviceMessage(e, "microphone");
+      if (isExpectedMediaIssue(e)) toast.message(message);
+      else toast.error(message);
     }
   };
 
@@ -151,12 +165,30 @@ export function Controls({
     try {
       await localParticipant.setCameraEnabled(!isCameraEnabled);
     } catch (e) {
-      toast.error(e instanceof Error ? e.message : "Could not toggle camera");
+      const message = mediaDeviceMessage(e, "camera");
+      if (isExpectedMediaIssue(e)) toast.message(message);
+      else toast.error(message);
     }
   };
 
   const toggleScreenShare = async () => {
-    if (role !== "tutor") return;
+    if (role === "student" && !screenAllowed) {
+      setScreenShareBusy(true);
+      try {
+        if (screenPending) {
+          await floor.cancel("screen");
+          toast.message("Screen share request cancelled");
+        } else {
+          await floor.request("screen");
+          toast.message("Waiting for your tutor to allow screen sharing");
+        }
+      } catch (e) {
+        toast.error(e instanceof Error ? e.message : "Could not ask to share your screen");
+      } finally {
+        setScreenShareBusy(false);
+      }
+      return;
+    }
 
     setScreenShareBusy(true);
     try {
@@ -169,7 +201,11 @@ export function Controls({
           SCREEN_SHARE_CAPTURE,
           SCREEN_SHARE_PUBLISH
         );
-        toast.success("Sharing your screen — students see it in the main view");
+        toast.success(
+          role === "tutor"
+            ? "Sharing your screen — students see it in the main view"
+            : "Sharing your screen — the class can see it"
+        );
       }
     } catch (e) {
       toast.error(screenShareErrorMessage(e));
@@ -228,29 +264,42 @@ export function Controls({
         {isCameraEnabled ? <Video className="h-5 w-5" /> : <VideoOff className="h-5 w-5" />}
       </Button>
 
-      {role === "tutor" && (
-        <Button
-          type="button"
-          size="icon"
-          variant={isScreenShareEnabled ? "default" : "secondary"}
-          className={cn(
-            "h-11 w-11 shrink-0 rounded-full sm:h-12 sm:w-12",
-            isScreenShareEnabled && "ring-2 ring-emerald-400 ring-offset-2"
-          )}
-          onClick={toggleScreenShare}
-          disabled={!isConnected || screenShareBusy}
-          aria-label={isScreenShareEnabled ? "Stop screen share" : "Share screen"}
-          aria-pressed={isScreenShareEnabled}
-        >
-          {screenShareBusy ? (
-            <Loader2 className="h-5 w-5 animate-spin" />
-          ) : isScreenShareEnabled ? (
-            <MonitorOff className="h-5 w-5" />
-          ) : (
-            <Monitor className="h-5 w-5" />
-          )}
-        </Button>
-      )}
+      <Button
+        type="button"
+        size={role === "student" && !isScreenShareEnabled ? "default" : "icon"}
+        variant={isScreenShareEnabled ? "default" : screenPending ? "outline" : "secondary"}
+        className={cn(
+          "h-11 shrink-0 rounded-full sm:h-12",
+          role === "student" && !isScreenShareEnabled ? "px-3" : "w-11 sm:w-12",
+          isScreenShareEnabled && "ring-2 ring-emerald-400 ring-offset-2",
+          role === "student" && screenAllowed && !isScreenShareEnabled && "ring-2 ring-amber-400 ring-offset-2"
+        )}
+        onClick={toggleScreenShare}
+        disabled={!isConnected || screenShareBusy}
+        aria-label={
+          isScreenShareEnabled
+            ? "Stop screen share"
+            : screenPending
+              ? "Cancel screen share request"
+              : screenAllowed
+                ? "Share screen"
+                : "Ask to share your screen"
+        }
+        aria-pressed={isScreenShareEnabled || screenPending}
+      >
+        {screenShareBusy ? (
+          <Loader2 className="h-5 w-5 animate-spin" />
+        ) : isScreenShareEnabled ? (
+          <MonitorOff className="h-5 w-5" />
+        ) : (
+          <Monitor className="h-5 w-5" />
+        )}
+        {role === "student" && !isScreenShareEnabled && (
+          <span className="ml-2 text-sm">
+            {screenPending ? "Waiting" : screenAllowed ? "Share" : "Ask to share"}
+          </span>
+        )}
+      </Button>
 
       {canRecord && onToggleRecording && (
         <Button
@@ -351,7 +400,7 @@ export function Controls({
           onClick={onEndSession}
         >
           <PhoneOff className="mr-2 h-4 w-4" />
-          End session
+          End meeting
         </Button>
       )}
     </div>

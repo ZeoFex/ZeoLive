@@ -13,6 +13,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { useWhiteboard } from "@/hooks/useWhiteboard";
+import { useFloor } from "@/components/livekit/floor-control";
 import { parseParticipantRole } from "@/lib/classroom-participant";
 import type { ClassroomRole } from "@/lib/livekit";
 import { limitPoints, MAX_WHITEBOARD_PAGES, WHITEBOARD_COLORS, type WhiteboardPoint, type WhiteboardStroke } from "@/lib/whiteboard";
@@ -38,9 +39,14 @@ export function Whiteboard({
 }) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const scrollerRef = useRef<HTMLDivElement>(null);
-  const canDraw = role === "tutor";
+  const floor = useFloor();
+  const grantedDraw = role === "student" && floor.board?.identity === floor.identity;
+  const canDraw = role === "tutor" || grantedDraw;
+  const canManageBoard = role === "tutor";
+  const drawRequestPending = role === "student" && floor.pending("board");
   const { pages, activePage, selectPage, commit, authorId } = useWhiteboard(roomId, {
     writable: canDraw,
+    drawIdentity: floor.board?.identity ?? null,
   });
   const participants = useParticipants();
   const [tool, setTool] = useState<"pen" | "eraser">("pen");
@@ -50,10 +56,15 @@ export function Whiteboard({
   const [large, setLarge] = useState(false);
   const [clearOpen, setClearOpen] = useState(false);
   const [pageHeight, setPageHeight] = useState(960);
+  const canDrawRef = useRef(canDraw);
   const drawingRef = useRef<WhiteboardStroke | null>(null);
   const pagesRef = useRef(pages);
   const savingRef = useRef(false);
   const strokes = pages[activePage] ?? [];
+
+  useEffect(() => {
+    canDrawRef.current = canDraw;
+  }, [canDraw]);
 
   useEffect(() => {
     pagesRef.current = pages;
@@ -141,7 +152,7 @@ export function Whiteboard({
 
   const onPointerDown = (event: React.PointerEvent<HTMLCanvasElement>) => {
     if (!canDraw || event.button !== 0) return;
-    if (!large) {
+    if (!large && role === "tutor") {
       setLarge(true);
       return;
     }
@@ -178,6 +189,7 @@ export function Whiteboard({
     }
     drawingRef.current = null;
     setLive(null);
+    if (!canDrawRef.current) return;
     const stroke = { ...current, points: limitPoints(current.points) };
     void commit({ type: "stroke", page: activePage, stroke });
   };
@@ -221,6 +233,11 @@ export function Whiteboard({
           <PenLine className="h-3.5 w-3.5" />
           Whiteboard
         </div>
+        {grantedDraw && (
+          <p className="text-xs font-medium normal-case tracking-normal text-emerald-700">
+            You can draw. Everyone in this class can see it.
+          </p>
+        )}
 
         {canDraw ? (
           <>
@@ -292,11 +309,52 @@ export function Whiteboard({
               </button>
             ))}
           </>
+        ) : role === "student" ? (
+          <div className="flex min-w-0 flex-1 flex-wrap items-center gap-2">
+            <p className="text-xs text-stone-500">
+              {drawRequestPending
+                ? "Waiting for your tutor to let you draw"
+                : floor.board
+                  ? `${floor.board.name} is drawing. You can watch.`
+                  : "Ask to draw if you want to show a question"}
+            </p>
+            <Button
+              type="button"
+              size="sm"
+              variant={drawRequestPending ? "outline" : "default"}
+              className="h-8 rounded-full"
+              disabled={floor.busy}
+              onClick={() => {
+                const task = drawRequestPending ? floor.cancel("board") : floor.request("board");
+                void task.catch((error: unknown) => {
+                  toast.error(error instanceof Error ? error.message : "Could not ask to draw");
+                });
+              }}
+            >
+              {drawRequestPending ? "Cancel" : "Ask to draw"}
+            </Button>
+          </div>
         ) : (
-          <p className="text-xs text-stone-500">View only — your tutor is writing</p>
+          <p className="text-xs text-stone-500">View only</p>
         )}
 
         <div className="ml-auto flex items-center gap-1">
+          {canManageBoard && floor.board && (
+            <Button
+              type="button"
+              size="sm"
+              variant="outline"
+              className="h-8 rounded-full px-2"
+              disabled={floor.busy}
+              onClick={() => {
+                void floor.revoke("board", floor.board?.identity ?? "").catch((error: unknown) => {
+                  toast.error(error instanceof Error ? error.message : "Could not take back the pen");
+                });
+              }}
+            >
+              Take back {floor.board.name}&apos;s pen
+            </Button>
+          )}
           <Button
             type="button"
             size="icon"
@@ -308,14 +366,14 @@ export function Whiteboard({
             {large ? <Minimize2 className="h-4 w-4" /> : <Maximize2 className="h-4 w-4" />}
           </Button>
           {canDraw && (
-            <>
-              <Button type="button" size="icon" variant="outline" className="h-8 w-8" onClick={undo} aria-label="Undo my last stroke">
-                <Undo2 className="h-4 w-4" />
-              </Button>
-              <Button type="button" size="icon" variant="outline" className="h-8 w-8" onClick={clear} aria-label="Clear this page">
-                <Trash2 className="h-4 w-4" />
-              </Button>
-            </>
+            <Button type="button" size="icon" variant="outline" className="h-8 w-8" onClick={undo} aria-label="Undo my last stroke">
+              <Undo2 className="h-4 w-4" />
+            </Button>
+          )}
+          {canManageBoard && (
+            <Button type="button" size="icon" variant="outline" className="h-8 w-8" onClick={clear} aria-label="Clear this page">
+              <Trash2 className="h-4 w-4" />
+            </Button>
           )}
         </div>
       </div>
@@ -337,7 +395,7 @@ export function Whiteboard({
             Page {index + 1}
           </button>
         ))}
-        {canDraw && (
+        {canManageBoard && (
           <Button
             type="button"
             size="sm"
@@ -359,8 +417,8 @@ export function Whiteboard({
           className={cn(
             "block w-full bg-white",
             canDraw && "touch-none",
-            canDraw && !large && "cursor-zoom-in",
-            canDraw && large && (tool === "eraser" ? "cursor-cell" : "cursor-crosshair"),
+            canDraw && role === "tutor" && !large && "cursor-zoom-in",
+            canDraw && (role !== "tutor" || large) && (tool === "eraser" ? "cursor-cell" : "cursor-crosshair"),
             !canDraw && "cursor-default"
           )}
           onPointerDown={onPointerDown}
@@ -395,10 +453,14 @@ export function Whiteboard({
         {strokes.length === 0 && !live && (
           <p className="pointer-events-none absolute inset-x-0 top-6 px-4 text-center text-sm text-stone-400">
             {canDraw
-              ? large
-                ? "Scroll for more room on this page. Add a page when you want a fresh board, and switch back anytime."
-                : "Tap the whiteboard to enlarge it for teaching. Scroll for more writing room."
-              : "Follow along here. Only your tutor can write on the board."}
+              ? grantedDraw
+                ? "Draw or write your question. Everyone in this class can see it."
+                : large
+                  ? "Scroll for more room on this page. Add a page when you want a fresh board, and switch back anytime."
+                  : "Tap the whiteboard to enlarge it for teaching. Scroll for more writing room."
+              : floor.board
+                ? `${floor.board.name} is drawing. Everyone else can watch.`
+                : "Follow along here. Ask to draw if you want to show a question on the board."}
           </p>
         )}
       </div>

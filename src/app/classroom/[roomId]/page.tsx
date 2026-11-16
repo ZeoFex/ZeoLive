@@ -191,6 +191,7 @@ export default function ClassroomPage() {
       session={pageState.session}
       audio={devices.audio}
       video={devices.video}
+      onRefreshToken={refetchToken}
     />
   );
 }

@@ -29,8 +29,13 @@ type ExtraStroke = {
 
 const EXTRA_TTL_MS = 8000;
 
-export function useWhiteboard(roomId: string, options?: { writable?: boolean }) {
+export function useWhiteboard(
+  roomId: string,
+  options?: { writable?: boolean; drawIdentity?: string | null }
+) {
   const writable = options?.writable ?? true;
+  const drawIdentity = options?.drawIdentity ?? null;
+  const drawIdentityRef = useRef(drawIdentity);
   const room = useRoomContext();
   const [pages, setPages] = useState<WhiteboardStroke[][]>([[]]);
   const [activePage, setActivePage] = useState(0);
@@ -40,6 +45,10 @@ export function useWhiteboard(roomId: string, options?: { writable?: boolean }) 
   const tombstonesRef = useRef<Set<string>>(new Set());
   const pagesRef = useRef(pages);
   const activeRef = useRef(activePage);
+
+  useEffect(() => {
+    drawIdentityRef.current = drawIdentity;
+  }, [drawIdentity]);
 
   useEffect(() => {
     pagesRef.current = pages;
@@ -182,7 +191,16 @@ export function useWhiteboard(roomId: string, options?: { writable?: boolean }) 
 
       const parsed = parseBoardOp(message);
       if (!parsed) return;
-      if (parseParticipantRole(participant?.metadata) !== "tutor") return;
+      const senderId = participant?.identity;
+      const tutorSent = parseParticipantRole(participant?.metadata) === "tutor";
+      const grantedStudent = Boolean(senderId) && senderId === drawIdentityRef.current;
+      if (!tutorSent && !grantedStudent) return;
+      if (!tutorSent && (parsed.type === "clear" || parsed.type === "add-page")) return;
+      if (!tutorSent && parsed.type === "stroke" && parsed.stroke.authorId !== senderId) return;
+      if (!tutorSent && parsed.type === "undo") {
+        const stroke = pagesRef.current[parsed.page]?.find((item) => item.id === parsed.id);
+        if (!stroke || stroke.authorId !== senderId) return;
+      }
 
       if (parsed.type === "stroke") {
         if (tombstonesRef.current.has(parsed.stroke.id)) return;
@@ -252,9 +270,17 @@ export function useWhiteboard(roomId: string, options?: { writable?: boolean }) 
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify(op),
         });
-        const json = (await res.json().catch(() => null)) as BoardSnapshot | null;
-        if (!res.ok || !json) {
-          throw new Error("Could not save whiteboard");
+        const json = (await res.json().catch(() => null)) as BoardSnapshot | { error?: string } | null;
+        if (!res.ok || !json || !("revision" in json)) {
+          const index = pendingRef.current.indexOf(op);
+          if (index >= 0) pendingRef.current.splice(index, 1);
+          if (op.type === "stroke") {
+            extrasRef.current = extrasRef.current.filter((extra) => extra.stroke.id !== op.stroke.id);
+          }
+          await pull();
+          throw new Error(
+            json && "error" in json && json.error ? json.error : "Could not save whiteboard"
+          );
         }
         const index = pendingRef.current.indexOf(op);
         if (index >= 0) pendingRef.current.splice(index, 1);
@@ -263,7 +289,7 @@ export function useWhiteboard(roomId: string, options?: { writable?: boolean }) 
         console.warn("Whiteboard sync failed", error);
       }
     },
-    [adoptSnapshot, documentFrom, room, roomId, writable]
+    [adoptSnapshot, documentFrom, pull, room, roomId, writable]
   );
 
   const selectPage = useCallback((page: number) => {

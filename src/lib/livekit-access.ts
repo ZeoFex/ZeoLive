@@ -1,5 +1,6 @@
 import { markSessionActive } from "@/lib/classroom-access";
 import { resolveClassroomActor } from "@/lib/classroom-connection";
+import { readFloor } from "@/lib/classroom-floor-store";
 import { createLiveKitToken, getLiveKitServerUrl, isLiveKitConfigured } from "@/lib/livekit";
 import { meetingIsFull, returningAttendanceKey } from "@/lib/participant-limit";
 import { linkedAccountUserId, recordSessionAttendance } from "@/lib/record-attendance";
@@ -38,7 +39,10 @@ export async function issueClassroomToken(
     }
   }
 
-  const token = await createLiveKitToken(room, resolved.actor.identity, resolved.actor.name, role);
+  const floor = role === "student" ? await readFloor(room) : null;
+  const token = await createLiveKitToken(room, resolved.actor.identity, resolved.actor.name, role, {
+    allowScreenShare: floor?.screen?.identity === resolved.actor.identity,
+  });
 
   const linkedUserId = await linkedAccountUserId(resolved.actor);
   await recordSessionAttendance({

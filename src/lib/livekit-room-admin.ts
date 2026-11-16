@@ -1,5 +1,7 @@
-import { RoomServiceClient, TrackSource, type ParticipantInfo } from "livekit-server-sdk";
+import { DataPacket_Kind, RoomServiceClient, TrackSource, type ParticipantInfo } from "livekit-server-sdk";
+import { FLOOR_TOPIC } from "@/lib/classroom-floor";
 import { getLiveKitServerUrl, isLiveKitConfigured } from "@/lib/livekit";
+import { studentPublishSources } from "@/lib/livekit-publish";
 
 function liveKitHttpUrl() {
   const url = getLiveKitServerUrl();
@@ -19,22 +21,35 @@ export function getRoomService() {
   );
 }
 
-function participantRole(info: ParticipantInfo) {
+type ParticipantMeta = {
+  role?: string;
+  micLocked?: boolean;
+  screenShare?: boolean;
+};
+
+function readMeta(metadata: string): ParticipantMeta {
   try {
-    const data = JSON.parse(info.metadata) as { role?: string };
-    return data.role ?? null;
+    const data = JSON.parse(metadata || "{}") as ParticipantMeta;
+    return data && typeof data === "object" ? data : {};
   } catch {
-    return null;
+    return {};
   }
 }
 
-const audienceSources = [
-  TrackSource.CAMERA,
-  TrackSource.SCREEN_SHARE,
-  TrackSource.SCREEN_SHARE_AUDIO,
-];
+function participantRole(info: ParticipantInfo) {
+  return readMeta(info.metadata).role ?? null;
+}
 
-const openSources = [TrackSource.MICROPHONE, ...audienceSources];
+function permissionFor(allowMic: boolean, allowScreen: boolean) {
+  return {
+    canSubscribe: true,
+    canPublish: true,
+    canPublishData: true,
+    canPublishSources: studentPublishSources(allowMic, allowScreen),
+    hidden: false,
+    recorder: false,
+  };
+}
 
 export async function moderateParticipant(
   room: string,
@@ -57,32 +72,77 @@ export async function moderateParticipant(
   }
 
   const allowMic = action === "unmute";
-  let metadata = person.metadata;
-  try {
-    const current = JSON.parse(person.metadata || "{}") as { role?: string };
-    metadata = JSON.stringify({
-      ...current,
-      role: current.role ?? "student",
-      micLocked: !allowMic,
-    });
-  } catch {
-    metadata = JSON.stringify({ role: "student", micLocked: !allowMic });
-  }
+  const current = readMeta(person.metadata);
+  const allowScreen = current.screenShare === true;
+  const metadata = JSON.stringify({
+    ...current,
+    role: current.role ?? "student",
+    micLocked: !allowMic,
+    screenShare: allowScreen,
+  });
   await client.updateParticipant(room, identity, {
     metadata,
-    permission: {
-      canSubscribe: true,
-      canPublish: true,
-      canPublishData: true,
-      canPublishSources: allowMic ? openSources : audienceSources,
-      hidden: false,
-      recorder: false,
-    },
+    permission: permissionFor(allowMic, allowScreen),
   });
 
   for (const track of person.tracks) {
     if (track.source === TrackSource.MICROPHONE) {
       await client.mutePublishedTrack(room, identity, track.sid, !allowMic);
     }
+  }
+}
+
+export async function findRoomParticipant(room: string, identity: string) {
+  const client = getRoomService();
+  const people = await client.listParticipants(room);
+  return people.find((item) => item.identity === identity) ?? null;
+}
+
+export async function setScreenShareAllowed(room: string, identity: string, allowed: boolean) {
+  const client = getRoomService();
+  const person = await findRoomParticipant(room, identity);
+  if (!person) {
+    if (!allowed) return;
+    throw new Error("That person is no longer in the meeting");
+  }
+  if (participantRole(person) === "tutor") {
+    throw new Error("The host can already share a screen");
+  }
+
+  const current = readMeta(person.metadata);
+  await client.updateParticipant(room, identity, {
+    metadata: JSON.stringify({
+      ...current,
+      role: current.role ?? "student",
+      micLocked: current.micLocked === true,
+      screenShare: allowed,
+    }),
+    permission: permissionFor(current.micLocked !== true, allowed),
+  });
+
+  if (!allowed) {
+    for (const track of person.tracks) {
+      if (
+        track.source === TrackSource.SCREEN_SHARE ||
+        track.source === TrackSource.SCREEN_SHARE_AUDIO
+      ) {
+        await client.mutePublishedTrack(room, identity, track.sid, true);
+      }
+    }
+  }
+}
+
+export async function publishFloorRefresh(room: string) {
+  if (!isLiveKitConfigured()) return;
+  try {
+    const client = getRoomService();
+    await client.sendData(
+      room,
+      new TextEncoder().encode(JSON.stringify({ type: "refresh" })),
+      DataPacket_Kind.RELIABLE,
+      { topic: FLOOR_TOPIC }
+    );
+  } catch {
+    /* The room may not be open yet. Clients also refresh on a timer. */
   }
 }
