@@ -17,11 +17,16 @@ const schema = z.discriminatedUnion("action", [
   z.object({
     action: z.literal("release"),
     identity: z.string().min(1).max(128).optional(),
+    keepBoard: z.union([z.boolean(), z.literal("true"), z.literal("false")]).optional(),
   }),
   z.object({
     action: z.enum(["grant", "deny", "revoke"]),
     kind: z.enum(["screen", "board"]),
     identity: z.string().min(1).max(128),
+  }),
+  z.object({
+    action: z.literal("board"),
+    open: z.union([z.boolean(), z.literal("true"), z.literal("false")]),
   }),
 ]);
 
@@ -31,6 +36,7 @@ function visibleFloor(state: FloorState, role: "student" | "tutor", identity: st
     screen: state.screen,
     board: state.board,
     requests: state.requests.filter((request) => request.identity === identity),
+    boardOpen: state.boardOpen,
   };
 }
 
@@ -83,7 +89,11 @@ export async function POST(
 
   const actor = resolved.actor;
   const command = parsed.data;
-  const tutorAction = command.action === "grant" || command.action === "deny" || command.action === "revoke";
+  const tutorAction =
+    command.action === "grant" ||
+    command.action === "deny" ||
+    command.action === "revoke" ||
+    command.action === "board";
   if (tutorAction && actor.role !== "tutor") {
     return NextResponse.json({ error: "Only the tutor can allow that" }, { status: 403 });
   }
@@ -111,7 +121,11 @@ export async function POST(
     if (actor.role === "student" && command.identity && command.identity !== actor.identity) {
       return NextResponse.json({ error: "You can only give up your own permission" }, { status: 403 });
     }
-    action = { type: "release", identity };
+    action = {
+      type: "release",
+      identity,
+      keepBoard: command.keepBoard === true || command.keepBoard === "true",
+    };
   } else if (command.action === "grant") {
     let person;
     try {
@@ -139,6 +153,11 @@ export async function POST(
       identity: command.identity,
       name: person.name?.trim() || "Student",
       kind: command.kind,
+    };
+  } else if (command.action === "board") {
+    action = {
+      type: "board-visibility",
+      open: command.open === true || command.open === "true",
     };
   } else {
     action = {

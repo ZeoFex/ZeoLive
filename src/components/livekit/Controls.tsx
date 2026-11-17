@@ -4,7 +4,7 @@ import {
   useLocalParticipant,
   useRoomContext,
 } from "@livekit/components-react";
-import { ConnectionState, ParticipantEvent } from "livekit-client";
+import { ConnectionState, LocalTrackPublication, ParticipantEvent, Track } from "livekit-client";
 import {
   Circle,
   Ellipsis,
@@ -29,6 +29,13 @@ import { toast } from "sonner";
 import { useFloor } from "@/components/livekit/floor-control";
 import { ReportDialog } from "@/components/livekit/ReportDialog";
 import { Button } from "@/components/ui/button";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import type { ClassroomRole } from "@/lib/livekit";
 import { isExpectedMediaIssue, mediaDeviceMessage } from "@/lib/media-device-error";
 import {
@@ -109,10 +116,12 @@ export function Controls({
   } = useLocalParticipant();
   const [screenShareBusy, setScreenShareBusy] = useState(false);
   const [moreOpen, setMoreOpen] = useState(false);
+  const [leaveOpen, setLeaveOpen] = useState(false);
   const [micLocked, setMicLocked] = useState(false);
   const [reportOpener, setReportOpener] = useState<(() => void) | null>(null);
   const isPhone = useMediaQuery("(max-width: 767px)");
   const lastMicSeq = useRef<number | null>(null);
+  const micLockedRef = useRef(false);
   const floor = useFloor();
   const screenAllowed =
     role === "tutor" || floor.screen?.identity === localParticipant.identity;
@@ -133,6 +142,22 @@ export function Controls({
     void localParticipant.setScreenShareEnabled(false);
   }, [localParticipant, role, screenAllowed]);
 
+  const applyMic = useCallback(
+    async (enabled: boolean) => {
+      const publication = localParticipant.getTrackPublication(Track.Source.Microphone);
+      if (publication instanceof LocalTrackPublication) {
+        if (enabled) await publication.unmute();
+        else await publication.mute();
+        if (enabled && publication.isMuted) {
+          await localParticipant.setMicrophoneEnabled(true);
+        }
+        return;
+      }
+      await localParticipant.setMicrophoneEnabled(enabled);
+    },
+    [localParticipant]
+  );
+
   useEffect(() => {
     const sync = () => {
       let locked = false;
@@ -147,21 +172,20 @@ export function Controls({
       } catch {
         locked = false;
       }
+      micLockedRef.current = locked;
       setMicLocked(locked);
       const previous = lastMicSeq.current;
       lastMicSeq.current = seq;
       const hostChangedMic = previous !== null && previous !== seq;
       if (locked) {
-        if (localParticipant.isMicrophoneEnabled) {
-          void localParticipant.setMicrophoneEnabled(false);
-        }
+        void applyMic(false).catch(() => undefined);
         if (hostChangedMic) toast.message("The host muted your microphone");
         return;
       }
       if (!hostChangedMic) return;
       void (async () => {
         try {
-          await localParticipant.setMicrophoneEnabled(true);
+          await applyMic(true);
           if (joinWithVideo) await localParticipant.setCameraEnabled(true);
           toast.message("Your microphone is on");
         } catch (error) {
@@ -172,18 +196,26 @@ export function Controls({
       })();
     };
 
+    const keepHostMute = () => {
+      if (!micLockedRef.current) return;
+      void applyMic(false).catch(() => undefined);
+    };
+
     sync();
     localParticipant.on(ParticipantEvent.ParticipantMetadataChanged, sync);
     localParticipant.on(ParticipantEvent.ParticipantPermissionsChanged, sync);
+    localParticipant.on(ParticipantEvent.TrackUnmuted, keepHostMute);
     return () => {
       localParticipant.off(ParticipantEvent.ParticipantMetadataChanged, sync);
       localParticipant.off(ParticipantEvent.ParticipantPermissionsChanged, sync);
+      localParticipant.off(ParticipantEvent.TrackUnmuted, keepHostMute);
     };
-  }, [joinWithVideo, localParticipant]);
+  }, [applyMic, joinWithVideo, localParticipant]);
 
   const toggleMic = async () => {
+    if (micLockedRef.current) return;
     try {
-      await localParticipant.setMicrophoneEnabled(!isMicrophoneEnabled);
+      await applyMic(!isMicrophoneEnabled);
     } catch (e) {
       const message = mediaDeviceMessage(e, "microphone");
       if (isExpectedMediaIssue(e)) toast.message(message);
@@ -258,6 +290,13 @@ export function Controls({
   };
 
   const closeMore = () => setMoreOpen(false);
+  const askToLeave = () => {
+    if (role === "student") {
+      setLeaveOpen(true);
+      return;
+    }
+    onLeave();
+  };
 
   const moreItems: Array<{
     key: string;
@@ -295,7 +334,7 @@ export function Controls({
   if (onToggleWhiteboard) {
     moreItems.push({
       key: "board",
-      label: showWhiteboard ? "Hide board" : "Whiteboard",
+      label: showWhiteboard ? "Hide board" : "Share board",
       pressed: showWhiteboard,
       icon: <PenLine className="h-5 w-5" />,
       onClick: () => {
@@ -504,7 +543,7 @@ export function Controls({
           variant={showWhiteboard ? "default" : "secondary"}
           className="hidden h-11 w-11 shrink-0 rounded-full sm:h-12 sm:w-12 md:inline-flex"
           onClick={onToggleWhiteboard}
-          aria-label={showWhiteboard ? "Hide whiteboard" : "Show whiteboard"}
+          aria-label={showWhiteboard ? "Hide whiteboard" : "Share whiteboard with the class"}
           aria-pressed={showWhiteboard}
         >
           <PenLine className="h-5 w-5" />
@@ -528,7 +567,7 @@ export function Controls({
         type="button"
         size="icon"
         variant={showParticipants ? "default" : "secondary"}
-        className="hidden h-11 w-11 shrink-0 rounded-full sm:h-12 sm:w-12 md:inline-flex"
+        className="h-10 w-10 shrink-0 rounded-full sm:h-12 sm:w-12"
         onClick={onToggleParticipants}
         aria-label="Toggle participants"
       >
@@ -568,7 +607,7 @@ export function Controls({
         variant="outline"
         size="icon"
         className="h-10 w-10 shrink-0 rounded-full md:hidden"
-        onClick={onLeave}
+        onClick={askToLeave}
         aria-label="Leave"
       >
         <LogOut className="h-4 w-4" />
@@ -578,7 +617,7 @@ export function Controls({
         variant="outline"
         size="sm"
         className="hidden rounded-full md:inline-flex"
-        onClick={onLeave}
+        onClick={askToLeave}
       >
         <LogOut className="mr-2 h-4 w-4" />
         Leave
@@ -609,6 +648,31 @@ export function Controls({
         </>
       )}
     </div>
+    <Dialog open={leaveOpen} onOpenChange={setLeaveOpen}>
+      <DialogContent className="max-w-sm">
+        <DialogHeader>
+          <DialogTitle>Leave this meeting?</DialogTitle>
+          <DialogDescription>
+            You can rejoin until the tutor ends it.
+          </DialogDescription>
+        </DialogHeader>
+        <div className="flex justify-end gap-2">
+          <Button type="button" variant="outline" onClick={() => setLeaveOpen(false)}>
+            No
+          </Button>
+          <Button
+            type="button"
+            variant="destructive"
+            onClick={() => {
+              setLeaveOpen(false);
+              onLeave();
+            }}
+          >
+            Yes
+          </Button>
+        </div>
+      </DialogContent>
+    </Dialog>
     </div>
   );
 }

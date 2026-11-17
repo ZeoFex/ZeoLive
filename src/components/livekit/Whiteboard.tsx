@@ -64,6 +64,9 @@ export function Whiteboard({
 
   useEffect(() => {
     canDrawRef.current = canDraw;
+    if (canDraw) return;
+    drawingRef.current = null;
+    setLive(null);
   }, [canDraw]);
 
   useEffect(() => {

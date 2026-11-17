@@ -19,6 +19,8 @@ export type FloorState = {
   screen: FloorHolder | null;
   board: FloorHolder | null;
   requests: FloorRequest[];
+  /** The tutor has chosen to show the whiteboard to the class. */
+  boardOpen: boolean;
 };
 
 export type FloorAction =
@@ -34,12 +36,13 @@ export type FloorAction =
   | { type: "grant"; identity: string; name: string; kind: FloorKind }
   | { type: "deny"; identity: string; kind: FloorKind }
   | { type: "revoke"; identity: string; kind: FloorKind }
-  | { type: "release"; identity: string };
+  | { type: "release"; identity: string; keepBoard?: boolean }
+  | { type: "board-visibility"; open: boolean };
 
 const MAX_REQUESTS = 40;
 
 export function emptyFloor(): FloorState {
-  return { screen: null, board: null, requests: [] };
+  return { screen: null, board: null, requests: [], boardOpen: false };
 }
 
 function cleanName(name: string) {
@@ -95,6 +98,11 @@ export function reduceFloor(state: FloorState, action: FloorAction): FloorState 
     return { ...state, board: holder, requests };
   }
 
+  if (action.type === "board-visibility") {
+    if (state.boardOpen === action.open) return state;
+    return { ...state, boardOpen: action.open };
+  }
+
   if (action.type === "revoke") {
     const holder = action.kind === "screen" ? state.screen : state.board;
     const requests = withoutRequest(state, action.identity, action.kind);
@@ -115,9 +123,13 @@ export function reduceFloor(state: FloorState, action: FloorAction): FloorState 
 
   const requests = state.requests.filter((request) => request.identity !== action.identity);
   const screen = state.screen?.identity === action.identity ? null : state.screen;
-  const board = state.board?.identity === action.identity ? null : state.board;
+  const board = action.keepBoard
+    ? state.board
+    : state.board?.identity === action.identity
+      ? null
+      : state.board;
   if (screen === state.screen && board === state.board && requests.length === state.requests.length) {
     return state;
   }
-  return { screen, board, requests };
+  return { screen, board, requests, boardOpen: state.boardOpen };
 }

@@ -84,10 +84,11 @@ export async function moderateParticipant(
   });
   await client.updateParticipant(room, identity, {
     metadata,
-    permission: permissionFor(allowMic, allowScreen),
+    permission: permissionFor(true, allowScreen),
   });
 
-  for (const track of person.tracks) {
+  const latest = (await client.listParticipants(room)).find((item) => item.identity === identity) ?? person;
+  for (const track of latest.tracks) {
     if (track.source === TrackSource.MICROPHONE) {
       await client.mutePublishedTrack(room, identity, track.sid, !allowMic);
     }
@@ -119,7 +120,7 @@ export async function setScreenShareAllowed(room: string, identity: string, allo
       micLocked: current.micLocked === true,
       screenShare: allowed,
     }),
-    permission: permissionFor(current.micLocked !== true, allowed),
+    permission: permissionFor(true, allowed),
   });
 
   if (!allowed) {

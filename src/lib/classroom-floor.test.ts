@@ -79,7 +79,23 @@ test("screen sharing and drawing are granted separately", () => {
   assert.equal(both.board?.identity, "student-b");
 });
 
-test("leaving clears that student's permission and requests only", () => {
+test("the whiteboard stays hidden until the tutor shares it", () => {
+  assert.equal(room.boardOpen, false);
+  const open = reduceFloor(room, { type: "board-visibility", open: true });
+  assert.equal(open.boardOpen, true);
+  const sharing = reduceFloor(open, {
+    type: "grant",
+    identity: "student-a",
+    name: "Ada",
+    kind: "screen",
+  });
+  assert.equal(sharing.boardOpen, true);
+  const closed = reduceFloor(sharing, { type: "board-visibility", open: false });
+  assert.equal(closed.boardOpen, false);
+  assert.equal(closed.screen?.identity, "student-a");
+});
+
+test("leaving keeps the pen until the tutor takes it back", () => {
   let state = reduceFloor(room, {
     type: "grant",
     identity: "student-a",
@@ -100,8 +116,11 @@ test("leaving clears that student's permission and requests only", () => {
     name: "Bea",
     kind: "screen",
   });
-  const left = reduceFloor(state, { type: "release", identity: "student-a" });
-  assert.equal(left.board, null);
+  const left = reduceFloor(state, { type: "release", identity: "student-a", keepBoard: true });
+  assert.equal(left.board?.identity, "student-a");
   assert.equal(left.screen?.identity, "student-b");
   assert.equal(left.requests.length, 0);
+
+  const taken = reduceFloor(left, { type: "revoke", identity: "student-a", kind: "board" });
+  assert.equal(taken.board, null);
 });

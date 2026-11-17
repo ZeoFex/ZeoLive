@@ -35,18 +35,19 @@ function normalize(value: unknown): FloorState | null {
         typeof request.identity === "string" &&
         typeof request.id === "string"
     ),
+    boardOpen: raw.boardOpen === true,
   };
 }
 
 export async function readFloor(roomId: string): Promise<FloorState> {
-  const local = floors.get(roomId);
-  if (local) return local;
-
   const cached = normalize(await cacheGet<unknown>(cacheKey(roomId)));
   if (cached) {
     floors.set(roomId, cached);
     return cached;
   }
+
+  const local = floors.get(roomId);
+  if (local) return local;
 
   const empty = emptyFloor();
   floors.set(roomId, empty);

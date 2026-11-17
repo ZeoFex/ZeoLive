@@ -29,6 +29,7 @@ type FloorContextValue = {
   screen: FloorHolder | null;
   board: FloorHolder | null;
   requests: FloorRequest[];
+  boardOpen: boolean;
   busy: boolean;
   pending: (kind: FloorKind) => boolean;
   request: (kind: FloorKind) => Promise<void>;
@@ -36,6 +37,7 @@ type FloorContextValue = {
   grant: (kind: FloorKind, identity: string) => Promise<void>;
   deny: (kind: FloorKind, identity: string) => Promise<void>;
   revoke: (kind: FloorKind, identity: string) => Promise<void>;
+  setBoardOpen: (open: boolean) => Promise<void>;
 };
 
 const FloorContext = createContext<FloorContextValue | null>(null);
@@ -55,7 +57,12 @@ export function FloorProvider({
 }) {
   const room = useRoomContext();
   const identity = room.localParticipant.identity;
-  const [floor, setFloor] = useState<FloorState>({ screen: null, board: null, requests: [] });
+  const [floor, setFloor] = useState<FloorState>({
+    screen: null,
+    board: null,
+    requests: [],
+    boardOpen: false,
+  });
   const [busy, setBusy] = useState(false);
   const [loaded, setLoaded] = useState(false);
   const announced = useRef(new Set<string>());
@@ -71,6 +78,7 @@ export function FloorProvider({
       screen: next.screen ?? null,
       board: next.board ?? null,
       requests: Array.isArray(next.requests) ? next.requests : [],
+      boardOpen: next.boardOpen === true,
     });
   }, []);
 
@@ -143,7 +151,9 @@ export function FloorProvider({
         current.board?.identity === participant.identity ||
         current.requests.some((request) => request.identity === participant.identity);
       if (!holds) return;
-      void post({ action: "release", identity: participant.identity }).catch(() => undefined);
+      void post({ action: "release", identity: participant.identity, keepBoard: "true" }).catch(
+        () => undefined
+      );
     };
     room.on(RoomEvent.DataReceived, onData);
     room.on(RoomEvent.ParticipantDisconnected, onLeave);
@@ -241,6 +251,7 @@ export function FloorProvider({
       screen: floor.screen,
       board: floor.board,
       requests: floor.requests,
+      boardOpen: floor.boardOpen,
       busy,
       pending: (kind) => floor.requests.some((request) => request.kind === kind && request.identity === identity),
       request: (kind) => run(() => post({ action: "request", kind }).then(() => undefined)),
@@ -258,8 +269,10 @@ export function FloorProvider({
       deny: (kind, target) => run(() => post({ action: "deny", kind, identity: target }).then(() => undefined)),
       revoke: (kind, target) =>
         run(() => post({ action: "revoke", kind, identity: target }).then(() => undefined)),
+      setBoardOpen: (open) =>
+        run(() => post({ action: "board", open: open ? "true" : "false" }).then(() => undefined)),
     }),
-    [busy, floor.board, floor.requests, floor.screen, identity, post, role, run]
+    [busy, floor.board, floor.boardOpen, floor.requests, floor.screen, identity, post, role, run]
   );
 
   return <FloorContext.Provider value={value}>{children}</FloorContext.Provider>;

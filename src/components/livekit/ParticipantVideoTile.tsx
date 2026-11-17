@@ -2,8 +2,13 @@
 
 import {
   ParticipantTile,
+  useLocalParticipant,
+  useRoomContext,
   type TrackReferenceOrPlaceholder,
 } from "@livekit/components-react";
+import { Mic, MicOff } from "lucide-react";
+import { useState } from "react";
+import { toast } from "sonner";
 import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
 import {
@@ -22,11 +27,41 @@ export function ParticipantVideoTile({
   variant = "grid",
   className,
 }: ParticipantVideoTileProps) {
+  const room = useRoomContext();
+  const { localParticipant } = useLocalParticipant();
   const role = parseParticipantRole(trackRef.participant.metadata);
   const name = participantLabel(trackRef.participant);
   const isFilmstrip = variant === "filmstrip";
   const isDock = variant === "dock";
   const isFill = variant === "fill";
+  const host = parseParticipantRole(localParticipant.metadata) === "tutor";
+  const canModerate = host && !trackRef.participant.isLocal && role !== "tutor";
+  const micOn = trackRef.participant.isMicrophoneEnabled;
+  const [pending, setPending] = useState(false);
+
+  const moderateMic = async () => {
+    setPending(true);
+    try {
+      const res = await fetch(`/api/classroom/${room.name}/participants`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        credentials: "same-origin",
+        body: JSON.stringify({
+          identity: trackRef.participant.identity,
+          action: micOn ? "mute" : "unmute",
+        }),
+      });
+      const json = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        throw new Error(typeof json.error === "string" ? json.error : "Could not update that microphone");
+      }
+      toast.success(micOn ? "Microphone muted" : "Microphone unmuted");
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "Could not update that microphone");
+    } finally {
+      setPending(false);
+    }
+  };
 
   return (
     <div
@@ -78,6 +113,20 @@ export function ParticipantVideoTile({
           </Badge>
         )}
       </div>
+      {canModerate ? (
+        <button
+          type="button"
+          disabled={pending}
+          onClick={() => void moderateMic()}
+          className={cn(
+            "absolute right-1.5 top-1.5 z-20 flex items-center justify-center rounded-full bg-black/70 text-white shadow-md disabled:opacity-60",
+            isFilmstrip || isDock ? "h-7 w-7" : "h-10 w-10"
+          )}
+          aria-label={micOn ? `Mute ${name}` : `Unmute ${name}`}
+        >
+          {micOn ? <Mic className="h-4 w-4" /> : <MicOff className="h-4 w-4" />}
+        </button>
+      ) : null}
     </div>
   );
 }

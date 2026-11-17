@@ -7,7 +7,7 @@ import {
   useParticipants,
   useRoomContext,
 } from "@livekit/components-react";
-import { ConnectionState, DisconnectReason, RoomEvent } from "livekit-client";
+import { ConnectionState, DisconnectReason, RoomEvent, type RemoteParticipant } from "livekit-client";
 import { Mic, MicOff, UserMinus } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
@@ -36,6 +36,7 @@ import {
   mediaDeviceMessage,
 } from "@/lib/media-device-error";
 import { BRAND_NAME } from "@/lib/brand";
+import { playJoinChime, unlockJoinChime } from "@/lib/join-chime";
 import { dashboardForRole } from "@/lib/routes";
 import { cn } from "@/lib/utils";
 
@@ -100,7 +101,7 @@ function ParticipantsSidebar({
   }
 
   return (
-    <div className="border-b border-border p-4 md:border-b-0 md:border-l">
+    <div className="max-h-[46dvh] overflow-y-auto border-b border-border p-4 md:max-h-none md:border-b-0 md:border-l">
       <h3 className="mb-3 text-sm font-semibold text-foreground">
         Participants ({participants.length})
       </h3>
@@ -208,7 +209,7 @@ function ParticipantsSidebar({
                       type="button"
                       size="sm"
                       variant="outline"
-                      className="h-7 rounded-full px-2 text-xs"
+                      className="h-10 rounded-full px-3 text-xs"
                       disabled={pending !== null}
                       onClick={() => void moderate(p.identity, micOn ? "mute" : "unmute")}
                     >
@@ -364,7 +365,7 @@ function ClassroomRoomInner({
 
   const [showChat, setShowChat] = useState(true);
   const [showParticipants, setShowParticipants] = useState(false);
-  const [boardOn, setBoardOn] = useState(true);
+  const floor = useFloor();
   const [ended, setEnded] = useState(false);
   const saveWhiteboardRef = useRef<(() => Promise<void>) | null>(null);
   const bindWhiteboardSave = useCallback((save: (() => Promise<void>) | null) => {
@@ -448,6 +449,25 @@ function ClassroomRoomInner({
   }, [session.participantRole, studentPresent]);
 
   useEffect(() => {
+    if (session.participantRole !== "tutor") return;
+    const unlock = () => unlockJoinChime();
+    window.addEventListener("pointerdown", unlock);
+    const alreadyHere = new Set(room.remoteParticipants.keys());
+    const onJoin = (participant: RemoteParticipant) => {
+      if (alreadyHere.has(participant.identity)) return;
+      alreadyHere.add(participant.identity);
+      playJoinChime();
+      const name = participant.name?.trim() || "Someone";
+      toast.message(`${name} joined the meeting`);
+    };
+    room.on(RoomEvent.ParticipantConnected, onJoin);
+    return () => {
+      window.removeEventListener("pointerdown", unlock);
+      room.off(RoomEvent.ParticipantConnected, onJoin);
+    };
+  }, [room, session.participantRole]);
+
+  useEffect(() => {
     if (!isScreenSharing || mobilePanelsCollapsed.current) return;
     if (window.matchMedia("(max-width: 767px)").matches) {
       mobilePanelsCollapsed.current = true;
@@ -470,7 +490,7 @@ function ClassroomRoomInner({
         headers: { "Content-Type": "application/json" },
         credentials: "same-origin",
         keepalive: true,
-        body: JSON.stringify({ action: "release" }),
+        body: JSON.stringify({ action: "release", keepBoard: true }),
       }).catch(() => undefined);
     }
     try {
@@ -514,19 +534,17 @@ function ClassroomRoomInner({
   }
 
   const showSidePanel = showParticipants || showChat;
-  const whiteboardVisible = boardOn && !(isScreenSharing && screenExpanded);
+  const whiteboardVisible = floor.boardOpen;
 
   const toggleWhiteboard = () => {
-    if (whiteboardVisible) {
-      setBoardOn(false);
-      return;
-    }
-    setBoardOn(true);
-    setScreenExpanded(false);
+    const next = !floor.boardOpen;
+    if (next) setScreenExpanded(false);
+    void floor.setBoardOpen(next).catch((error: unknown) => {
+      toast.error(error instanceof Error ? error.message : "Could not share the whiteboard");
+    });
   };
 
   return (
-    <FloorProvider roomId={session.roomId} role={session.participantRole}>
     <div ref={containerRef} className="relative flex h-full min-h-0 flex-1 flex-col overflow-hidden bg-background">
       <SessionHeader
         title={session.title}
@@ -605,7 +623,9 @@ function ClassroomRoomInner({
         showParticipants={showParticipants}
         onToggleParticipants={() => setShowParticipants((v) => !v)}
         showWhiteboard={!showWaitingRoom && whiteboardVisible}
-        onToggleWhiteboard={showWaitingRoom ? undefined : toggleWhiteboard}
+        onToggleWhiteboard={
+          session.participantRole === "tutor" && !showWaitingRoom ? toggleWhiteboard : undefined
+        }
         containerRef={containerRef}
         canRecord={session.participantRole === "tutor"}
         recording={recorder.recording}
@@ -614,7 +634,6 @@ function ClassroomRoomInner({
         onToggleRecording={() => void recorder.toggle()}
       />
     </div>
-    </FloorProvider>
   );
 }
 
@@ -635,6 +654,7 @@ function ClassroomRoom({
 }) {
   return (
     <ClassroomLayoutProvider>
+      <FloorProvider roomId={session.roomId} role={session.participantRole}>
       <ClassroomRoomInner
         session={session}
         publishAudio={publishAudio}
@@ -643,6 +663,7 @@ function ClassroomRoom({
         onLeft={onLeft}
         onExit={onExit}
       />
+      </FloorProvider>
     </ClassroomLayoutProvider>
   );
 }
