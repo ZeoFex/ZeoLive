@@ -1,4 +1,5 @@
 import type { Role, TutoringSession, TutoringSessionStatus, User } from "@/generated/prisma";
+import { closeExpiredSessions } from "@/lib/expire-sessions";
 import { getPlatformSettings } from "@/lib/platform-settings";
 import { prisma } from "@/lib/prisma";
 import { clearFloor } from "@/lib/classroom-floor-store";
@@ -98,6 +99,7 @@ export async function verifyClassroomAccess(
   userId: string,
   userRole: Role
 ): Promise<ClassroomAccessResult> {
+  await closeExpiredSessions();
   const session = await prisma.tutoringSession.findUnique({
     where: { roomId },
     include: {

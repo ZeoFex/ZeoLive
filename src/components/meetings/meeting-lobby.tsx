@@ -141,9 +141,8 @@ export function MeetingLobby({
       <div className="pointer-events-none absolute -right-16 bottom-0 h-80 w-80 rounded-full bg-[#0066CC]/20 blur-3xl" />
 
       <div className="relative mx-auto flex min-h-screen w-full max-w-3xl flex-col justify-center px-4 py-10">
-        <div className="mb-6 flex items-center gap-3">
+        <div className="mb-6">
           <Logo href="/" size="lg" variant="mark" />
-          <span className="text-2xl font-extrabold tracking-tight text-[#0B4F8A]">ZTL</span>
         </div>
 
         <div className="overflow-hidden rounded-[28px] border border-white bg-white shadow-[0_30px_80px_-36px_rgba(0,84,166,0.55)]">

@@ -8,6 +8,7 @@ import {
   meetingGuestCookieOptions,
   sealMeetingGuest,
 } from "@/lib/meeting-guest";
+import { closeExpiredSessions } from "@/lib/expire-sessions";
 import { meetingIsFull } from "@/lib/participant-limit";
 import { prisma } from "@/lib/prisma";
 
@@ -16,6 +17,7 @@ export async function POST(
   { params }: { params: Promise<{ roomId: string }> }
 ) {
   const { roomId } = await params;
+  await closeExpiredSessions();
   const tutoring = await prisma.tutoringSession.findUnique({
     where: { roomId },
     select: { id: true, tutorId: true, status: true, shareable: true, seatLimit: true },
@@ -25,7 +27,7 @@ export async function POST(
     return NextResponse.json({ error: "This meeting link is not valid" }, { status: 404 });
   }
   if (tutoring.status === "CANCELLED" || tutoring.status === "COMPLETED") {
-    return NextResponse.json({ error: "This meeting has ended" }, { status: 403 });
+    return NextResponse.json({ error: "This meeting time has passed" }, { status: 403 });
   }
 
   const session = await auth();

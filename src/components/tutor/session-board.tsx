@@ -52,7 +52,7 @@ export function TutorSessionBoard({ kind }: { kind: "scheduling" | "booking" }) 
         title={scheduling ? "Scheduling sessions" : "Booking sessions"}
         description={
           scheduling
-            ? "Create a meeting, share the link, and keep it open until you end it."
+            ? "Create a meeting and share the link. After its time passes, it is completed and can be rescheduled or deleted."
             : "Sessions students booked with you. The same date and time stays in one class."
         }
         actions={scheduling ? <ScheduleMeetingDialog onScheduled={load} /> : undefined}

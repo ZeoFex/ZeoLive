@@ -101,6 +101,8 @@ export async function listPortalSessionsForUser(
   userId: string,
   role: "STUDENT" | "TUTOR" | "ADMIN"
 ): Promise<PortalSession[]> {
+  const { closeExpiredSessions } = await import("@/lib/expire-sessions");
+  await closeExpiredSessions();
   const where =
     role === "TUTOR"
       ? { tutorId: userId }

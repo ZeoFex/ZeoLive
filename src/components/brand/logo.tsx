@@ -116,24 +116,13 @@ export function Logo({
   className,
   markClassName,
 }: LogoProps) {
-  const config = sizeConfig[size];
   const label = `${BRAND_NAME} — ${BRAND_FULL_NAME}`;
 
   const content =
-    variant === "mark" ? (
-      <LogoMark size={size} className={markClassName} />
-    ) : variant === "wordmark" ? (
+    variant === "wordmark" ? (
       <LogoWordmark size={size} inverted={inverted} />
-    ) : variant === "stacked" ? (
-      <span className={cn("flex flex-col items-start", config.gap)}>
-        <LogoMark size={size} className={markClassName} />
-        <LogoWordmark size={size} stacked inverted={inverted} />
-      </span>
     ) : (
-      <span className={cn("inline-flex items-center", config.gap)}>
-        <LogoMark size={size} className={markClassName} />
-        <LogoWordmark size={size} inverted={inverted} />
-      </span>
+      <LogoMark size={size} className={markClassName} />
     );
 
   const classes = cn(
@@ -203,10 +192,7 @@ export function LogoHero({ className }: { className?: string }) {
       </div>
 
       <div className="relative mt-6 text-center">
-        <p className="text-2xl font-bold tracking-tight text-[#0B4F8A] sm:text-3xl">
-          {BRAND_NAME}
-        </p>
-        <p className="mt-1.5 text-sm font-medium tracking-[0.12em] text-[#0B4F8A]/70 uppercase">
+        <p className="text-sm font-medium tracking-[0.12em] text-[#0B4F8A]/70 uppercase">
           {BRAND_FULL_NAME}
         </p>
       </div>

@@ -6,6 +6,7 @@ import { auth } from "@/auth";
 import { Logo } from "@/components/brand/logo";
 import { MeetingLobby } from "@/components/meetings/meeting-lobby";
 import { Button } from "@/components/ui/button";
+import { closeExpiredSessions } from "@/lib/expire-sessions";
 import { prisma } from "@/lib/prisma";
 
 export const dynamic = "force-dynamic";
@@ -16,6 +17,7 @@ export default async function JoinMeetingPage({
   params: Promise<{ roomId: string }>;
 }) {
   const { roomId } = await params;
+  await closeExpiredSessions();
   const tutoring = await prisma.tutoringSession.findUnique({
     where: { roomId },
     select: {
@@ -24,6 +26,7 @@ export default async function JoinMeetingPage({
       studentId: true,
       status: true,
       title: true,
+      startedAt: true,
       participants: { select: { studentId: true } },
     },
   });
@@ -38,10 +41,15 @@ export default async function JoinMeetingPage({
   }
 
   if (tutoring.status === "CANCELLED" || tutoring.status === "COMPLETED") {
+    const missed = tutoring.status === "COMPLETED" && !tutoring.startedAt;
     return (
       <JoinNotice
-        title="The tutor ended this meeting"
-        body={tutoring.title ? `"${tutoring.title}" is closed.` : "This meeting is closed."}
+        title={missed ? "This meeting time has passed" : "This meeting has ended"}
+        body={
+          tutoring.title
+            ? `"${tutoring.title}" is closed. Ask the tutor for a new time.`
+            : "This meeting is closed. Ask the tutor for a new time."
+        }
       />
     );
   }
@@ -86,10 +94,7 @@ function JoinNotice({
       />
 
       <div className="relative mx-auto flex min-h-screen w-full max-w-md flex-col items-center justify-center px-5 py-12">
-        <div className="flex items-center gap-3">
-          <Logo href="/" size="lg" variant="mark" />
-          <span className="text-2xl font-extrabold tracking-tight text-[#0B4F8A]">ZTL</span>
-        </div>
+        <Logo href="/" size="lg" variant="mark" />
 
         <div className="mt-8 w-full rounded-[28px] border border-white bg-white px-6 py-8 text-center shadow-[0_24px_60px_-28px_rgba(0,84,166,0.45)] sm:px-8">
           <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-2xl bg-[linear-gradient(145deg,#19b7f5_0%,#0066cc_52%,#004f9a_100%)] text-white shadow-[0_16px_30px_-16px_rgba(0,102,204,0.8)]">
