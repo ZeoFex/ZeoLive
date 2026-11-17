@@ -10,6 +10,7 @@ import { storeMessage } from "@/lib/messaging";
 import { prisma } from "@/lib/prisma";
 import { tutorParticipantLimit } from "@/lib/participant-limit";
 import { displayUserName } from "@/lib/portal-data";
+import { PAST_SCHEDULE_MESSAGE, scheduledTimeHasPassed } from "@/lib/session-expiry";
 import { buildDisplayName } from "@/lib/user-name";
 
 const createSchema = z.object({
@@ -70,6 +71,9 @@ export async function POST(request: Request) {
     const scheduledAt = data.startNow ? new Date() : new Date(data.scheduledAt);
     if (Number.isNaN(scheduledAt.getTime())) {
       return NextResponse.json({ error: "Choose a valid time" }, { status: 400 });
+    }
+    if (!data.startNow && scheduledTimeHasPassed(scheduledAt)) {
+      return NextResponse.json({ error: PAST_SCHEDULE_MESSAGE }, { status: 400 });
     }
 
     const seatLimit = await tutorParticipantLimit(session.user.id);

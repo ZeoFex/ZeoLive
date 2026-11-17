@@ -15,6 +15,7 @@ import {
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { PAST_SCHEDULE_MESSAGE, scheduledTimeHasPassed } from "@/lib/session-expiry";
 import { cn } from "@/lib/utils";
 
 type Person = { id: string; name: string; email?: string };
@@ -95,6 +96,8 @@ export function ScheduleMeetingDialog({
   };
 
   const chosenSubject = (customSubject.trim() || subject).trim();
+  const today = new Date();
+  const minDate = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, "0")}-${String(today.getDate()).padStart(2, "0")}`;
 
   const schedule = async () => {
     if (title.trim().length < 2) {
@@ -118,7 +121,12 @@ export function ScheduleMeetingDialog({
         return;
       }
       const [year, month, day] = date.split("-").map((part) => parseInt(part, 10));
-      scheduledAt = new Date(year, month - 1, day, hour, minute).toISOString();
+      const when = new Date(year, month - 1, day, hour, minute);
+      if (scheduledTimeHasPassed(when)) {
+        toast.error(PAST_SCHEDULE_MESSAGE);
+        return;
+      }
+      scheduledAt = when.toISOString();
     }
 
     setSaving(true);
@@ -290,6 +298,7 @@ export function ScheduleMeetingDialog({
                   <Input
                     id="meeting-date"
                     type="date"
+                    min={minDate}
                     className="mt-1"
                     value={date}
                     onChange={(e) => setDate(e.target.value)}

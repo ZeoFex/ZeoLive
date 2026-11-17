@@ -15,6 +15,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import type { PortalSession } from "@/lib/session-card";
+import { PAST_SCHEDULE_MESSAGE, scheduledTimeHasPassed } from "@/lib/session-expiry";
 
 export function EndedMeetingActions({
   session,
@@ -31,6 +32,8 @@ export function EndedMeetingActions({
   const [joinUrl, setJoinUrl] = useState("");
   const [copied, setCopied] = useState(false);
   const name = session.title?.trim() || "This meeting";
+  const today = new Date();
+  const minDate = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, "0")}-${String(today.getDate()).padStart(2, "0")}`;
 
   const reschedule = async () => {
     if (!date || !time) {
@@ -43,7 +46,12 @@ export function EndedMeetingActions({
       toast.error("Choose a valid time");
       return;
     }
-    const scheduledAt = new Date(year, month - 1, day, hour, minute).toISOString();
+    const when = new Date(year, month - 1, day, hour, minute);
+    if (scheduledTimeHasPassed(when)) {
+      toast.error(PAST_SCHEDULE_MESSAGE);
+      return;
+    }
+    const scheduledAt = when.toISOString();
     setSaving(true);
     try {
       const res = await fetch(`/api/tutor/meetings/${session.id}`, {
@@ -148,6 +156,7 @@ export function EndedMeetingActions({
                 <Input
                   id={`reschedule-date-${session.id}`}
                   type="date"
+                  min={minDate}
                   className="mt-1"
                   value={date}
                   onChange={(event) => setDate(event.target.value)}
