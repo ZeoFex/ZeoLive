@@ -37,9 +37,36 @@ export default function ClassroomLayout({
       .catch(() => setAllowed(false));
   }, [session, status]);
 
+  useEffect(() => {
+    const html = document.documentElement;
+    const body = document.body;
+    const previous = {
+      htmlOverflow: html.style.overflow,
+      bodyOverflow: body.style.overflow,
+      bodyPosition: body.style.position,
+      bodyWidth: body.style.width,
+      bodyHeight: body.style.height,
+      bodyTop: body.style.top,
+    };
+    html.style.overflow = "hidden";
+    body.style.overflow = "hidden";
+    body.style.position = "fixed";
+    body.style.width = "100%";
+    body.style.height = "100%";
+    body.style.top = "0";
+    return () => {
+      html.style.overflow = previous.htmlOverflow;
+      body.style.overflow = previous.bodyOverflow;
+      body.style.position = previous.bodyPosition;
+      body.style.width = previous.bodyWidth;
+      body.style.height = previous.bodyHeight;
+      body.style.top = previous.bodyTop;
+    };
+  }, []);
+
   if (status === "loading" || allowed === null) {
     return (
-      <div className="flex min-h-screen items-center justify-center text-sm text-muted-foreground">
+      <div className="fixed inset-0 flex items-center justify-center overflow-hidden bg-background text-sm text-muted-foreground">
         Loading classroom…
       </div>
     );
@@ -47,7 +74,7 @@ export default function ClassroomLayout({
 
   if (!allowed) {
     return (
-      <div className="flex min-h-screen flex-col items-center justify-center gap-4 p-8 text-center">
+      <div className="fixed inset-0 flex flex-col items-center justify-center gap-4 overflow-hidden bg-background p-8 text-center">
         <h1 className="text-lg font-semibold">Tutor account not approved yet</h1>
         <p className="max-w-md text-sm text-muted-foreground">
           You can join live sessions after an admin approves your tutor application.
@@ -62,5 +89,9 @@ export default function ClassroomLayout({
     );
   }
 
-  return <>{children}</>;
+  return (
+    <div className="fixed inset-0 flex h-[100svh] max-h-[100svh] flex-col overflow-hidden overscroll-none bg-background">
+      {children}
+    </div>
+  );
 }

@@ -308,6 +308,11 @@ body {
   object-fit: cover;
 }
 
+.lk-participant-tile button,
+.lk-participant-tile .lk-focus-toggle {
+  display: none;
+}
+
 @keyframes zeolive-sheet-up {
   from {
     opacity: 0;

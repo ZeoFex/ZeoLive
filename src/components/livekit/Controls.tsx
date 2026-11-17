@@ -51,6 +51,7 @@ interface ControlsProps {
   containerRef?: React.RefObject<HTMLElement | null>;
   className?: string;
   roomId: string;
+  joinWithVideo?: boolean;
   canRecord?: boolean;
   recording?: boolean;
   recordingBusy?: boolean;
@@ -92,6 +93,7 @@ export function Controls({
   containerRef,
   className,
   roomId,
+  joinWithVideo = false,
   canRecord,
   recording,
   recordingBusy,
@@ -110,7 +112,7 @@ export function Controls({
   const [micLocked, setMicLocked] = useState(false);
   const [reportOpener, setReportOpener] = useState<(() => void) | null>(null);
   const isPhone = useMediaQuery("(max-width: 767px)");
-  const micLockNotice = useRef(false);
+  const lastMicSeq = useRef<number | null>(null);
   const floor = useFloor();
   const screenAllowed =
     role === "tutor" || floor.screen?.identity === localParticipant.identity;
@@ -134,25 +136,40 @@ export function Controls({
   useEffect(() => {
     const sync = () => {
       let locked = false;
+      let seq = 0;
       try {
-        const data = JSON.parse(localParticipant.metadata || "{}") as { micLocked?: boolean };
+        const data = JSON.parse(localParticipant.metadata || "{}") as {
+          micLocked?: boolean;
+          micSeq?: number;
+        };
         locked = data.micLocked === true;
+        seq = typeof data.micSeq === "number" ? data.micSeq : 0;
       } catch {
         locked = false;
       }
       setMicLocked(locked);
+      const previous = lastMicSeq.current;
+      lastMicSeq.current = seq;
+      const hostChangedMic = previous !== null && previous !== seq;
       if (locked) {
         if (localParticipant.isMicrophoneEnabled) {
           void localParticipant.setMicrophoneEnabled(false);
         }
-        if (!micLockNotice.current) {
-          micLockNotice.current = true;
-          toast.message("The host muted your microphone");
-        }
-      } else if (micLockNotice.current) {
-        micLockNotice.current = false;
-        toast.message("You can turn your microphone on");
+        if (hostChangedMic) toast.message("The host muted your microphone");
+        return;
       }
+      if (!hostChangedMic) return;
+      void (async () => {
+        try {
+          await localParticipant.setMicrophoneEnabled(true);
+          if (joinWithVideo) await localParticipant.setCameraEnabled(true);
+          toast.message("Your microphone is on");
+        } catch (error) {
+          const message = mediaDeviceMessage(error, "microphone");
+          if (isExpectedMediaIssue(error)) toast.message(message);
+          else toast.error(message);
+        }
+      })();
     };
 
     sync();
@@ -162,7 +179,7 @@ export function Controls({
       localParticipant.off(ParticipantEvent.ParticipantMetadataChanged, sync);
       localParticipant.off(ParticipantEvent.ParticipantPermissionsChanged, sync);
     };
-  }, [localParticipant]);
+  }, [joinWithVideo, localParticipant]);
 
   const toggleMic = async () => {
     try {

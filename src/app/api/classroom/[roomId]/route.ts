@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { auth } from "@/auth";
 import { markSessionCompleted, participantDisplayName } from "@/lib/classroom-access";
+import { closeLiveKitRoom } from "@/lib/livekit-room-admin";
 import { resolveClassroomActor } from "@/lib/classroom-connection";
 import { prisma } from "@/lib/prisma";
 
@@ -76,6 +77,7 @@ export async function PATCH(
       );
     }
     await markSessionCompleted(roomId);
+    await closeLiveKitRoom(roomId);
     return NextResponse.json({ status: "COMPLETED" });
   }
 

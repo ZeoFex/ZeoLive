@@ -24,6 +24,7 @@ export function getRoomService() {
 type ParticipantMeta = {
   role?: string;
   micLocked?: boolean;
+  micSeq?: number;
   screenShare?: boolean;
 };
 
@@ -78,6 +79,7 @@ export async function moderateParticipant(
     ...current,
     role: current.role ?? "student",
     micLocked: !allowMic,
+    micSeq: (typeof current.micSeq === "number" ? current.micSeq : 0) + 1,
     screenShare: allowScreen,
   });
   await client.updateParticipant(room, identity, {
@@ -129,6 +131,15 @@ export async function setScreenShareAllowed(room: string, identity: string, allo
         await client.mutePublishedTrack(room, identity, track.sid, true);
       }
     }
+  }
+}
+
+export async function closeLiveKitRoom(room: string) {
+  if (!isLiveKitConfigured()) return;
+  try {
+    await getRoomService().deleteRoom(room);
+  } catch {
+    /* The room is already closed. */
   }
 }
 

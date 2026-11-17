@@ -6,6 +6,7 @@ import { useParams, useRouter } from "next/navigation";
 import { useSession } from "next-auth/react";
 import { useEffect, useState } from "react";
 import { Classroom, type ClassroomSessionInfo } from "@/components/livekit/Classroom";
+import { BRAND_NAME } from "@/lib/brand";
 import { Button } from "@/components/ui/button";
 import { useLiveKitToken } from "@/hooks/useLiveKitToken";
 import { dashboardForRole } from "@/lib/routes";
@@ -111,7 +112,7 @@ export default function ClassroomPage() {
 
   if (authStatus === "loading" || pageState.status === "loading") {
     return (
-      <div className="flex h-screen flex-col items-center justify-center gap-3 bg-background text-foreground">
+      <div className="flex h-full flex-col items-center justify-center gap-3 bg-background text-foreground">
         <Loader2 className="h-10 w-10 animate-spin text-primary" />
         <p className="text-sm text-muted-foreground">Connecting to classroom…</p>
       </div>
@@ -125,7 +126,7 @@ export default function ClassroomPage() {
         : "/";
 
     return (
-      <div className="flex h-screen flex-col items-center justify-center gap-4 bg-background p-8 text-center text-foreground">
+      <div className="flex h-full flex-col items-center justify-center gap-4 bg-background p-8 text-center text-foreground">
         <ShieldAlert className="h-12 w-12 text-destructive" />
         <h1 className="text-lg font-semibold">Cannot join session</h1>
         <p className="max-w-md text-sm text-muted-foreground">{pageState.message}</p>
@@ -143,7 +144,7 @@ export default function ClassroomPage() {
 
   if (tokenState.status === "loading" || tokenState.status === "idle") {
     return (
-      <div className="flex h-screen flex-col items-center justify-center gap-3 bg-background text-foreground">
+      <div className="flex h-full flex-col items-center justify-center gap-3 bg-background text-foreground">
         <Loader2 className="h-10 w-10 animate-spin text-primary" />
         <p className="text-sm text-muted-foreground">Preparing secure connection…</p>
       </div>
@@ -152,7 +153,7 @@ export default function ClassroomPage() {
 
   if (tokenState.status === "error") {
     return (
-      <div className="flex h-screen flex-col items-center justify-center gap-4 bg-background p-8 text-center text-foreground">
+      <div className="flex h-full flex-col items-center justify-center gap-4 bg-background p-8 text-center text-foreground">
         <ShieldAlert className="h-12 w-12 text-destructive" />
         <h1 className="text-lg font-semibold">Connection failed</h1>
         <p className="max-w-md text-sm text-muted-foreground">{tokenState.message}</p>
@@ -170,11 +171,10 @@ export default function ClassroomPage() {
 
   if (pageState.session.status === "COMPLETED") {
     return (
-      <div className="flex h-screen flex-col items-center justify-center gap-4 bg-background p-8 text-center text-foreground">
-        <h1 className="text-lg font-semibold">Session ended</h1>
-        <p className="max-w-md text-sm text-muted-foreground">
-          This tutoring session is no longer active.
-        </p>
+      <div className="flex h-full flex-col items-center justify-center gap-4 bg-background p-8 text-center text-foreground">
+        <h1 className="text-3xl font-semibold tracking-tight">Goodbye</h1>
+        <p className="text-lg font-medium">Thanks for using {BRAND_NAME}</p>
+        <p className="max-w-sm text-sm text-muted-foreground">This meeting has ended.</p>
         <Button asChild>
           <Link href={dashboardForRole(authSession?.user?.role ?? "STUDENT")}>
             Back to dashboard

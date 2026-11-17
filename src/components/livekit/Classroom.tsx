@@ -3,6 +3,7 @@
 import {
   LiveKitRoom,
   RoomAudioRenderer,
+  useAudioPlayback,
   useParticipants,
   useRoomContext,
 } from "@livekit/components-react";
@@ -34,7 +35,8 @@ import {
   listedDeviceAvailable,
   mediaDeviceMessage,
 } from "@/lib/media-device-error";
-import { dashboardForRole, routes } from "@/lib/routes";
+import { BRAND_NAME } from "@/lib/brand";
+import { dashboardForRole } from "@/lib/routes";
 import { cn } from "@/lib/utils";
 
 export interface ClassroomSessionInfo {
@@ -246,6 +248,53 @@ function ParticipantsSidebar({
   );
 }
 
+function GoodbyeScreen({ onLeave }: { onLeave: () => void }) {
+  return (
+    <div className="flex h-full min-h-0 flex-1 flex-col items-center justify-center gap-3 bg-background px-6 text-center text-foreground">
+      <h1 className="text-3xl font-semibold tracking-tight">Goodbye</h1>
+      <p className="text-lg font-medium">Thanks for using {BRAND_NAME}</p>
+      <p className="max-w-sm text-sm text-muted-foreground">This meeting has ended.</p>
+      <Button className="mt-2" onClick={onLeave}>
+        Leave
+      </Button>
+    </div>
+  );
+}
+
+function ClassroomPlayback() {
+  const room = useRoomContext();
+  const { canPlayAudio, startAudio } = useAudioPlayback(room);
+
+  useEffect(() => {
+    void startAudio().catch(() => undefined);
+  }, [startAudio]);
+
+  useEffect(() => {
+    if (canPlayAudio) return;
+    const resume = () => {
+      void startAudio().catch(() => undefined);
+    };
+    window.addEventListener("pointerdown", resume);
+    window.addEventListener("touchend", resume);
+    return () => {
+      window.removeEventListener("pointerdown", resume);
+      window.removeEventListener("touchend", resume);
+    };
+  }, [canPlayAudio, startAudio]);
+
+  if (canPlayAudio) return null;
+
+  return (
+    <button
+      type="button"
+      className="absolute inset-x-3 bottom-[4.75rem] z-40 rounded-full bg-primary px-4 py-2 text-sm font-medium text-primary-foreground shadow-lg"
+      onClick={() => void startAudio()}
+    >
+      Tap to hear everyone
+    </button>
+  );
+}
+
 function MeetingPause({
   session,
   mode,
@@ -262,7 +311,7 @@ function MeetingPause({
   const closed = mode === "closed";
 
   return (
-    <div className="flex h-[100dvh] flex-col items-center justify-center gap-4 bg-background p-8 text-center text-foreground">
+    <div className="flex h-full min-h-0 flex-1 flex-col items-center justify-center gap-4 overflow-hidden bg-background p-8 text-center text-foreground">
       <h1 className="text-xl font-semibold">
         {closed ? "This meeting has ended" : "You left the meeting"}
       </h1>
@@ -308,8 +357,8 @@ function ClassroomRoomInner({
   onLeft: () => void;
   onExit: () => void;
 }) {
-  const router = useRouter();
   const containerRef = useRef<HTMLDivElement>(null);
+  const openedMedia = useRef({ mic: false, camera: false });
   const { isScreenSharing, screenExpanded, setScreenExpanded } = useClassroomLayout();
   const mobilePanelsCollapsed = useRef(false);
 
@@ -369,13 +418,25 @@ function ClassroomRoomInner({
         }
       };
 
-      await openDevice("microphone", publishAudio, "audioinput");
-      await openDevice("camera", publishVideo, "videoinput");
+      if (publishAudio && !openedMedia.current.mic) {
+        await openDevice("microphone", true, "audioinput");
+        openedMedia.current.mic = room.localParticipant.isMicrophoneEnabled;
+      }
+      if (publishVideo && !openedMedia.current.camera) {
+        await openDevice("camera", true, "videoinput");
+        openedMedia.current.camera = room.localParticipant.isCameraEnabled;
+      }
     };
     void publishChosenDevices();
     room.on(RoomEvent.Connected, publishChosenDevices);
+    const retries = [700, 1800].map((delay) =>
+      window.setTimeout(() => {
+        void publishChosenDevices();
+      }, delay)
+    );
     return () => {
       cancelled = true;
+      retries.forEach((timer) => window.clearTimeout(timer));
       room.off(RoomEvent.Connected, publishChosenDevices);
     };
   }, [publishAudio, publishVideo, room]);
@@ -424,10 +485,6 @@ function ClassroomRoomInner({
     onExit();
   }, [onExit]);
 
-  const openEndedMeetings = useCallback(() => {
-    router.push(session.shareable ? routes.tutor.scheduling : routes.tutor.sessions);
-  }, [router, session.shareable]);
-
   const endSession = useCallback(async () => {
     try {
       await recorder.stopAndSave();
@@ -447,23 +504,13 @@ function ClassroomRoomInner({
       }
       setEnded(true);
       onSessionEnded();
-      toast.success("Meeting ended for everyone");
-      openEndedMeetings();
     } catch (e) {
       toast.error(e instanceof Error ? e.message : "Could not end session");
     }
-  }, [session.roomId, openEndedMeetings, onSessionEnded, recorder]);
+  }, [session.roomId, onSessionEnded, recorder]);
 
   if (ended) {
-    return (
-      <div className="flex flex-1 flex-col items-center justify-center gap-4 p-8 text-center">
-        <h2 className="text-xl font-semibold">Session ended</h2>
-        <p className="max-w-md text-sm text-muted-foreground">
-          This tutoring session has been closed. You can return to your dashboard.
-        </p>
-        <Button onClick={exitClass}>Leave</Button>
-      </div>
-    );
+    return <GoodbyeScreen onLeave={exitClass} />;
   }
 
   const showSidePanel = showParticipants || showChat;
@@ -480,7 +527,7 @@ function ClassroomRoomInner({
 
   return (
     <FloorProvider roomId={session.roomId} role={session.participantRole}>
-    <div ref={containerRef} className="flex h-full min-h-0 flex-1 flex-col bg-background">
+    <div ref={containerRef} className="relative flex h-full min-h-0 flex-1 flex-col overflow-hidden bg-background">
       <SessionHeader
         title={session.title}
         subject={session.subject}
@@ -545,10 +592,12 @@ function ClassroomRoomInner({
       </div>
 
       <RoomAudioRenderer />
+      <ClassroomPlayback />
       <FloorRequestBanner />
       <Controls
         roomId={session.roomId}
         role={session.participantRole}
+        joinWithVideo={publishVideo}
         onLeave={leaveRoom}
         onEndSession={session.participantRole === "tutor" ? endSession : undefined}
         showChat={showChat}
@@ -645,22 +694,25 @@ export function Classroom({
   }, [meetingIsClosed, onRefreshToken]);
 
   useEffect(() => {
-    if (!away) return;
+    if (sessionEnded || removed) return;
     const watch = window.setInterval(() => {
-      void meetingIsClosed()
-        .then((closed) => {
-          if (!closed) return;
-          setSessionEnded(true);
-          setAway(false);
+      void fetch(`/api/classroom/${session.roomId}`, { credentials: "same-origin" })
+        .then(async (res) => {
+          const json = await res.json().catch(() => ({}));
+          const status = typeof json.status === "string" ? json.status : "";
+          if (status === "COMPLETED" || status === "CANCELLED") {
+            setSessionEnded(true);
+            setAway(false);
+          }
         })
         .catch(() => undefined);
-    }, 8000);
+    }, 4000);
     return () => window.clearInterval(watch);
-  }, [away, meetingIsClosed]);
+  }, [removed, session.roomId, sessionEnded]);
 
   if (removed) {
     return (
-      <div className="flex h-[100dvh] flex-col items-center justify-center gap-4 bg-background p-8 text-center text-foreground">
+      <div className="flex h-full min-h-0 flex-1 flex-col items-center justify-center gap-4 overflow-hidden bg-background p-8 text-center text-foreground">
         <h1 className="text-lg font-semibold">You were removed from the meeting</h1>
         <p className="max-w-md text-sm text-muted-foreground">
           The host removed you from this meeting.
@@ -673,7 +725,7 @@ export function Classroom({
   }
 
   if (sessionEnded) {
-    return <MeetingPause session={session} mode="closed" onRejoin={rejoin} onExit={exitClass} />;
+    return <GoodbyeScreen onLeave={exitClass} />;
   }
 
   if (away) {
@@ -688,7 +740,7 @@ export function Classroom({
       connect
       audio={false}
       video={false}
-      className="flex h-[100dvh] flex-col bg-background text-foreground"
+      className="flex h-full min-h-0 w-full flex-1 flex-col overflow-hidden bg-background text-foreground"
       options={{
         adaptiveStream: true,
         dynacast: true,
@@ -707,7 +759,6 @@ export function Classroom({
         }
         if (reason === DisconnectReason.ROOM_DELETED) {
           setSessionEnded(true);
-          toast.message("The tutor ended the meeting");
         }
       }}
       onError={(error) => {
