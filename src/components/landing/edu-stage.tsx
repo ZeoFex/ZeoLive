@@ -281,7 +281,8 @@ function mountEdu(
         pointPositions[i * 3 + 1] = pointOrigin[i * 3 + 1]! + drift;
         pointPositions[i * 3 + 2] = pointOrigin[i * 3 + 2]! + aim.y * 0.12;
       }
-      points?.geometry.attributes.position?.needsUpdate && (points.geometry.attributes.position.needsUpdate = true);
+      const positions = points?.geometry.attributes.position;
+      if (positions) positions.needsUpdate = true;
 
       if (lines) {
         const attr = lines.geometry.attributes.position as InstanceType<ThreeNS["BufferAttribute"]>;
