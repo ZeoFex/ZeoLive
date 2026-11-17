@@ -82,19 +82,19 @@ export function Navbar() {
           open
             ? "border-transparent bg-transparent"
             : scrolled
-              ? "border-slate-200/80 bg-white/90 shadow-[0_8px_30px_-18px_rgba(15,23,42,0.35)] backdrop-blur-xl dark:border-slate-800/80 dark:bg-slate-950/85"
-              : "border-transparent bg-white/70 backdrop-blur-md dark:bg-slate-950/60"
+              ? "border-border bg-background/90 shadow-[0_8px_30px_-18px_rgba(15,23,42,0.25)] backdrop-blur-xl"
+              : "border-transparent bg-background/75 backdrop-blur-md"
         )}
       >
-        <div className="relative z-[70] mx-auto flex h-16 max-w-6xl items-center justify-between gap-4 px-4 sm:h-[4.25rem] sm:px-6 lg:px-8">
-          <Logo href="/" size="md" inverted={open} className="shrink-0" />
+        <div className="relative z-[70] mx-auto flex h-16 max-w-[1440px] items-center justify-between gap-4 px-4 sm:h-[4.25rem] sm:px-5 lg:px-6">
+          <Logo href="/" size="md" className="shrink-0" />
 
           <nav className="hidden items-center gap-1 lg:flex">
             {navLinks.map((link) => (
               <a
                 key={link.href}
                 href={link.href}
-                className="rounded-lg px-3.5 py-2 text-sm font-medium text-slate-600 transition-colors hover:bg-sky-50 hover:text-[#0066CC] dark:text-slate-300 dark:hover:bg-slate-800/80 dark:hover:text-sky-300"
+                className="rounded-lg px-3.5 py-2 text-sm font-medium text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
               >
                 {link.label}
               </a>
@@ -105,20 +105,20 @@ export function Navbar() {
             <ThemeToggle />
             <Button
               variant="ghost"
-              className="h-10 px-3.5 text-sm font-medium text-slate-700 hover:bg-sky-50 hover:text-[#0066CC] dark:text-slate-100 dark:hover:bg-slate-800 dark:hover:text-sky-300"
+              className="h-10 px-3.5 text-sm font-medium text-foreground hover:bg-muted"
               asChild
             >
               <Link href="/login">Log in</Link>
             </Button>
             <Button
               variant="outline"
-              className="hidden h-10 border-slate-200 bg-white px-3.5 text-sm font-medium text-slate-700 shadow-none hover:border-sky-200 hover:bg-sky-50 hover:text-[#0066CC] dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100 dark:hover:border-sky-500/40 dark:hover:bg-slate-800 dark:hover:text-sky-300 lg:inline-flex"
+              className="hidden h-10 rounded-full border-border bg-card px-3.5 text-sm font-medium text-foreground shadow-none hover:bg-muted lg:inline-flex"
               asChild
             >
               <Link href="/signup/tutor">Become a tutor</Link>
             </Button>
             <Button
-              className="h-10 bg-[linear-gradient(135deg,#00aeef_0%,#0066cc_55%,#0054a6_100%)] px-4 text-sm font-medium text-white shadow-[0_10px_20px_-12px_rgba(0,102,204,0.8)] hover:opacity-95"
+              className="h-10 rounded-full bg-foreground px-4 text-sm font-medium text-background hover:bg-foreground/90"
               asChild
             >
               <Link href="/signup/student">Sign up</Link>
@@ -132,10 +132,8 @@ export function Navbar() {
             <button
               type="button"
               className={cn(
-                "inline-flex h-11 w-11 items-center justify-center rounded-xl text-slate-800 transition-colors dark:text-slate-100",
-                open
-                  ? "bg-white/15 text-white hover:bg-white/20"
-                  : "hover:bg-sky-50 hover:text-[#0066CC]"
+                "inline-flex h-11 w-11 items-center justify-center rounded-xl text-foreground transition-colors",
+                open ? "bg-muted" : "hover:bg-muted"
               )}
               onClick={() => setOpen((value) => !value)}
               aria-label={open ? "Close menu" : "Open menu"}
@@ -160,18 +158,14 @@ export function Navbar() {
             transition={{ duration: 0.28, ease: [0.22, 1, 0.36, 1] }}
           >
             <motion.div
-              className="absolute inset-0 bg-[linear-gradient(160deg,#003d7a_0%,#0066cc_42%,#00aeef_100%)]"
+              className="absolute inset-0 bg-background"
               initial={{ clipPath: "circle(0% at calc(100% - 2.25rem) 2rem)" }}
               animate={{ clipPath: "circle(150% at calc(100% - 2.25rem) 2rem)" }}
               exit={{ clipPath: "circle(0% at calc(100% - 2.25rem) 2rem)" }}
               transition={{ duration: 0.45, ease: [0.22, 1, 0.36, 1] }}
             />
             <div
-              className="absolute inset-0 opacity-30"
-              style={{
-                backgroundImage:
-                  "radial-gradient(circle at 20% 20%, rgba(255,255,255,0.28), transparent 40%), radial-gradient(circle at 80% 80%, rgba(255,255,255,0.16), transparent 35%)",
-              }}
+              className="absolute inset-0 bg-[radial-gradient(circle_at_100%_0%,hsl(var(--primary)/0.16),transparent_42%)]"
               aria-hidden
             />
 
@@ -182,7 +176,7 @@ export function Navbar() {
                     key={link.href}
                     href={link.href}
                     onClick={() => setOpen(false)}
-                    className="rounded-2xl px-3 py-3.5 text-3xl font-semibold tracking-tight text-white/95 transition-colors hover:bg-white/10"
+                    className="rounded-2xl px-3 py-3 text-2xl font-medium tracking-tight text-foreground transition-colors hover:bg-muted"
                     initial={{ opacity: 0, y: 18 }}
                     animate={{ opacity: 1, y: 0 }}
                     exit={{ opacity: 0, y: 10 }}
@@ -198,14 +192,14 @@ export function Navbar() {
               </nav>
 
               <motion.div
-                className="grid gap-3 border-t border-white/15 pt-5"
+                className="grid gap-3 border-t border-border pt-5"
                 initial={{ opacity: 0, y: 16 }}
                 animate={{ opacity: 1, y: 0 }}
                 exit={{ opacity: 0, y: 10 }}
                 transition={{ delay: 0.28, duration: 0.35, ease: [0.22, 1, 0.36, 1] }}
               >
                 <Button
-                  className="h-12 rounded-xl bg-white text-sm font-medium text-[#0066CC] hover:bg-white/95"
+                  className="h-12 rounded-full bg-foreground text-sm font-medium text-background hover:bg-foreground/90"
                   asChild
                 >
                   <Link href="/signup/student" onClick={() => setOpen(false)}>
@@ -214,7 +208,7 @@ export function Navbar() {
                 </Button>
                 <Button
                   variant="outline"
-                  className="h-12 rounded-xl border-white/35 bg-transparent text-sm font-medium text-white hover:bg-white/10 hover:text-white"
+                  className="h-12 rounded-full border-border bg-card text-sm font-medium text-foreground hover:bg-muted"
                   asChild
                 >
                   <Link href="/signup/tutor" onClick={() => setOpen(false)}>
@@ -223,7 +217,7 @@ export function Navbar() {
                 </Button>
                 <Button
                   variant="ghost"
-                  className="h-12 rounded-xl text-sm font-medium text-white hover:bg-white/10 hover:text-white"
+                  className="h-12 rounded-full text-sm font-medium text-foreground hover:bg-muted"
                   asChild
                 >
                   <Link href="/login" onClick={() => setOpen(false)}>

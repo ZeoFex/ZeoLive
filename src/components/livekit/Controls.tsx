@@ -7,6 +7,8 @@ import {
 import { ConnectionState, ParticipantEvent } from "livekit-client";
 import {
   Circle,
+  Ellipsis,
+  Flag,
   Loader2,
   LogOut,
   Maximize,
@@ -22,7 +24,7 @@ import {
   Video,
   VideoOff,
 } from "lucide-react";
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState, type ReactNode } from "react";
 import { toast } from "sonner";
 import { useFloor } from "@/components/livekit/floor-control";
 import { ReportDialog } from "@/components/livekit/ReportDialog";
@@ -33,6 +35,7 @@ import {
   SCREEN_SHARE_CAPTURE,
   SCREEN_SHARE_PUBLISH,
 } from "@/lib/livekit-screen-share";
+import { useMediaQuery } from "@/hooks/use-media-query";
 import { cn } from "@/lib/utils";
 
 interface ControlsProps {
@@ -103,7 +106,10 @@ export function Controls({
     isScreenShareEnabled,
   } = useLocalParticipant();
   const [screenShareBusy, setScreenShareBusy] = useState(false);
+  const [moreOpen, setMoreOpen] = useState(false);
   const [micLocked, setMicLocked] = useState(false);
+  const [reportOpener, setReportOpener] = useState<(() => void) | null>(null);
+  const isPhone = useMediaQuery("(max-width: 767px)");
   const micLockNotice = useRef(false);
   const floor = useFloor();
   const screenAllowed =
@@ -111,6 +117,13 @@ export function Controls({
   const screenPending = role === "student" && floor.pending("screen");
 
   const isConnected = room.state === ConnectionState.Connected;
+  const bindReport = useCallback((open: (() => void) | null) => {
+    setReportOpener(() => open);
+  }, []);
+
+  useEffect(() => {
+    if (!isPhone) setMoreOpen(false);
+  }, [isPhone]);
 
   useEffect(() => {
     if (role === "tutor" || screenAllowed) return;
@@ -227,18 +240,156 @@ export function Controls({
     }
   };
 
+  const closeMore = () => setMoreOpen(false);
+
+  const moreItems: Array<{
+    key: string;
+    label: string;
+    pressed?: boolean;
+    disabled?: boolean;
+    icon: ReactNode;
+    onClick: () => void;
+  }> = [];
+
+  moreItems.push({
+    key: "screen",
+    label: isScreenShareEnabled
+      ? "Stop share"
+      : screenPending
+        ? "Waiting"
+        : screenAllowed
+          ? "Share"
+          : "Ask to share",
+    pressed: isScreenShareEnabled || screenPending,
+    disabled: !isConnected || screenShareBusy,
+    icon: screenShareBusy ? (
+      <Loader2 className="h-5 w-5 animate-spin" />
+    ) : isScreenShareEnabled ? (
+      <MonitorOff className="h-5 w-5" />
+    ) : (
+      <Monitor className="h-5 w-5" />
+    ),
+    onClick: () => {
+      closeMore();
+      void toggleScreenShare();
+    },
+  });
+
+  if (onToggleWhiteboard) {
+    moreItems.push({
+      key: "board",
+      label: showWhiteboard ? "Hide board" : "Whiteboard",
+      pressed: showWhiteboard,
+      icon: <PenLine className="h-5 w-5" />,
+      onClick: () => {
+        closeMore();
+        onToggleWhiteboard();
+      },
+    });
+  }
+
+  moreItems.push({
+    key: "people",
+    label: "People",
+    pressed: showParticipants,
+    icon: <Users className="h-5 w-5" />,
+    onClick: () => {
+      closeMore();
+      onToggleParticipants();
+    },
+  });
+
+  if (canRecord && onToggleRecording) {
+    moreItems.push({
+      key: "record",
+      label: recording ? `Stop ${formatElapsed(recordingElapsed)}` : "Record",
+      pressed: recording,
+      disabled: !isConnected || recordingBusy,
+      icon: recordingBusy ? (
+        <Loader2 className="h-5 w-5 animate-spin" />
+      ) : recording ? (
+        <Square className="h-5 w-5 fill-current" />
+      ) : (
+        <Circle className="h-5 w-5 fill-red-500 text-red-500" />
+      ),
+      onClick: () => {
+        closeMore();
+        onToggleRecording();
+      },
+    });
+  }
+
+  moreItems.push({
+    key: "report",
+    label: "Report",
+    icon: <Flag className="h-5 w-5" />,
+    onClick: () => {
+      closeMore();
+      reportOpener?.();
+    },
+  });
+
+  const moreHasLiveAction =
+    isScreenShareEnabled || Boolean(recording) || Boolean(showWhiteboard) || screenPending;
+
   return (
+    <div className={cn("relative z-30", className)}>
+      {isPhone && moreOpen && (
+        <button
+          type="button"
+          className="fixed inset-0 z-20 bg-black/45"
+          aria-label="Close more controls"
+          onClick={closeMore}
+        />
+      )}
+
+      {isPhone && moreOpen && (
+        <div
+          className="absolute inset-x-2 bottom-[calc(100%+0.5rem)] z-40 rounded-3xl border border-border bg-card p-3 shadow-2xl"
+          style={{ animation: "zeolive-sheet-up 180ms ease-out" }}
+        >
+          <div className="mx-auto mb-2 h-1 w-10 rounded-full bg-muted-foreground/30" />
+          <p className="mb-2 px-1 text-center text-xs font-medium text-muted-foreground">
+            More controls
+          </p>
+          <div className="grid grid-cols-4 gap-1">
+            {moreItems.map((item) => (
+                <button
+                  key={item.key}
+                  type="button"
+                  disabled={item.disabled}
+                  aria-pressed={item.pressed}
+                  className="flex flex-col items-center gap-1.5 rounded-2xl px-1 py-2 text-[11px] font-medium text-foreground active:bg-muted disabled:opacity-50"
+                  onClick={item.onClick}
+                >
+                  <span
+                    className={cn(
+                      "flex h-12 w-12 items-center justify-center rounded-full",
+                      item.pressed
+                        ? "bg-primary text-primary-foreground"
+                        : "bg-secondary text-secondary-foreground",
+                      item.key === "record" && item.pressed && "bg-destructive text-destructive-foreground"
+                    )}
+                  >
+                    {item.icon}
+                  </span>
+                  <span className="line-clamp-2 max-w-full leading-tight">{item.label}</span>
+                </button>
+              ))}
+          </div>
+        </div>
+      )}
+
     <div
       className={cn(
-        "flex flex-wrap items-center justify-center gap-2 border-t border-border bg-card/95 px-3 py-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] backdrop-blur-md sm:px-4",
-        className
+        "relative z-30 flex flex-nowrap items-center justify-center gap-1.5 border-t border-border bg-card/95 px-2.5 py-2.5 pb-[max(0.65rem,env(safe-area-inset-bottom))] backdrop-blur-md sm:gap-2 sm:px-4 sm:py-3 md:flex-wrap"
       )}
     >
       <Button
         type="button"
         size="icon"
         variant={isMicrophoneEnabled ? "secondary" : "destructive"}
-        className="h-11 w-11 shrink-0 rounded-full sm:h-12 sm:w-12"
+        className="h-10 w-10 shrink-0 rounded-full sm:h-12 sm:w-12"
         onClick={toggleMic}
         disabled={!isConnected || micLocked}
         aria-label={
@@ -256,7 +407,7 @@ export function Controls({
         type="button"
         size="icon"
         variant={isCameraEnabled ? "secondary" : "destructive"}
-        className="h-11 w-11 shrink-0 rounded-full sm:h-12 sm:w-12"
+        className="h-10 w-10 shrink-0 rounded-full sm:h-12 sm:w-12"
         onClick={toggleCamera}
         disabled={!isConnected}
         aria-label={isCameraEnabled ? "Turn off camera" : "Turn on camera"}
@@ -269,7 +420,7 @@ export function Controls({
         size={role === "student" && !isScreenShareEnabled ? "default" : "icon"}
         variant={isScreenShareEnabled ? "default" : screenPending ? "outline" : "secondary"}
         className={cn(
-          "h-11 shrink-0 rounded-full sm:h-12",
+          "hidden h-11 shrink-0 rounded-full sm:h-12 md:inline-flex",
           role === "student" && !isScreenShareEnabled ? "px-3" : "w-11 sm:w-12",
           isScreenShareEnabled && "ring-2 ring-emerald-400 ring-offset-2",
           role === "student" && screenAllowed && !isScreenShareEnabled && "ring-2 ring-amber-400 ring-offset-2"
@@ -306,7 +457,7 @@ export function Controls({
           type="button"
           variant={recording ? "destructive" : "secondary"}
           className={cn(
-            "h-11 shrink-0 rounded-full px-3 sm:h-12",
+            "hidden h-11 shrink-0 rounded-full px-3 sm:h-12 md:inline-flex",
             recording && "animate-pulse"
           )}
           onClick={onToggleRecording}
@@ -334,7 +485,7 @@ export function Controls({
           type="button"
           size="icon"
           variant={showWhiteboard ? "default" : "secondary"}
-          className="h-11 w-11 shrink-0 rounded-full sm:h-12 sm:w-12"
+          className="hidden h-11 w-11 shrink-0 rounded-full sm:h-12 sm:w-12 md:inline-flex"
           onClick={onToggleWhiteboard}
           aria-label={showWhiteboard ? "Hide whiteboard" : "Show whiteboard"}
           aria-pressed={showWhiteboard}
@@ -347,20 +498,20 @@ export function Controls({
         type="button"
         size="icon"
         variant={showChat ? "default" : "secondary"}
-        className="h-11 w-11 shrink-0 rounded-full sm:h-12 sm:w-12"
+        className="h-10 w-10 shrink-0 rounded-full sm:h-12 sm:w-12"
         onClick={onToggleChat}
         aria-label="Toggle chat"
       >
         <MessageSquare className="h-5 w-5" />
       </Button>
 
-      <ReportDialog roomId={roomId} />
+      <ReportDialog roomId={roomId} hideTrigger onBindOpen={bindReport} />
 
       <Button
         type="button"
         size="icon"
         variant={showParticipants ? "default" : "secondary"}
-        className="h-11 w-11 shrink-0 rounded-full sm:h-12 sm:w-12"
+        className="hidden h-11 w-11 shrink-0 rounded-full sm:h-12 sm:w-12 md:inline-flex"
         onClick={onToggleParticipants}
         aria-label="Toggle participants"
       >
@@ -378,13 +529,38 @@ export function Controls({
         <Maximize className="h-5 w-5" />
       </Button>
 
-      <div className="mx-1 hidden h-8 w-px bg-border sm:block" />
+      <Button
+        type="button"
+        size="icon"
+        variant={moreOpen ? "default" : "secondary"}
+        className={cn(
+          "relative h-10 w-10 shrink-0 rounded-full md:hidden",
+          moreHasLiveAction && !moreOpen && "ring-2 ring-primary ring-offset-2"
+        )}
+        onClick={() => setMoreOpen((open) => !open)}
+        aria-expanded={moreOpen}
+        aria-label={moreOpen ? "Hide more controls" : "More controls"}
+      >
+        <Ellipsis className="h-5 w-5" />
+      </Button>
+
+      <div className="mx-1 hidden h-8 w-px bg-border md:block" />
 
       <Button
         type="button"
         variant="outline"
+        size="icon"
+        className="h-10 w-10 shrink-0 rounded-full md:hidden"
+        onClick={onLeave}
+        aria-label="Leave"
+      >
+        <LogOut className="h-4 w-4" />
+      </Button>
+      <Button
+        type="button"
+        variant="outline"
         size="sm"
-        className="rounded-full"
+        className="hidden rounded-full md:inline-flex"
         onClick={onLeave}
       >
         <LogOut className="mr-2 h-4 w-4" />
@@ -392,17 +568,30 @@ export function Controls({
       </Button>
 
       {role === "tutor" && onEndSession && (
-        <Button
-          type="button"
-          variant="destructive"
-          size="sm"
-          className="rounded-full"
-          onClick={onEndSession}
-        >
-          <PhoneOff className="mr-2 h-4 w-4" />
-          End meeting
-        </Button>
+        <>
+          <Button
+            type="button"
+            variant="destructive"
+            size="icon"
+            className="h-10 w-10 shrink-0 rounded-full md:hidden"
+            onClick={onEndSession}
+            aria-label="End meeting"
+          >
+            <PhoneOff className="h-4 w-4" />
+          </Button>
+          <Button
+            type="button"
+            variant="destructive"
+            size="sm"
+            className="hidden rounded-full md:inline-flex"
+            onClick={onEndSession}
+          >
+            <PhoneOff className="mr-2 h-4 w-4" />
+            End meeting
+          </Button>
+        </>
       )}
+    </div>
     </div>
   );
 }

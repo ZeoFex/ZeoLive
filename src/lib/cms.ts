@@ -4,7 +4,7 @@ import type {
   CmsShowcase,
   LandingCms,
 } from "@/lib/cms-types";
-import { CMS_LANDING_KEY } from "@/lib/cms-types";
+import { CMS_LANDING_KEY, isHeroScene } from "@/lib/cms-types";
 import { defaultLandingCms } from "@/lib/cms-defaults";
 import { prisma } from "@/lib/prisma";
 
@@ -48,6 +48,7 @@ function mergeHero(defaults: CmsHero, partial: LegacyHero | undefined): CmsHero 
     cardTitle: partial.cardTitle ?? defaults.cardTitle,
     cardItems: partial.cardItems?.length ? partial.cardItems : defaults.cardItems,
     cardFootnote: partial.cardFootnote ?? defaults.cardFootnote,
+    scene: isHeroScene(partial.scene) ? partial.scene : defaults.scene,
   };
 }
 

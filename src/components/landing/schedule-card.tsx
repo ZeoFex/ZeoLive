@@ -17,28 +17,28 @@ export function ScheduleCard({
   return (
     <aside
       className={cn(
-        "w-full max-w-sm rounded-2xl border border-slate-200 bg-white p-5 text-slate-900 shadow-sm",
+        "w-full max-w-sm rounded-2xl border border-border bg-card p-5 text-card-foreground shadow-sm",
         className
       )}
     >
-      <p className="text-sm font-semibold text-slate-900">{title}</p>
+      <p className="text-sm font-semibold text-foreground">{title}</p>
       <ul className="mt-3 space-y-3">
         {items.map((session, index) => (
           <li
             key={`${session.subject}-${session.tutor}-${index}`}
-            className="border-b border-slate-100 pb-3 last:border-0 last:pb-0"
+            className="border-b border-border pb-3 last:border-0 last:pb-0"
           >
-            <p className="text-sm font-semibold leading-snug text-[#0066CC]">
+            <p className="text-sm font-semibold leading-snug text-primary">
               {session.subject}
             </p>
-            <p className="mt-1 text-sm font-medium leading-snug text-slate-900">
+            <p className="mt-1 text-sm font-medium leading-snug text-foreground">
               {session.tutor}
             </p>
-            <p className="mt-0.5 text-xs font-medium text-slate-400">{session.time}</p>
+            <p className="mt-0.5 text-xs font-medium text-muted-foreground">{session.time}</p>
           </li>
         ))}
       </ul>
-      {footnote ? <p className="mt-3 text-xs text-slate-500">{footnote}</p> : null}
+      {footnote ? <p className="mt-3 text-xs text-muted-foreground">{footnote}</p> : null}
     </aside>
   );
 }

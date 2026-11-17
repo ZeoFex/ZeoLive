@@ -1,3 +1,4 @@
+import { MotionCard, RevealGroup } from "@/components/landing/motion-card";
 import { TutorCard } from "@/components/shared/tutor-card";
 import { SectionHeading } from "@/components/landing/section-heading";
 import type { CmsSectionHeading } from "@/lib/cms-types";
@@ -13,14 +14,16 @@ export function FeaturedTutors({
   if (tutors.length === 0) return null;
 
   return (
-    <section id="tutors" className="px-4 py-16 sm:px-6 lg:px-8 lg:py-20">
-      <div className="mx-auto max-w-6xl">
+    <section id="tutors" className="bg-muted/40 px-4 py-14 sm:px-4 sm:py-16 lg:px-5 lg:py-24">
+      <div className="mx-auto max-w-[1440px]">
         <SectionHeading title={heading.title} description={heading.description} />
-        <div className="mt-10 grid gap-5 sm:grid-cols-2 lg:grid-cols-4">
-          {tutors.map((tutor) => (
-            <TutorCard key={tutor.id} tutor={tutor} variant="photo" />
+        <RevealGroup connect="none" className="mt-8 grid gap-4 sm:mt-10 sm:grid-cols-2 sm:gap-5 lg:grid-cols-4">
+          {tutors.map((tutor, index) => (
+            <MotionCard key={tutor.id} index={index} className="h-full">
+              <TutorCard tutor={tutor} variant="photo" className="h-full rounded-2xl border border-border bg-card" />
+            </MotionCard>
           ))}
-        </div>
+        </RevealGroup>
       </div>
     </section>
   );

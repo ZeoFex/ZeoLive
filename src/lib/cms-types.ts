@@ -14,7 +14,28 @@ export type CmsHeroSlide = {
   imageAlt: string;
 };
 
+export const HERO_SCENES = [
+  { id: "classroom", label: "Live classroom" },
+  { id: "camera", label: "Video camera" },
+  { id: "microphone", label: "Lesson microphone" },
+  { id: "notebook", label: "Study notebook" },
+  { id: "crosses", label: "Glossy crosses" },
+  { id: "orb", label: "Glass orb" },
+  { id: "rings", label: "Orbit rings" },
+  { id: "knots", label: "Twisted knots" },
+  { id: "crystals", label: "Crystal cluster" },
+  { id: "off", label: "Hide animation" },
+] as const;
+
+export type HeroScene = (typeof HERO_SCENES)[number]["id"];
+
+export function isHeroScene(value: unknown): value is HeroScene {
+  return HERO_SCENES.some((scene) => scene.id === value);
+}
+
 export type CmsHero = {
+  /** Which 3D scene plays at the top of the homepage. */
+  scene: HeroScene;
   slides: CmsHeroSlide[];
   /** Auto-advance interval in ms. 0 disables autoplay. */
   autoplayMs: number;

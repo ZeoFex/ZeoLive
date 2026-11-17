@@ -6,6 +6,7 @@ import { useMemo } from "react";
 import { ParticipantVideoTile } from "@/components/livekit/ParticipantVideoTile";
 import { ScreenShareStage } from "@/components/livekit/ScreenShareStage";
 import { useClassroomLayout } from "@/components/livekit/classroom-layout-context";
+import { useMediaQuery } from "@/hooks/use-media-query";
 import { parseParticipantRole } from "@/lib/classroom-participant";
 import { cn } from "@/lib/utils";
 
@@ -63,6 +64,69 @@ function CameraStrip({
   );
 }
 
+function MobileClosedBoard({
+  tracks,
+  className,
+}: {
+  tracks: TrackReferenceOrPlaceholder[];
+  className?: string;
+}) {
+  const tutor = tracks.find(
+    (track) => parseParticipantRole(track.participant.metadata) === "tutor"
+  );
+  const students = tracks.filter((track) => track !== tutor);
+
+  return (
+    <div className={cn("flex min-h-0 flex-1 flex-col gap-2 overflow-hidden p-2", className)}>
+      {tutor && (
+        <ParticipantVideoTile
+          trackRef={tutor}
+          variant="fill"
+          className={cn(
+            "min-h-[8.5rem]",
+            students.length > 0 ? "h-auto flex-[1.05]" : "flex-1"
+          )}
+        />
+      )}
+      {students.length > 0 && (
+        <div className="flex min-h-0 flex-1 flex-col gap-1.5">
+          <p className="shrink-0 px-0.5 text-[10px] font-medium uppercase tracking-wide text-muted-foreground">
+            {tutor
+              ? students.length === 1
+                ? "Connected student"
+                : `Connected students · ${students.length}`
+              : "In this class"}
+          </p>
+          <div
+            className={cn(
+              "grid h-full min-h-0 flex-1 gap-2",
+              students.length === 1 && "grid-cols-1 grid-rows-1",
+              students.length === 2 && "grid-cols-2 grid-rows-1",
+              students.length > 2 && students.length <= 4 && "grid-cols-2 grid-rows-2",
+              students.length > 4 && "grid-cols-2 auto-rows-[minmax(6.5rem,1fr)] overflow-y-auto"
+            )}
+          >
+            {students.map((trackRef, index) => (
+              <ParticipantVideoTile
+                key={`${trackRef.participant.sid}-camera`}
+                trackRef={trackRef}
+                variant="fill"
+                className={cn(
+                  students.length > 4 && "min-h-[6.5rem]",
+                  students.length > 1 &&
+                    students.length % 2 === 1 &&
+                    index === students.length - 1 &&
+                    "col-span-2"
+                )}
+              />
+            ))}
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
 export function ParticipantGrid({
   className,
   variant = "stage",
@@ -71,6 +135,7 @@ export function ParticipantGrid({
   variant?: "stage" | "filmstrip";
 }) {
   const { isScreenSharing, screenExpanded } = useClassroomLayout();
+  const isPhone = useMediaQuery("(max-width: 767px)");
 
   const cameraTracks = useTracks(
     [{ source: Track.Source.Camera, withPlaceholder: true }],
@@ -123,6 +188,10 @@ export function ParticipantGrid({
         )}
       </div>
     );
+  }
+
+  if (isPhone) {
+    return <MobileClosedBoard tracks={sortedCameras} className={className} />;
   }
 
   return (

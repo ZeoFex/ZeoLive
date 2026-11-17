@@ -1,4 +1,5 @@
 import { FAQ } from "@/components/landing/faq";
+import { LandingWeb } from "@/components/landing/landing-web";
 import { FeaturedTutors } from "@/components/landing/featured-tutors";
 import { Features } from "@/components/landing/features";
 import { Hero } from "@/components/landing/hero";
@@ -27,7 +28,9 @@ export default async function HomePage() {
   const stats = { ...cms.stats, ...liveStats };
 
   return (
-    <div className="flex min-h-screen flex-col">
+    <div className="relative flex min-h-screen flex-col text-foreground">
+      <LandingWeb />
+      <div className="relative z-10 flex min-h-screen flex-col">
       <Navbar />
       <main>
         <Hero content={cms.hero} />
@@ -40,6 +43,7 @@ export default async function HomePage() {
         <FAQ content={cms.faq} />
       </main>
       <Footer />
+      </div>
     </div>
   );
 }

@@ -9,7 +9,7 @@ import type { LandingCms } from "@/lib/cms-types";
 
 export function FAQ({ content }: { content: LandingCms["faq"] }) {
   return (
-    <section id="faq" className="border-t px-4 py-16 sm:px-6 lg:px-8 lg:py-20">
+    <section id="faq" className="border-t border-border px-4 py-14 sm:px-6 sm:py-16 lg:px-8 lg:py-20">
       <div className="mx-auto max-w-2xl">
         <SectionHeading
           title={content.heading.title}

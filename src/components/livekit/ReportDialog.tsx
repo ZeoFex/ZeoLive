@@ -2,7 +2,7 @@
 
 import { useLocalParticipant, useParticipants } from "@livekit/components-react";
 import { Flag, Loader2 } from "lucide-react";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import {
@@ -14,7 +14,15 @@ import {
 } from "@/components/ui/dialog";
 import { REPORT_REASONS } from "@/lib/session-trust";
 
-export function ReportDialog({ roomId }: { roomId: string }) {
+export function ReportDialog({
+  roomId,
+  hideTrigger = false,
+  onBindOpen,
+}: {
+  roomId: string;
+  hideTrigger?: boolean;
+  onBindOpen?: (open: (() => void) | null) => void;
+}) {
   const participants = useParticipants();
   const { localParticipant } = useLocalParticipant();
   const [open, setOpen] = useState(false);
@@ -22,6 +30,11 @@ export function ReportDialog({ roomId }: { roomId: string }) {
   const [reason, setReason] = useState<(typeof REPORT_REASONS)[number]>(REPORT_REASONS[0]);
   const [details, setDetails] = useState("");
   const [sending, setSending] = useState(false);
+
+  useEffect(() => {
+    onBindOpen?.(() => setOpen(true));
+    return () => onBindOpen?.(null);
+  }, [onBindOpen]);
 
   const targets = useMemo(() => {
     const names = participants
@@ -53,16 +66,18 @@ export function ReportDialog({ roomId }: { roomId: string }) {
 
   return (
     <>
-      <Button
-        type="button"
-        size="icon"
-        variant="secondary"
-        className="h-11 w-11 shrink-0 rounded-full sm:h-12 sm:w-12"
-        onClick={() => setOpen(true)}
-        aria-label="Report a problem in this class"
-      >
-        <Flag className="h-5 w-5" />
-      </Button>
+      {hideTrigger ? null : (
+        <Button
+          type="button"
+          size="icon"
+          variant="secondary"
+          className="h-11 w-11 shrink-0 rounded-full sm:h-12 sm:w-12"
+          onClick={() => setOpen(true)}
+          aria-label="Report a problem in this class"
+        >
+          <Flag className="h-5 w-5" />
+        </Button>
+      )}
       <Dialog open={open} onOpenChange={setOpen}>
         <DialogContent>
           <DialogHeader>

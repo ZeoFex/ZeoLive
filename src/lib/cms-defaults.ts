@@ -6,14 +6,15 @@ import { siteImages } from "@/lib/site-images";
 export function defaultLandingCms(): LandingCms {
   return {
     hero: {
+      scene: "classroom",
       autoplayMs: 6500,
       slides: [
         {
           eyebrow: `${BRAND_NAME} — online tutoring`,
           title: "Live lessons with tutors you can trust",
           description: `Find a tutor, schedule a session, and meet in a shared classroom — teaching, notes, and a clear record of what you covered.`,
-          imageSrc: siteImages.hero.src,
-          imageAlt: siteImages.hero.alt,
+          imageSrc: "/images/hero-studio.png",
+          imageAlt: "Studio desk with a curved monitor, keyboard, and headphones",
         },
         {
           eyebrow: "Built for real learning",

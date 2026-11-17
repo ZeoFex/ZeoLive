@@ -12,14 +12,14 @@ import { Label } from "@/components/ui/label";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Textarea } from "@/components/ui/textarea";
 import { defaultLandingCms } from "@/lib/cms-defaults";
-import type {
-  CmsHeroCardItem,
-  CmsHeroSlide,
-  CmsShowcasePanel,
-  CmsStep,
-  LandingCms,
+import {
+  HERO_SCENES,
+  type CmsHeroCardItem,
+  type CmsHeroSlide,
+  type CmsShowcasePanel,
+  type CmsStep,
+  type LandingCms,
 } from "@/lib/cms-types";
-
 export default function AdminCmsPage() {
   const searchParams = useSearchParams();
   const initialTab = searchParams.get("tab") === "schedule" ? "schedule" : "hero";
@@ -246,40 +246,48 @@ export default function AdminCmsPage() {
         </TabsList>
 
         <TabsContent value="hero" className="admin-tabs-content">
+          <div className="admin-card space-y-3 p-6">
+            <div>
+              <h3 className="text-base font-bold text-slate-900">Homepage animation</h3>
+              <p className="mt-1 text-xs text-slate-500">
+                The homepage hero uses the academy scene: a book, graduation cap, geometry, and a molecule. Choose Hide animation to turn the 3D off. The headline, buttons, and schedule card stay.
+              </p>
+            </div>
+            <div className="max-w-sm">
+              <Label className="admin-label" htmlFor="hero-scene">
+                Animation
+              </Label>
+              <select
+                id="hero-scene"
+                className="admin-input"
+                value={cms.hero.scene}
+                onChange={(e) =>
+                  patchHero({
+                    scene: HERO_SCENES.some((scene) => scene.id === e.target.value)
+                      ? (e.target.value as LandingCms["hero"]["scene"])
+                      : "classroom",
+                  })
+                }
+              >
+                {HERO_SCENES.map((scene) => (
+                  <option key={scene.id} value={scene.id}>
+                    {scene.label}
+                  </option>
+                ))}
+              </select>
+            </div>
+          </div>
+
           <div className="admin-card space-y-4 p-6">
             <div className="flex flex-wrap items-start justify-between gap-3">
               <div>
-                <h3 className="text-base font-bold text-slate-900">Hero banner carousel</h3>
+                <h3 className="text-base font-bold text-slate-900">Hero copy</h3>
                 <p className="mt-1 text-xs text-slate-500">
-                  Full-bleed slides with image + sliding copy. CTAs stay shared across slides.
+                  The first headline and description sit beside the academy scene. Slides are not shown as pictures.
                 </p>
               </div>
-              <Button
-                type="button"
-                size="sm"
-                className="admin-gradient-btn rounded-xl"
-                onClick={addHeroSlide}
-              >
-                <Plus className="mr-1.5 h-4 w-4" />
-                Add slide
-              </Button>
             </div>
-
-            <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-              <div>
-                <Label className="admin-label">Autoplay (ms)</Label>
-                <Input
-                  type="number"
-                  min={0}
-                  step={500}
-                  className="admin-input"
-                  value={cms.hero.autoplayMs}
-                  onChange={(e) =>
-                    patchHero({ autoplayMs: Number(e.target.value) || 0 })
-                  }
-                />
-                <p className="admin-hint">Use 0 to disable autoplay.</p>
-              </div>
+            <div className="grid gap-4 sm:grid-cols-2">
               <div>
                 <Label className="admin-label">Primary CTA label</Label>
                 <Input

@@ -35,11 +35,12 @@ export function TutorCard({
 
   if (variant === "photo" && photo) {
     return (
-      <Card className={cn("student-card overflow-hidden border-0 shadow-none", className)}>
+      <Card className={cn("student-card overflow-hidden border-0 shadow-none transition-shadow duration-500 group-hover:shadow-[0_24px_50px_-28px_rgba(0,102,204,0.45)]", className)}>
         <LandingImage
           src={photo.src}
           alt={photo.alt}
           className="aspect-[4/3] w-full border-b"
+          imageClassName="transition-transform duration-700 ease-[cubic-bezier(0.22,1,0.36,1)] group-hover:scale-[1.06]"
           sizes="(max-width: 640px) 100vw, 280px"
         />
         <CardContent className="p-5">

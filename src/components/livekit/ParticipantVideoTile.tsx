@@ -13,7 +13,7 @@ import {
 
 interface ParticipantVideoTileProps {
   trackRef: TrackReferenceOrPlaceholder;
-  variant?: "grid" | "filmstrip" | "dock";
+  variant?: "grid" | "filmstrip" | "dock" | "fill";
   className?: string;
 }
 
@@ -26,6 +26,7 @@ export function ParticipantVideoTile({
   const name = participantLabel(trackRef.participant);
   const isFilmstrip = variant === "filmstrip";
   const isDock = variant === "dock";
+  const isFill = variant === "fill";
 
   return (
     <div
@@ -37,6 +38,8 @@ export function ParticipantVideoTile({
           "h-24 w-36 shrink-0 snap-center rounded-xl border border-white/15 shadow-lg sm:h-28 sm:w-44 md:h-32 md:w-52",
         variant === "grid" &&
           "aspect-video w-full rounded-2xl border border-border bg-muted shadow-sm",
+        isFill &&
+          "h-full min-h-0 w-full rounded-2xl border border-white/10 bg-slate-900 shadow-md",
         className
       )}
     >
@@ -49,13 +52,16 @@ export function ParticipantVideoTile({
           "pointer-events-none absolute z-10 flex items-center gap-1.5 bg-black/60 text-white backdrop-blur-sm",
           isFilmstrip
             ? "bottom-1.5 left-1.5 max-w-[calc(100%-0.75rem)] rounded-md px-1.5 py-0.5 text-[10px]"
-            : "bottom-3 left-3 rounded-lg px-3 py-1.5 text-sm"
+            : isFill
+              ? "bottom-2 left-2 max-w-[calc(100%-1rem)] rounded-lg px-2 py-1 text-xs"
+              : "bottom-3 left-3 rounded-lg px-3 py-1.5 text-sm"
         )}
       >
         <span
           className={cn(
             "truncate font-medium",
-            (isFilmstrip || isDock) && "max-w-[4.5rem] sm:max-w-[5.5rem]"
+            (isFilmstrip || isDock) && "max-w-[4.5rem] sm:max-w-[5.5rem]",
+            isFill && "max-w-[9rem]"
           )}
         >
           {name}

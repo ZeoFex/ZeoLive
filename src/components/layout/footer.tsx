@@ -22,10 +22,10 @@ const footerLinks = {
 
 export function Footer() {
   return (
-    <footer className="border-t bg-muted/30">
-      <div className="mx-auto max-w-6xl px-4 py-14 sm:px-6 lg:px-8">
-        <div className="grid gap-10 lg:grid-cols-5">
-          <div className="lg:col-span-2">
+    <footer className="border-t border-border bg-muted/40">
+      <div className="mx-auto max-w-6xl px-4 py-12 sm:px-6 sm:py-14 lg:px-8">
+        <div className="grid gap-10 sm:grid-cols-2 lg:grid-cols-5">
+          <div className="sm:col-span-2 lg:col-span-2">
             <Logo href="/" size="md" />
             <p className="mt-3 max-w-sm text-sm leading-relaxed text-muted-foreground">
               {BRAND_FULL_NAME} — scheduling, classrooms, and payouts for tutors

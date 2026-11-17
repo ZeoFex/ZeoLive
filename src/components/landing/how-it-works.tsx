@@ -1,38 +1,49 @@
-import { LandingImage } from "@/components/shared/landing-image";
+import { MotionCard, MotionTitle, RevealGroup } from "@/components/landing/motion-card";
+import { EduStage, type EduKind } from "@/components/landing/edu-stage";
 import { SectionHeading } from "@/components/landing/section-heading";
 import type { LandingCms } from "@/lib/cms-types";
+
+const stepScenes: Array<{ kind: EduKind; label: string }> = [
+  { kind: "book", label: "Animated open book" },
+  { kind: "geometry", label: "Animated geometric model with a clock ring" },
+  { kind: "molecule", label: "Animated molecular model" },
+];
 
 export function HowItWorks({ content }: { content: LandingCms["howItWorks"] }) {
   return (
     <section
       id="how-it-works"
-      className="border-y bg-muted/40 px-4 py-16 sm:px-6 lg:px-8 lg:py-20"
+      className="px-4 py-14 sm:px-4 sm:py-16 lg:px-5 lg:py-24"
     >
-      <div className="mx-auto max-w-6xl">
+      <div className="mx-auto max-w-[1440px]">
         <SectionHeading
           title={content.heading.title}
           description={content.heading.description}
         />
 
-        <ol className="mt-10 grid gap-10 md:grid-cols-3">
-          {content.steps.map((item) => (
-            <li key={item.step}>
-              <LandingImage
-                src={item.imageSrc}
-                alt={item.imageAlt}
-                className="aspect-[3/2] rounded-lg border"
-                sizes="(max-width: 768px) 100vw, 30vw"
-              />
-              <span className="mt-4 block text-sm font-medium text-muted-foreground">
-                Step {item.step}
-              </span>
-              <h3 className="mt-1 text-lg font-medium text-foreground">{item.title}</h3>
-              <p className="mt-2 text-sm leading-relaxed text-muted-foreground">
-                {item.description}
-              </p>
-            </li>
-          ))}
-        </ol>
+        <RevealGroup className="mt-8 grid gap-8 md:mt-12 md:grid-cols-3 md:gap-10" connect="none">
+          {content.steps.map((item, index) => {
+            const scene = stepScenes[index] ?? stepScenes[0]!;
+            return (
+              <MotionCard key={item.step} index={index} className="h-full">
+                <div className="h-full">
+                  <EduStage kind={scene.kind} label={item.imageAlt || scene.label} className="aspect-[16/10] w-full" />
+                  <span className="mt-4 block text-sm font-medium text-muted-foreground">
+                    Step {item.step}
+                  </span>
+                  <MotionTitle
+                    as="h3"
+                    text={item.title}
+                    className="mt-1 text-lg font-medium text-foreground"
+                  />
+                  <p className="mt-2 text-sm leading-relaxed text-muted-foreground">
+                    {item.description}
+                  </p>
+                </div>
+              </MotionCard>
+            );
+          })}
+        </RevealGroup>
       </div>
     </section>
   );
